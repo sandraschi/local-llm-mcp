@@ -1,0 +1,300 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/dxt/main/dist/dxt-manifest.schema.json",
+  "dxt_version": "0.1",
+  "name": "llm-mcp-server",
+  "display_name": "LLM MCP Server",
+  "version": "0.1.0",
+  "description": "Multi-provider LLM MCP server with support for local and cloud models",
+  "long_description": "A Model Control Protocol (MCP) server that provides a unified interface to multiple LLM providers including Ollama, Anthropic, and others. Supports model listing, text generation, and conversation management.",
+  "author": {
+    "name": "Your Name",
+    "email": "your.email@example.com",
+    "url": "https://github.com/yourusername/llm-mcp"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/llm-mcp"
+  },
+  "homepage": "https://github.com/yourusername/llm-mcp",
+  "documentation": "https://github.com/yourusername/llm-mcp#readme",
+  "support": "https://github.com/yourusername/llm-mcp/issues",
+  "icon": "icon.png",
+  "server": {
+    "type": "python",
+    "entry_point": "server/main.py",
+    "mcp_config": {
+      "command": "python",
+      "args": [
+        "${__dirname}/server/main.py"
+      ],
+      "env": {
+        "PYTHONPATH": "${__dirname}/server"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "list_models",
+      "description": "List all available models from all providers.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "get_model",
+      "description": "Get details about a specific model.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "model_id": {
+            "type": "string",
+            "title": "Model Id"
+          }
+        },
+        "required": [
+          "model_id"
+        ]
+      }
+    },
+    {
+      "name": "generate_text",
+      "description": "Generate text using the specified model.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "model_id": {
+            "type": "string",
+            "title": "Model Id"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "max_tokens": {
+            "type": "number",
+            "default": 100,
+            "title": "Max Tokens"
+          },
+          "temperature": {
+            "type": "number",
+            "default": 0.7,
+            "title": "Temperature"
+          },
+          "top_p": {
+            "type": "number",
+            "default": 1.0,
+            "title": "Top P"
+          },
+          "frequency_penalty": {
+            "type": "number",
+            "default": 0.0,
+            "title": "Frequency Penalty"
+          },
+          "presence_penalty": {
+            "type": "number",
+            "default": 0.0,
+            "title": "Presence Penalty"
+          },
+          "stop": {
+            "type": "string",
+            "title": "Stop"
+          }
+        },
+        "required": [
+          "model_id",
+          "prompt"
+        ]
+      }
+    },
+    {
+      "name": "chat",
+      "description": "Generate a chat completion using the specified model.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "model_id": {
+            "type": "string",
+            "title": "Model Id"
+          },
+          "messages": {
+            "type": "string",
+            "title": "Messages"
+          },
+          "max_tokens": {
+            "type": "number",
+            "default": 100,
+            "title": "Max Tokens"
+          },
+          "temperature": {
+            "type": "number",
+            "default": 0.7,
+            "title": "Temperature"
+          },
+          "top_p": {
+            "type": "number",
+            "default": 1.0,
+            "title": "Top P"
+          },
+          "frequency_penalty": {
+            "type": "number",
+            "default": 0.0,
+            "title": "Frequency Penalty"
+          },
+          "presence_penalty": {
+            "type": "number",
+            "default": 0.0,
+            "title": "Presence Penalty"
+          },
+          "stop": {
+            "type": "string",
+            "title": "Stop"
+          }
+        },
+        "required": [
+          "model_id",
+          "messages"
+        ]
+      }
+    },
+    {
+      "name": "load_model",
+      "description": "Load a model into memory.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "model_id": {
+            "type": "string",
+            "title": "Model Id"
+          },
+          "device": {
+            "type": "string",
+            "title": "Device"
+          },
+          "num_gpu_layers": {
+            "type": "number",
+            "title": "Num Gpu Layers"
+          },
+          "context_length": {
+            "type": "number",
+            "title": "Context Length"
+          },
+          "gpu_memory_utilization": {
+            "type": "number",
+            "title": "Gpu Memory Utilization"
+          },
+          "max_model_len": {
+            "type": "number",
+            "title": "Max Model Len"
+          },
+          "quantization": {
+            "type": "string",
+            "title": "Quantization"
+          },
+          "trust_remote_code": {
+            "type": "boolean",
+            "default": false,
+            "title": "Trust Remote Code"
+          }
+        },
+        "required": [
+          "model_id"
+        ]
+      }
+    },
+    {
+      "name": "unload_model",
+      "description": "Unload a model from memory.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "model_id": {
+            "type": "string",
+            "title": "Model Id"
+          }
+        },
+        "required": [
+          "model_id"
+        ]
+      }
+    },
+    {
+      "name": "get_loaded_models",
+      "description": "Get a list of all currently loaded models.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "get_provider_status",
+      "description": "Get the status of a provider.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "provider_name": {
+            "type": "string",
+            "title": "Provider Name"
+          }
+        },
+        "required": [
+          "provider_name"
+        ]
+      }
+    },
+    {
+      "name": "load_provider",
+      "description": "Load and initialize a provider.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "provider_name": {
+            "type": "string",
+            "title": "Provider Name"
+          },
+          "auto_start": {
+            "type": "boolean",
+            "default": true,
+            "title": "Auto Start"
+          },
+          "wait_until_ready": {
+            "type": "boolean",
+            "default": true,
+            "title": "Wait Until Ready"
+          },
+          "timeout": {
+            "type": "number",
+            "default": 30,
+            "title": "Timeout"
+          }
+        },
+        "required": [
+          "provider_name"
+        ]
+      }
+    }
+  ],
+  "keywords": [
+    "llm",
+    "mcp",
+    "ai",
+    "ollama",
+    "anthropic",
+    "local-ai"
+  ],
+  "license": "MIT",
+  "user_config": {},
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "python": ">=3.8.0 <4"
+    }
+  }
+}

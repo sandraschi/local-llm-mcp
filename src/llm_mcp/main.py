@@ -12,14 +12,7 @@ from .core.config import Settings, get_settings
 from .core.startup import register_handlers
 from .api.v1.router import api_router
 
-# Initialize FastMCP
-mcp = FastMCP(
-    name="llm-mcp",
-    description="LLM Model Control Protocol Server",
-    version="0.1.0"
-)
-
-# Initialize FastAPI application
+# Initialize FastAPI application first
 app = FastAPI(
     title="LLM MCP Server",
     description="A FastMCP 2.10-compliant server for managing local and cloud LLMs",
@@ -28,8 +21,19 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+# Initialize FastMCP with the FastAPI app
+mcp = FastMCP.from_fastapi(
+    app=app,
+    name="llm-mcp",
+    log_level="INFO"
+)
+
 # Register startup and shutdown handlers
 register_handlers(app, mcp)
+
+# Set up MCP tools
+from .core.startup import setup_mcp
+setup_mcp(mcp)
 
 # Add CORS middleware
 app.add_middleware(
@@ -73,8 +77,8 @@ async def health_check():
     """Health check endpoint."""
     return {"status": "ok"}
 
-# Mount MCP app
-app.mount("/mcp", mcp.app)
+# Note: The FastMCP instance is already integrated with the FastAPI app
+# through the FastMCP.from_fastapi() call, so we don't need to mount it separately.
 
 if __name__ == "__main__":
     import uvicorn

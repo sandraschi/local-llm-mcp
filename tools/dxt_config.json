@@ -1,0 +1,99 @@
+{
+  "name": "llm-mcp-server",
+  "display_name": "LLM MCP Server",
+  "version": "0.1.0",
+  "description": "Multi-provider LLM MCP server with support for local and cloud models",
+  "long_description": "A Model Control Protocol (MCP) server that provides a unified interface to multiple LLM providers including Ollama, Anthropic, and others. Supports model listing, text generation, and conversation management.",
+  "author": {
+    "name": "Your Name",
+    "email": "your.email@example.com",
+    "url": "https://github.com/yourusername/llm-mcp"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/llm-mcp"
+  },
+  "homepage": "https://github.com/yourusername/llm-mcp",
+  "documentation": "https://github.com/yourusername/llm-mcp#readme",
+  "support": "https://github.com/yourusername/llm-mcp/issues",
+  "icon": "icon.png",
+  "server": {
+    "type": "python",
+    "entry_point": "server/main.py",
+    "mcp_config": {
+      "command": "python",
+      "args": [
+        "${__dirname}/server/main.py"
+      ],
+      "env": {
+        "PYTHONPATH": "${__dirname}/server"
+      }
+    }
+  },
+  "keywords": ["llm", "mcp", "ai", "ollama", "anthropic", "local-ai"],
+  "license": "MIT",
+  "user_config": {
+    "default_provider": {
+      "type": "string",
+      "title": "Default Provider",
+      "description": "Default LLM provider to use",
+      "default": "ollama",
+      "enum": ["ollama", "anthropic"],
+      "required": false
+    },
+    "ollama_base_url": {
+      "type": "string",
+      "title": "Ollama Base URL",
+      "description": "Base URL for the Ollama API",
+      "default": "http://localhost:11434",
+      "required": false
+    },
+    "anthropic_api_key": {
+      "type": "string",
+      "title": "Anthropic API Key",
+      "description": "API key for Anthropic Claude",
+      "sensitive": true,
+      "required": false
+    },
+    "log_level": {
+      "type": "string",
+      "title": "Log Level",
+      "description": "Logging level (debug, info, warning, error, critical)",
+      "default": "info",
+      "enum": ["debug", "info", "warning", "error", "critical"],
+      "required": false
+    },
+    "max_tokens": {
+      "type": "number",
+      "title": "Max Tokens",
+      "description": "Maximum number of tokens to generate",
+      "default": 2048,
+      "minimum": 1,
+      "maximum": 8192,
+      "required": false
+    },
+    "temperature": {
+      "type": "number",
+      "title": "Temperature",
+      "description": "Sampling temperature (0.0 to 2.0)",
+      "default": 0.7,
+      "minimum": 0.0,
+      "maximum": 2.0,
+      "required": false
+    },
+    "model_cache_dir": {
+      "type": "string",
+      "title": "Model Cache Directory",
+      "description": "Directory to cache downloaded models",
+      "default": "${HOME}/.cache/llm-mcp/models",
+      "required": false
+    }
+  },
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "python": ">=3.8.0 <4"
+    }
+  }
+}
