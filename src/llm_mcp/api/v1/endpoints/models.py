@@ -1,104 +1,69 @@
 """API endpoints for model management."""
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.responses import StreamingResponse
+import json
 
-from ....models.base import ModelMetadata, ModelProvider, ModelStatus
-from ....services.model_manager import ModelManager
-from ....core.config import get_settings
+from ....services.model_service import model_service
+from ....config import get_settings
+from ..models import (
+    ProviderInfo,
+    ModelInfo,
+    GenerateRequest,
+    GenerateResponse,
+    ModelOperationResponse,
+    ModelStatus
+)
 
 # Create router
 router = APIRouter()
 
-# Response models
-class ModelResponse(BaseModel):
-    """Response model for a single model."""
-    id: str = Field(..., description="Unique identifier for the model")
-    name: str = Field(..., description="Display name of the model")
-    provider: str = Field(..., description="Provider of the model")
-    version: str = Field(..., description="Model version")
-    status: str = Field(..., description="Current status of the model")
-    capabilities: List[str] = Field(..., description="Capabilities supported by the model")
-    created_at: Optional[str] = Field(None, description="Timestamp when the model was created")
-    updated_at: Optional[str] = Field(None, description="Timestamp when the model was last updated")
-
-class ModelListResponse(BaseModel):
-    """Response model for a list of models."""
-    models: List[ModelResponse] = Field(..., description="List of models")
-
-class LoadModelRequest(BaseModel):
-    """Request model for loading a model."""
-    model_id: str = Field(..., description="ID of the model to load")
-    params: Optional[dict] = Field(
-        default_factory=dict,
-        description="Additional parameters for model loading"
-    )
-
-class GenerateTextRequest(BaseModel):
-    """Request model for text generation."""
-    prompt: str = Field(..., description="The prompt to generate text from")
-    model_id: Optional[str] = Field(
-        None,
-        description="ID of the model to use (defaults to the first available model if not specified)"
-    )
-    params: Optional[dict] = Field(
-        default_factory=dict,
-        description="Additional parameters for text generation"
-    )
-
-class ChatMessage(BaseModel):
-    """A message in a chat conversation."""
-    role: str = Field(..., description="Role of the message sender (e.g., 'user', 'assistant')")
-    content: str = Field(..., description="Content of the message")
-
-class ChatRequest(BaseModel):
-    """Request model for chat completion."""
-    messages: List[ChatMessage] = Field(
-        ...,
-        description="List of messages in the conversation"
-    )
-    model_id: Optional[str] = Field(
-        None,
-        description="ID of the model to use (defaults to the first available model if not specified)"
-    )
-    params: Optional[dict] = Field(
-        default_factory=dict,
-        description="Additional parameters for chat completion"
-    )
-
-# Helper function to convert internal model to API response
-def model_to_response(model: ModelMetadata) -> ModelResponse:
-    """Convert a ModelMetadata object to a ModelResponse."""
-    return ModelResponse(
-        id=model.id,
-        name=model.name,
-        provider=model.provider.value,
-        version=model.version,
-        status=model.status.value,
-        capabilities=[cap.value for cap in model.capabilities],
-        created_at=model.created_at,
-        updated_at=model.updated_at
-    )
-
 # API endpoints
-@router.get("/models", response_model=ModelListResponse)
-async def list_models(
-    provider: Optional[str] = None,
-    model_manager: ModelManager = Depends(lambda: get_settings().model_manager)
-) -> ModelListResponse:
+@router.get("/providers", response_model=List[ProviderInfo])
+async def list_providers() -> List[ProviderInfo]:
+    """List all available providers.
+    
+    Returns:
+        List of available providers with their capabilities
+    """
+    try:
+        settings = get_settings()
+        providers = []
+        
+        for provider_name, config in settings.providers.items():
+            if not config.get("enabled", True):
+                continue
+                
+            providers.append(ProviderInfo(
+                name=provider_name,
+                description=f"{provider_name.capitalize()} provider",
+                capabilities=["generate", "stream"]
+            ))
+            
+        return providers
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to list providers: {str(e)}"
+        )
+
+@router.get("/models", response_model=List[ModelInfo])
+async def list_models(provider: Optional[str] = None) -> List[ModelInfo]:
     """List all available models, optionally filtered by provider.
     
     Args:
         provider: Optional provider name to filter by
-        model_manager: Model manager instance
         
     Returns:
-        List of available models
+        List of available models with their details
     """
     try:
-        models = await model_manager.list_models(provider)
-        return ModelListResponse(
-            models=[model_to_response(model) for model in models]
+        return await model_service.list_models(provider)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
         )
     except Exception as e:
         raise HTTPException(
@@ -106,56 +71,128 @@ async def list_models(
             detail=f"Failed to list models: {str(e)}"
         )
 
-@router.get("/models/{model_id}", response_model=ModelResponse)
+@router.get("/models/{model_name}", response_model=ModelInfo)
 async def get_model(
-    model_id: str,
-    model_manager: ModelManager = Depends(lambda: get_settings().model_manager)
-) -> ModelResponse:
-    """Get details about a specific model.
+    model_name: str,
+    provider: Optional[str] = None
+) -> ModelInfo:
+    """Get detailed information about a specific model.
     
     Args:
-        model_id: ID of the model to get
-        model_manager: Model manager instance
+        model_name: Name of the model to get info for
+        provider: Optional provider name if known
         
     Returns:
-        Model details
+        Detailed model information
     """
     try:
-        model = await model_manager.get_model(model_id)
-        if not model:
+        return await model_service.get_model_info(model_name, provider)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get model info: {str(e)}"
+        )
+
+@router.post("/models/pull", response_model=ModelOperationResponse)
+async def pull_model(
+    model_name: str,
+    provider: Optional[str] = None
+) -> ModelOperationResponse:
+    """Download a model if it's not already available locally.
+    
+    Args:
+        model_name: Name of the model to download
+        provider: Optional provider name if known
+        
+    Returns:
+        Status of the download operation
+    """
+    try:
+        if not provider:
+            provider = get_settings().default_provider
+            
+        provider_instance = model_service.providers.get(provider.lower())
+        if not provider_instance:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Model not found: {model_id}"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Provider not available: {provider}"
             )
-        return model_to_response(model)
+            
+        if not hasattr(provider_instance, 'pull_model'):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Provider {provider} does not support pulling models"
+            )
+            
+        result = await provider_instance.pull_model(model_name)
+        return ModelOperationResponse(
+            model=model_name,
+            provider=provider,
+            status=ModelStatus.READY,
+            message=result.get("message", "Model downloaded successfully"),
+            details=result
+        )
+        
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get model: {str(e)}"
+            detail=f"Failed to pull model: {str(e)}"
         )
 
-@router.post("/models/load", response_model=ModelResponse)
-async def load_model(
-    request: LoadModelRequest,
-    model_manager: ModelManager = Depends(lambda: get_settings().model_manager)
-) -> ModelResponse:
-    """Load a model into memory.
+@router.post("/generate", response_model=GenerateResponse)
+async def generate_text(
+    request: GenerateRequest,
+    raw_request: Request
+) -> GenerateResponse:
+    """Generate text using the specified model.
     
     Args:
-        request: Load model request
-        model_manager: Model manager instance
+        request: Generate text request
         
     Returns:
-        Updated model details
+        Generated text response
     """
-    try:
-        model = await model_manager.load_model(
-            request.model_id,
-            **request.params
+    # If streaming is requested, return a streaming response
+    if request.stream:
+        return StreamingResponse(
+            generate_stream(request, raw_request),
+            media_type="text/event-stream"
         )
-        return model_to_response(model)
+    
+    # Otherwise, generate the full response at once
+    try:
+        full_response = ""
+        async for chunk in model_service.generate(
+            prompt=request.prompt,
+            model=request.model,
+            provider=request.provider,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
+            top_p=request.top_p,
+            frequency_penalty=request.frequency_penalty,
+            presence_penalty=request.presence_penalty,
+            stop=request.stop
+        ):
+            full_response += chunk
+            
+        return GenerateResponse(
+            text=full_response,
+            model=request.model,
+            provider=request.provider or get_settings().default_provider,
+            usage={
+                "prompt_tokens": len(request.prompt.split()),  # Approximate
+                "completion_tokens": len(full_response.split()),  # Approximate
+                "total_tokens": len(request.prompt.split()) + len(full_response.split())
+            }
+        )
+        
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -164,149 +201,57 @@ async def load_model(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to load model: {str(e)}"
-        )
-
-@router.post("/models/{model_id}/unload", response_model=ModelResponse)
-async def unload_model(
-    model_id: str,
-    model_manager: ModelManager = Depends(lambda: get_settings().model_manager)
-) -> ModelResponse:
-    """Unload a model from memory.
-    
-    Args:
-        model_id: ID of the model to unload
-        model_manager: Model manager instance
-        
-    Returns:
-        Updated model details
-    """
-    try:
-        # First get the model to return its details after unloading
-        model = await model_manager.get_model(model_id)
-        if not model:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Model not found: {model_id}"
-            )
-        
-        # Unload the model
-        success = await model_manager.unload_model(model_id)
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to unload model: {model_id}"
-            )
-        
-        # Return the model with updated status
-        model.status = ModelStatus.UNLOADED
-        return model_to_response(model)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to unload model: {str(e)}"
-        )
-
-@router.post("/generate", response_model=dict)
-async def generate_text(
-    request: GenerateTextRequest,
-    model_manager: ModelManager = Depends(lambda: get_settings().model_manager)
-) -> dict:
-    """Generate text using the specified model.
-    
-    Args:
-        request: Generate text request
-        model_manager: Model manager instance
-        
-    Returns:
-        Generated text
-    """
-    try:
-        # If no model_id is provided, use the first available model
-        if not request.model_id:
-            models = await model_manager.list_models()
-            if not models:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="No models available"
-                )
-            model_id = models[0].id
-        else:
-            model_id = request.model_id
-        
-        # Generate text
-        text = await model_manager.generate_text(
-            model_id=model_id,
-            prompt=request.prompt,
-            **request.params
-        )
-        
-        return {
-            "model_id": model_id,
-            "text": text,
-            "status": "success"
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate text: {str(e)}"
         )
 
-@router.post("/chat", response_model=dict)
-async def chat(
-    request: ChatRequest,
-    model_manager: ModelManager = Depends(lambda: get_settings().model_manager)
-) -> dict:
-    """Generate a chat completion using the specified model.
+async def generate_stream(
+    request: GenerateRequest,
+    raw_request: Request
+) -> AsyncGenerator[bytes, None]:
+    """Generate text in a streaming fashion.
     
     Args:
-        request: Chat request
-        model_manager: Model manager instance
+        request: Generate text request
+        raw_request: The raw request object for checking if the client disconnected
         
-    Returns:
-        Chat response
+    Yields:
+        Chunks of the generated text as server-sent events
     """
     try:
-        # If no model_id is provided, use the first available model that supports chat
-        if not request.model_id:
-            models = await model_manager.list_models()
-            chat_models = [m for m in models if 'chat' in [c.value for c in m.capabilities]]
+        buffer = ""
+        
+        async for chunk in model_service.generate(
+            prompt=request.prompt,
+            model=request.model,
+            provider=request.provider,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
+            top_p=request.top_p,
+            frequency_penalty=request.frequency_penalty,
+            presence_penalty=request.presence_penalty,
+            stop=request.stop
+        ):
+            # Check if client disconnected
+            if await raw_request.is_disconnected():
+                break
+                
+            # Add to buffer and yield if we have a complete line
+            buffer += chunk
+            if "\n" in buffer:
+                lines = buffer.split("\n")
+                for line in lines[:-1]:
+                    yield f"data: {json.dumps({'text': line})}\n\n".encode()
+                buffer = lines[-1]
+            else:
+                yield f"data: {json.dumps({'text': chunk})}\n\n".encode()
+                
+        # Yield any remaining content in the buffer
+        if buffer:
+            yield f"data: {json.dumps({'text': buffer})}\n\n".encode()
             
-            if not chat_models:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="No chat models available"
-                )
-            model_id = chat_models[0].id
-        else:
-            model_id = request.model_id
+        # Send the [DONE] event
+        yield "data: [DONE]\n\n".encode()
         
-        # Convert messages to the format expected by the model manager
-        messages = [{"role": msg.role, "content": msg.content} for msg in request.messages]
-        
-        # Generate chat completion
-        response = await model_manager.chat(
-            model_id=model_id,
-            messages=messages,
-            **request.params
-        )
-        
-        return {
-            "model_id": model_id,
-            "message": {
-                "role": "assistant",
-                "content": response
-            },
-            "status": "success"
-        }
-    except HTTPException:
-        raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate chat completion: {str(e)}"
-        )
+        error_msg = f"Error during streaming: {str(e)}"
+        yield f"data: {json.dumps({'error': error_msg})}\n\n".encode()

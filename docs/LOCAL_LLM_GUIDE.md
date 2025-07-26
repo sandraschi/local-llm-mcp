@@ -180,8 +180,95 @@ Use `nvidia-smi` to monitor GPU usage:
 watch -n 1 nvidia-smi
 ```
 
+## LLM MCP Chat Terminal Integration
+
+The LLM MCP Chat Terminal provides a powerful interface for interacting with local LLM models. Here's how to set it up with your local models:
+
+### 1. Prerequisites
+
+- Python 3.8 or higher
+- One of the following local model servers running:
+  - text-generation-webui with API enabled (`--api` flag)
+  - vLLM server
+  - Ollama
+  - LM Studio with OpenAI-compatible API
+
+### 2. Configuration
+
+Edit or create `~/.config/llm-mcp/terminal.yaml`:
+
+```yaml
+providers:
+  local_llm:
+    base_url: "http://localhost:8000"  # Update with your local server URL
+    api_key: ""  # Leave empty for local servers
+    models:
+      - deepseek-coder-33b
+      - codellama-70b
+      - wizardcoder-33b
+
+defaults:
+  provider: local_llm
+  model: deepseek-coder-33b
+  temperature: 0.7
+  max_tokens: 2048
+```
+
+### 3. Starting the Chat Terminal
+
+```bash
+# Navigate to the project directory
+cd /path/to/llm-mcp
+
+# Install dependencies (if not already installed)
+pip install -r requirements.txt
+
+# Start the chat terminal
+python tools/run_chat.py
+```
+
+### 4. Using the Terminal
+
+```
+# List available models
+/model list
+
+# Set a specific model
+/model deepseek-coder-33b
+
+# Set temperature (0.0 to 1.0)
+/config temperature 0.7
+
+# Start chatting!
+Hello, how can you help me with coding today?
+```
+
+### 5. Advanced Features
+
+#### Using Personas
+
+```
+# List available personas
+/personas
+
+# Set a persona
+/persona research_assistant
+```
+
+#### Applying Rulebooks
+
+```
+# List available rulebooks
+/rulebooks
+
+# Apply a rulebook
+/rulebook technical_writing
+```
+
 ## Support
+
 For issues, please check:
 - [text-generation-webui GitHub](https://github.com/oobabooga/text-generation-webui)
 - [vLLM Documentation](https://vllm.readthedocs.io/)
 - [Hugging Face Models](https://huggingface.co/models)
+- [LLM MCP Documentation](./CHAT_TERMINAL.md)
