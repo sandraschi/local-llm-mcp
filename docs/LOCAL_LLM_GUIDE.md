@@ -27,18 +27,21 @@
 ## Recommended Models
 
 ### 1. DeepSeek Coder 33B (AWQ)
+
 - **Best for**: General coding, code completion
 - **VRAM**: Fits in 24GB with 4-bit quantization
 - **Performance**: 75.4% on HumanEval
 - **Format**: AWQ (recommended) or GGUF
 
 ### 2. CodeLlama 70B
+
 - **Best for**: Complex problem solving
 - **VRAM**: Requires 2x 4090s or 4-bit quantization
 - **Performance**: 53.7% on HumanEval
 - **Special**: 100k context window available
 
 ### 3. WizardCoder 33B
+
 - **Best for**: Python development
 - **VRAM**: Fits with 4-bit quantization
 - **Performance**: 73.2% on HumanEval
@@ -46,6 +49,7 @@
 ## Setup Instructions
 
 ### 1. Install text-generation-webui
+
 ```bash
 git clone https://github.com/oobabooga/text-generation-webui
 cd text-generation-webui
@@ -53,11 +57,13 @@ pip install -r requirements.txt
 ```
 
 ### 2. Download Model
+
 ```bash
 python download-model.py TheBloke/deepseek-coder-33B-instruct-AWQ
 ```
 
 ### 3. Start Server
+
 ```bash
 python server.py --model TheBloke_deepseek-coder-33B-instruct-AWQ \
                 --loader awq \
@@ -69,6 +75,7 @@ python server.py --model TheBloke_deepseek-coder-33B-instruct-AWQ \
 ## Performance Optimization
 
 ### vLLM for Maximum Throughput
+
 ```bash
 pip install vllm
 python -m vllm.entrypoints.openai.api_server \
@@ -78,6 +85,7 @@ python -m vllm.entrypoints.openai.api_server \
 ```
 
 ### Recommended Quantization
+
 | Model Size | Quantization | VRAM Usage | Quality |
 |------------|--------------|------------|----------|
 | 7B         | None        | 14GB       | Best     |
@@ -88,6 +96,7 @@ python -m vllm.entrypoints.openai.api_server \
 ## Integration with IDEs
 
 ### Cursor IDE
+
 1. Install Cursor from [cursor.sh](https://www.cursor.sh/)
 2. Go to Settings > AI > Local
 3. Enable "Use Local Model"
@@ -95,8 +104,10 @@ python -m vllm.entrypoints.openai.api_server \
 5. No API key needed
 
 ### VS Code
+
 1. Install Continue extension
 2. Add to settings.json:
+
 ```json
 {
   "continue.OPENAI_API_KEY": "EMPTY",
@@ -107,16 +118,19 @@ python -m vllm.entrypoints.openai.api_server \
 ## Troubleshooting
 
 ### Out of Memory Errors
+
 - Reduce context length (--n_ctx)
 - Increase swap space
 - Use smaller model or better quantization
 
 ### Slow Performance
+
 - Enable CUDA graphs (--cuda_graphs)
 - Use Flash Attention 2
 - Disable CPU offloading
 
 ### Installation Issues
+
 - Use Python 3.10 or later
 - Update CUDA drivers
 - Check PyTorch version compatibility
@@ -124,7 +138,9 @@ python -m vllm.entrypoints.openai.api_server \
 ## Advanced: Claude Desktop Proxy
 
 ### Setup
+
 1. Create a new Python file `claude_proxy.py`:
+
 ```python
 from fastapi import FastAPI, Request
 import httpx
@@ -151,6 +167,7 @@ if __name__ == "__main__":
 ```
 
 2. Start the proxy:
+
 ```bash
 python claude_proxy.py
 ```
@@ -169,13 +186,16 @@ python claude_proxy.py
 ## Maintenance
 
 ### Updating Models
+
 ```bash
 cd text-generation-webui
 python download-model.py --update
 ```
 
 ### Monitoring
+
 Use `nvidia-smi` to monitor GPU usage:
+
 ```bash
 watch -n 1 nvidia-smi
 ```
@@ -268,6 +288,7 @@ Hello, how can you help me with coding today?
 ## Support
 
 For issues, please check:
+
 - [text-generation-webui GitHub](https://github.com/oobabooga/text-generation-webui)
 - [vLLM Documentation](https://vllm.readthedocs.io/)
 - [Hugging Face Models](https://huggingface.co/models)

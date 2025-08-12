@@ -56,15 +56,20 @@ This project and everyone participating in it is governed by our [Code of Conduc
 
 1. Fork and clone the repository
 2. Create a virtual environment:
+
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: .\venv\Scripts\activate
    ```
+
 3. Install development dependencies:
+
    ```bash
    pip install -e ".[dev]"
    ```
+
 4. Install pre-commit hooks:
+
    ```bash
    pre-commit install
    ```

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/dxt/main/dist/dxt-manifest.schema.json",
+  "dxt_version": "0.1",
+  "name": "llm-mcp-server",
+  "display_name": "LLM MCP Server",
+  "version": "0.1.0",
+  "description": "Multi-provider LLM MCP server with support for local and cloud models",
+  "long_description": "A Model Control Protocol (MCP) server that provides a unified interface to multiple LLM providers including Ollama, Anthropic, and others. Supports model listing, text generation, and conversation management.",
+  "author": {
+    "name": "Your Name",
+    "email": "your.email@example.com",
+    "url": "https://github.com/yourusername/llm-mcp"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/llm-mcp"
+  },
+  "homepage": "https://github.com/yourusername/llm-mcp",
+  "documentation": "https://github.com/yourusername/llm-mcp#readme",
+  "support": "https://github.com/yourusername/llm-mcp/issues",
+  "icon": "icon.png",
+  "server": {
+    "type": "python",
+    "entry_point": "server/main.py",
+    "mcp_config": {
+      "command": "python",
+      "args": [
+        "${__dirname}/server/main.py"
+      ],
+      "env": {
+        "PYTHONPATH": "${__dirname}/server"
+      }
+    }
+  },
+  "tools": [],
+  "keywords": [
+    "llm",
+    "mcp",
+    "ai",
+    "ollama",
+    "anthropic",
+    "local-ai"
+  ],
+  "license": "MIT",
+  "user_config": {},
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "python": ">=3.8.0 <4"
+    }
+  }
+}

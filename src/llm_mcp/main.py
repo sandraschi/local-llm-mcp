@@ -1,8 +1,9 @@
 """Main application module for the LLM MCP Server."""
 import os
+import asyncio
 from typing import List, Optional
 
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.security import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from fastmcp import FastMCP
@@ -11,6 +12,7 @@ from pydantic import BaseModel
 from .core.config import Settings, get_settings
 from .core.startup import register_handlers
 from .api.v1.router import api_router
+from .services.mcp_server_manager import mcp_server_manager
 
 # Initialize FastAPI application first
 app = FastAPI(
@@ -35,6 +37,33 @@ register_handlers(app, mcp)
 from .core.startup import setup_mcp
 setup_mcp(mcp)
 
+# Initialize MCP server manager
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on application startup."""
+    try:
+        # Start any enabled MCP servers
+        servers = await mcp_server_manager.list_servers(enabled_only=True)
+        for server in servers:
+            if server.enabled:
+                await mcp_server_manager.start_server(server.name)
+        
+        logger.info(f"Started {len(servers)} MCP server(s) on startup")
+    except Exception as e:
+        logger.error(f"Error during startup: {e}")
+        raise
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on application shutdown."""
+    try:
+        # Stop all running MCP servers
+        await mcp_server_manager.stop_all_servers()
+        logger.info("Stopped all MCP servers")
+    except Exception as e:
+        logger.error(f"Error during shutdown: {e}")
+        raise
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -43,6 +72,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Configure logging
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # API Key security
 API_KEY_NAME = "X-API-Key"

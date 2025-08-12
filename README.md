@@ -23,6 +23,7 @@ A FastMCP 2.10-compliant server for managing local and cloud LLMs with support f
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Python 3.8+
 - Git
 - (Optional) [Ollama](https://ollama.ai/) or [LM Studio](https://lmstudio.ai/) for local models
@@ -31,12 +32,14 @@ A FastMCP 2.10-compliant server for managing local and cloud LLMs with support f
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/yourusername/llm-mcp.git
    cd llm-mcp
    ```
 
 2. Create and activate a virtual environment:
+
    ```bash
    # On Windows
    python -m venv venv
@@ -48,11 +51,13 @@ A FastMCP 2.10-compliant server for managing local and cloud LLMs with support f
    ```
 
 3. Install the package in development mode:
+
    ```bash
    pip install -e ".[dev]"
    ```
 
 4. Configure your environment:
+
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
@@ -108,6 +113,7 @@ python tools/chat_terminal.py --persona code_expert --rulebook coding_rules
 ### Provider Management
 
 Check the status of a provider:
+
 ```bash
 curl -X 'GET' \
   'http://localhost:8000/api/v1/providers/ollama/status' \
@@ -115,6 +121,7 @@ curl -X 'GET' \
 ```
 
 Load a provider (with optional auto-start for Ollama):
+
 ```bash
 curl -X 'POST' \
   'http://localhost:8000/api/v1/providers/ollama/load' \
@@ -130,6 +137,7 @@ curl -X 'POST' \
 ### DXT Packaging
 
 Package the server as a DXT extension:
+
 ```bash
 # Install DXT CLI (if not already installed)
 npm install -g @anthropic/dxt
@@ -157,8 +165,9 @@ The server exposes the following MCP tools:
 ### API Documentation
 
 Once the server is running, visit:
-- API Docs: http://localhost:8000/docs
-- Redoc: http://localhost:8000/redoc
+
+- API Docs: <http://localhost:8000/docs>
+- Redoc: <http://localhost:8000/redoc>
 
 ## 🤖 Supported Providers
 
@@ -285,6 +294,7 @@ Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
 ### Testing
 
 Run the test suite:
+
 ```bash
 pytest tests/
 ```
@@ -320,8 +330,9 @@ uvicorn llm_mcp.main:app --reload
 ### API Documentation
 
 Once the server is running, you can access the interactive API documentation at:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+
+- Swagger UI: <http://localhost:8000/docs>
+- ReDoc: <http://localhost:8000/redoc>
 
 ## Project Structure
 
