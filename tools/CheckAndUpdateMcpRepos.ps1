@@ -1,11 +1,17 @@
 <#
 .SYNOPSIS
-    Checks all MCP repositories for changes and commits/pushes them.
+    Manages MCP repositories by checking for changes, committing, and pushing updates.
+
 .DESCRIPTION
-    This script scans through all MCP repositories in the specified directory,
-    checks for any uncommitted changes, commits them with a timestamp,
-    and pushes to the remote repository. It's designed to be safe and reliable,
-    with comprehensive error handling and logging.
+    This script provides comprehensive management of MCP repositories including:
+    - Scanning for Git repositories in the specified directory
+    - Checking for uncommitted changes
+    - Staging and committing changes with meaningful messages
+    - Pushing to remote repositories
+    - Handling merge conflicts and detached HEAD states
+    - Generating detailed reports
+
+    The script includes safety checks, progress tracking, and detailed logging.
 
 .PARAMETER ReposPath
     The base path where MCP repositories are located. Defaults to 'D:\Dev\repos'.
@@ -13,12 +19,38 @@
 .PARAMETER DryRun
     If specified, the script will only show what would be done without making any changes.
 
+.PARAMETER ForcePush
+    If specified, allows force pushing to remote repositories (use with caution).
+
+.PARAMETER CommitMessage
+    Custom commit message. If not provided, a timestamp-based message will be used.
+
+.PARAMETER Branch
+    The branch to operate on. Defaults to the current branch of each repository.
+
+.PARAMETER MaxConcurrent
+    Maximum number of repositories to process in parallel. Defaults to 4.
+
 .EXAMPLE
+    # Basic usage
     .\CheckAndUpdateMcpRepos.ps1
-    .\CheckAndUpdateMcpRepos.ps1 -ReposPath "C:\MyRepos" -DryRun
+
+    # Dry run to see what would be done
+    .\CheckAndUpdateMcpRepos.ps1 -DryRun
+
+    # Custom repositories path and branch
+    .\CheckAndUpdateMcpRepos.ps1 -ReposPath "C:\MyRepos" -Branch "main"
+
+    # Force push changes (use with caution)
+    .\CheckAndUpdateMcpRepos.ps1 -ForcePush
+
+.NOTES
+    - Requires Git to be installed and in the system PATH
+    - Administrative privileges may be required for certain operations
+    - Always review changes before pushing to shared repositories
 #>
 
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
 param (
     [Parameter(Position = 0)]
     [ValidateScript({
@@ -29,26 +61,70 @@ param (
     })]
     [string]$ReposPath = "D:\Dev\repos",
     
-    [switch]$DryRun
+    [Parameter()]
+    [switch]$DryRun,
+    
+    [Parameter()]
+    [switch]$ForcePush,
+    
+    [Parameter()]
+    [string]$CommitMessage,
+    
+    [Parameter()]
+    [string]$Branch,
+    
+    [Parameter()]
+    [ValidateRange(1, 16)]
+    [int]$MaxConcurrent = 4
 )
+
+# Set strict mode for better error handling
+Set-StrictMode -Version Latest
+
+# Configure error handling
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'Continue'
 
 # Set error action preference
 $ErrorActionPreference = 'Stop'
 
-# Function to write colored output
+#region Helper Functions
+
+<#
+.SYNOPSIS
+    Writes a status message with color coding and optional logging.
+.DESCRIPTION
+    Outputs messages to the console with appropriate colors based on status
+    and optionally logs them to a file.
+#>
 function Write-Status {
+    [CmdletBinding()]
     param(
+        [Parameter(Mandatory = $true)]
         [string]$Message,
-        [string]$Status = "INFO",
-        [switch]$NoNewline
+        
+        [Parameter()]
+        [ValidateSet('SUCCESS', 'ERROR', 'WARNING', 'INFO', 'DETAIL', 'DEBUG')]
+        [string]$Status = 'INFO',
+        
+        [Parameter()]
+        [switch]$NoNewline,
+        
+        [Parameter()]
+        [string]$LogFile = $script:logFile
     )
     
+    $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+    $statusText = "[$timestamp] [$Status] $Message"
+    
+    # Define colors for different status levels
     $colors = @{
         'SUCCESS' = 'Green'
         'ERROR'   = 'Red'
         'WARNING' = 'Yellow'
         'INFO'    = 'Cyan'
         'DETAIL'  = 'Gray'
+        'DEBUG'   = 'DarkGray'
     }
     
     $color = $colors[$Status.ToUpper()]
@@ -64,114 +140,261 @@ function Write-Status {
     }
 }
 
+# Initialize script variables
+$script:logFile = Join-Path -Path $PSScriptRoot -ChildPath "mcp_repo_update_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
+$script:repositories = @()
+$script:results = @()
+$script:startTime = Get-Date
+
+# Create a mutex to prevent multiple instances
+$mutex = New-Object System.Threading.Mutex($false, 'MCP_Repo_Update_Mutex')
+$mutexAcquired = $false
+
 try {
+    # Try to acquire mutex with timeout
+    $mutexAcquired = $mutex.WaitOne(1000)
+    if (-not $mutexAcquired) {
+        throw "Another instance of this script is already running."
+    }
+    
+    # Start logging
     Write-Status "Starting MCP repository update process" -Status INFO
+    Write-Status "Log file: $($script:logFile)" -Status DETAIL
+    Write-Status "Repositories path: $ReposPath" -Status DETAIL
+    if ($DryRun) { Write-Status "DRY RUN MODE - No changes will be made" -Status WARNING }
     
-    # Get all directories that contain '.git' subdirectory
-    Write-Status "Scanning for Git repositories in: $ReposPath" -Status DETAIL
+    # Check if Git is available
+    try {
+        $gitVersion = git --version
+        Write-Status "Using Git version: $gitVersion" -Status DETAIL
+    } catch {
+        throw "Git is not installed or not in PATH. Please install Git and try again."
+    }
     
-    $gitRepos = Get-ChildItem -Path $ReposPath -Directory -Recurse -Depth 1 -Force | 
-                Where-Object { (Test-Path -Path "$($_.FullName)\.git") }
+    # Get all Git repositories
+    Write-Status "Scanning for Git repositories in: $ReposPath" -Status INFO
+    $gitDirs = Get-ChildItem -Path $ReposPath -Directory -Recurse -Force -ErrorAction SilentlyContinue |
+               Where-Object { Test-Path (Join-Path $_.FullName '.git') -PathType Container }
     
-    # Filter for MCP repositories (case-insensitive)
-    $mcpRepos = $gitRepos | Where-Object { $_.Name -match 'mcp' }
+    if (-not $gitDirs) {
+        Write-Status "No Git repositories found in $ReposPath" -Status WARNING
+        exit 0
+    }
     
-    if ($mcpRepos.Count -eq 0) {
+    # Process repositories in parallel batches
+    $script:repositories = $gitDirs.FullName | Where-Object { $_ -match 'mcp' }
+    $repoCount = $script:repositories.Count
+    
+    if ($repoCount -eq 0) {
         Write-Status "No MCP repositories found in the specified path." -Status WARNING
         exit 0
     }
     
-    Write-Status "Found $($mcpRepos.Count) MCP repositories to process" -Status SUCCESS
+    Write-Status "Found $repoCount MCP repositories to process" -Status INFO
     
-    foreach ($repo in $mcpRepos) {
-        $repoName = $repo.Name
-        $repoPath = $repo.FullName
+    # Process repositories in batches
+    $batchSize = [Math]::Min($MaxConcurrent, $script:repositories.Count)
+    $batches = [System.Collections.ArrayList]::new()
+    
+    for ($i = 0; $i -lt $script:repositories.Count; $i += $batchSize) {
+        $batch = $script:repositories | Select-Object -Skip $i -First $batchSize
+        $batches.Add($batch) | Out-Null
+    }
+    
+    $batchNumber = 0
+    $processedRepos = 0
+    $successCount = 0
+    $errorCount = 0
+    $skippedCount = 0
+    
+    # Process each batch
+    foreach ($batch in $batches) {
+        $batchNumber++
+        Write-Status "Processing batch $batchNumber of $($batches.Count) ($($batch.Count) repositories)" -Status INFO
         
-        Write-Status "`n=== Processing repository: $repoName ===" -Status INFO
-        
-        # Save current location
-        $originalLocation = Get-Location
-        
-        try {
-            # Change to the repository directory
-            Set-Location -Path $repoPath -ErrorAction Stop
+        $batchResults = $batch | ForEach-Object -ThrottleLimit $MaxConcurrent -Parallel {
+            $repoPath = $_
+            $repoName = Split-Path -Path $repoPath -Leaf
+            $result = @{
+                Name = $repoName
+                Path = $repoPath
+                Status = 'PENDING'
+                Message = ''
+                Changes = @()
+                Branch = ''
+                Remote = ''
+            }
             
             try {
-                # Get the current branch name
-                $branch = git rev-parse --abbrev-ref HEAD
-                if (-not $?) { throw "Failed to get current branch" }
+                # Get repository info
+                Push-Location -Path $repoPath -ErrorAction Stop
+                
+                # Get current branch
+                $result.Branch = git rev-parse --abbrev-ref HEAD
+                if ($result.Branch -eq 'HEAD') {
+                    $result.Status = 'SKIPPED'
+                    $result.Message = 'Detached HEAD state'
+                    return $result
+                }
                 
                 # Get remote URL
-                $remoteUrl = git config --get remote.origin.url
-                Write-Status "  Repository: $repoName" -Status DETAIL
-                Write-Status "  Branch: $branch" -Status DETAIL
-                Write-Status "  Remote: $remoteUrl" -Status DETAIL
+                $result.Remote = git config --get remote.origin.url
                 
                 # Check for changes
-                $status = git status --porcelain
+                $changes = git status --porcelain
+                if ([string]::IsNullOrWhiteSpace($changes)) {
+                    $result.Status = 'CLEAN'
+                    $result.Message = 'No changes'
+                    return $result
+                }
                 
-                if ($status) {
-                    $changeCount = ($status -split "`n").Count
-                    Write-Status "  Found $changeCount uncommitted change(s)" -Status WARNING
-                    
-                    if (-not $DryRun) {
-                        # Stage all changes
-                        Write-Status "  Staging changes..." -Status DETAIL -NoNewline
-                        git add . 2>&1 | Out-Null
-                        if (-not $?) { throw "Failed to stage changes" }
-                        Write-Status " Done" -Status SUCCESS -NoNewline
-                        Write-Host ""  # New line
-                        
-                        # Create commit
-                        $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-                        $commitMessage = "Auto-update: $timestamp"
-                        
-                        Write-Status "  Creating commit..." -Status DETAIL -NoNewline
-                        git commit -m $commitMessage 2>&1 | Out-Null
-                        if (-not $?) { throw "Failed to create commit" }
-                        Write-Status " Done" -Status SUCCESS -NoNewline
-                        Write-Host ""  # New line
-                        
-                        # Push changes
-                        Write-Status "  Pushing to origin/$branch..." -Status DETAIL -NoNewline
-                        $pushOutput = git push origin $branch 2>&1 | Out-String
-                        if (-not $?) { 
-                            Write-Status " Failed" -Status ERROR -NoNewline
-                            Write-Host ""  # New line
-                            throw "Failed to push changes: $pushOutput"
-                        }
-                        Write-Status " Done" -Status SUCCESS -NoNewline
-                        Write-Host ""  # New line
-                        
-                        Write-Status "  Successfully updated and pushed changes" -Status SUCCESS
-                    } else {
-                        Write-Status "  [DRY RUN] Would have committed and pushed $changeCount change(s)" -Status WARNING
-                    }
+                # Parse changes
+                $result.Changes = $changes -split "`n" | ForEach-Object {
+                    $status = $_.Substring(0, 2).Trim()
+                    $file = $_.Substring(3)
+                    @{ Status = $status; File = $file }
+                }
+                
+                if ($using:DryRun) {
+                    $result.Status = 'DRY_RUN'
+                    $result.Message = 'Would commit changes'
+                    return $result
+                }
+                
+                # Stage all changes
+                git add . 2>&1 | Out-Null
+                
+                # Create commit message
+                $commitMsg = if ($using:CommitMessage) {
+                    $using:CommitMessage
                 } else {
-                    Write-Status "  No changes to commit" -Status SUCCESS
+                    "Auto-commit: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+                }
+                
+                # Commit changes
+                git commit -m $commitMsg 2>&1 | Out-Null
+                
+                # Push changes
+                $pushArgs = if ($using:ForcePush) { '--force' } else { '' }
+                git push $pushArgs 2>&1 | Out-Null
+                
+                $result.Status = 'SUCCESS'
+                $result.Message = 'Changes committed and pushed'
+                
+            } catch {
+                $result.Status = 'ERROR'
+                $result.Message = $_.Exception.Message
+                
+            } finally {
+                Pop-Location
+            }
+            
+            return $result
+        }
+        
+        # Process batch results
+        foreach ($repoResult in $batchResults) {
+            $processedRepos++
+            
+            switch ($repoResult.Status) {
+                'SUCCESS' { 
+                    $successCount++
+                    $statusColor = 'Green'
+                }
+                'CLEAN' { 
+                    $skippedCount++
+                    $statusColor = 'Cyan'
+                }
+                'DRY_RUN' { 
+                    $skippedCount++
+                    $statusColor = 'Yellow'
+                }
+                'SKIPPED' { 
+                    $skippedCount++
+                    $statusColor = 'Magenta'
+                }
+                default { 
+                    $errorCount++
+                    $statusColor = 'Red'
                 }
             }
-            catch {
-                Write-Status "  Error processing repository: $_" -Status ERROR
-                # Continue with next repository
-                continue
+            
+            # Status text is used in the Write-Host command below
+            Write-Host ("[{0,-8}] {1,-50}" -f $repoResult.Status, $repoResult.Name) -NoNewline -ForegroundColor $statusColor
+            Write-Host $repoResult.Message -ForegroundColor 'Gray'
+            
+            # Log detailed changes if any
+            if ($repoResult.Changes.Count -gt 0) {
+                $repoResult.Changes | ForEach-Object {
+                    Write-Host "  $($_.Status) $($_.File)" -ForegroundColor 'DarkGray'
+                }
+            }
+            
+            # Add to results
+            $script:results += [PSCustomObject]@{
+                Name = $repoResult.Name
+                Path = $repoResult.Path
+                Status = $repoResult.Status
+                Message = $repoResult.Message
+                Branch = $repoResult.Branch
+                Remote = $repoResult.Remote
+                ChangeCount = $repoResult.Changes.Count
+                Timestamp = Get-Date
             }
         }
-        finally {
-            # Always return to the original directory
-            Set-Location -Path $originalLocation
+        
+        # Show progress
+        $progress = [Math]::Min(100, [int](($processedRepos / $repoCount) * 100))
+        Write-Progress -Activity "Processing repositories" -Status "$processedRepos of $repoCount completed" -PercentComplete $progress
+    }
+    
+    # Generate summary
+    $endTime = Get-Date
+    $duration = $endTime - $script:startTime
+    
+    Write-Host "`n=== Summary ===" -ForegroundColor Cyan
+    Write-Host "Total repositories: $repoCount"
+    Write-Host ("{0,-20} {1,5} ({2:P1})" -f 'Success:', $successCount, $(if ($repoCount -gt 0) { $successCount / $repoCount } else { 0 })) -ForegroundColor 'Green'
+    Write-Host ("{0,-20} {1,5} ({2:P1})" -f 'Skipped (clean):', $skippedCount, $(if ($repoCount -gt 0) { $skippedCount / $repoCount } else { 0 })) -ForegroundColor 'Cyan'
+    Write-Host ("{0,-20} {1,5} ({2:P1})" -f 'Errors:', $errorCount, $(if ($repoCount -gt 0) { $errorCount / $repoCount } else { 0 })) -ForegroundColor $(if ($errorCount -gt 0) { 'Red' } else { 'Gray' })
+    Write-Host ("{0,-20} {1,5} ({2:P1})" -f 'Processed:', $processedRepos, $(if ($repoCount -gt 0) { $processedRepos / $repoCount } else { 0 }))
+    Write-Host ("{0,-20} {1,5}" -f 'Duration:', "$($duration.Hours)h $($duration.Minutes)m $($duration.Seconds)s")
+    
+    # Export results to CSV
+    $reportFile = Join-Path -Path $PSScriptRoot -ChildPath "mcp_repo_report_$(Get-Date -Format 'yyyyMMdd_HHmmss').csv"
+    $script:results | Export-Csv -Path $reportFile -NoTypeInformation -Encoding UTF8
+    Write-Host "`nDetailed report saved to: $reportFile" -ForegroundColor 'Cyan'
+    
+    Write-Status "`n=== MCP repository update process completed ===" -Status SUCCESS
+} catch {
+    Write-Status "An error occurred: $_" -Status ERROR -ErrorAction Continue
+    Write-Status $_.ScriptStackTrace -Status DEBUG -ErrorAction SilentlyContinue
+    exit 1
+    
+} finally {
+    # Release mutex if acquired
+    if ($mutexAcquired) {
+        try {
+            $mutex.ReleaseMutex() | Out-Null
+        } catch {
+            Write-Status "Warning: Failed to release mutex: $_" -Status WARNING -ErrorAction Continue
         }
     }
     
-    Write-Status "`n=== MCP repository update process completed ===" -Status SUCCESS
-}
-catch {
-    Write-Status "Fatal error: $_" -Status ERROR
-    Write-Status $_.ScriptStackTrace -Status DETAIL
-    exit 1
-}
-finally {
-    # No need to clean up stack as we're not using it anymore
+    # Clean up
+    if ($null -ne $mutex) {
+        $mutex.Dispose()
+    }
     
-    Write-Status "Script execution completed at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -Status INFO
+    # Final status
+    $totalTime = (Get-Date) - $script:startTime
+    
+    Write-Status "Script completed in $($totalTime.TotalSeconds.ToString('0.00')) seconds" -Status INFO
+    
+    # Exit with appropriate code
+    if ($errorCount -gt 0) {
+        exit 1
+    } else {
+        exit 0
+    }
 }

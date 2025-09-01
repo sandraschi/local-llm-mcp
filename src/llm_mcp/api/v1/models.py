@@ -48,35 +48,100 @@ class GenerateRequest(BaseModel):
         description="Sampling temperature. Higher values make output more random."
     )
     max_tokens: Optional[int] = Field(
-        1024,
-        gt=0,
+        100,
+        ge=1,
         description="Maximum number of tokens to generate."
     )
     top_p: Optional[float] = Field(
-        0.9,
-        gt=0.0,
+        1.0,
+        ge=0.0,
         le=1.0,
-        description="Nucleus sampling parameter. Higher values mean more diversity."
+        description="Nucleus sampling: only the smallest set of most probable tokens with probabilities that add up to top_p or higher are kept."
     )
     frequency_penalty: Optional[float] = Field(
         0.0,
-        ge=0.0,
+        ge=-2.0,
         le=2.0,
-        description="Penalty for using frequent tokens."
+        description="Penalty for token frequency. Positive values penalize new tokens based on their frequency in the text so far."
     )
     presence_penalty: Optional[float] = Field(
         0.0,
-        ge=0.0,
+        ge=-2.0,
         le=2.0,
-        description="Penalty for using new tokens."
+        description="Penalty for new tokens. Positive values penalize new tokens based on whether they appear in the text so far."
     )
     stop: Optional[List[str]] = Field(
         None,
-        description="Sequences where the API will stop generating further tokens."
+        description="List of sequences where the API will stop generating further tokens."
     )
     stream: bool = Field(
         False,
         description="Whether to stream the response as server-sent events."
+    )
+    # vLLM specific parameters
+    top_k: Optional[int] = Field(
+        None,
+        ge=-1,
+        description="The number of highest probability vocabulary tokens to keep for top-k filtering."
+    )
+    best_of: Optional[int] = Field(
+        None,
+        ge=1,
+        description="Generates best_of completions server-side and returns the best."
+    )
+    use_beam_search: bool = Field(
+        False,
+        description="Whether to use beam search instead of sampling."
+    )
+    length_penalty: Optional[float] = Field(
+        1.0,
+        ge=0.0,
+        description="Exponential penalty to the length that is used with beam search."
+    )
+    early_stopping: Optional[bool] = Field(
+        False,
+        description="Whether to stop the beam search when at least `num_beams` sentences are finished per batch or not."
+    )
+    stop_token_ids: Optional[List[int]] = Field(
+        None,
+        description="List of token IDs where the API will stop generating further tokens."
+    )
+    ignore_eos: bool = Field(
+        False,
+        description="Whether to ignore the EOS token and continue generating."
+    )
+    logprobs: Optional[int] = Field(
+        None,
+        ge=0,
+        le=5,
+        description="Number of most likely tokens to return at each token position."
+    )
+    prompt_logprobs: Optional[int] = Field(
+        None,
+        ge=0,
+        le=5,
+        description="Number of most likely tokens to return for each prompt token."
+    )
+    # vLLM engine configuration
+    tensor_parallel_size: Optional[int] = Field(
+        None,
+        ge=1,
+        description="Number of GPUs to use for distributed execution."
+    )
+    gpu_memory_utilization: Optional[float] = Field(
+        None,
+        ge=0.0,
+        le=1.0,
+        description="Fraction of GPU memory to use."
+    )
+    max_seq_len: Optional[int] = Field(
+        None,
+        ge=1,
+        description="Maximum sequence length."
+    )
+    quantization: Optional[str] = Field(
+        None,
+        description="Quantization method to use (e.g., 'awq', 'gptq', 'squeezellm')."
     )
 
 

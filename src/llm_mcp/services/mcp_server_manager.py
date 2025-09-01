@@ -176,12 +176,24 @@ class MCPServerManager:
             return False
         
         try:
-            # Create and start the FastMCP instance
-            mcp = FastMCP(
-                name=server_config.name,
-                description=server_config.description,
-                **server_config.config
-            )
+            # Create and start the FastMCP instance with stateful functionality
+            config = server_config.config.copy()
+            
+            # Ensure stateful configuration is set if not provided
+            if 'state' not in config:
+                config.update({
+                    'state': {
+                        'enabled': True,
+                        'persistence': {
+                            'enabled': True,
+                            'storage_path': f"state/{server_config.name.lower().replace(' ', '_')}"
+                        },
+                        'max_size_mb': 100
+                    },
+                    'features': ["stateful_tools", "persistent_state", "tool_caching"]
+                })
+            
+            mcp = FastMCP(name=server_config.name, **config)
             
             # Register tools based on server type
             await self._register_server_tools(mcp, server_config)

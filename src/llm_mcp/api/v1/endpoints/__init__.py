@@ -1,10 +1,13 @@
-""""API v1 endpoints package."""
+"""API endpoints for the LLM MCP server."""
 
-# Import routers to make them available when importing from this package
+from .mcp_servers import router as mcp_servers_router
 from .models import router as models_router
 
 # List of all routers to be included in the API
-__all__ = ["models_router"]
+__all__ = [
+    'mcp_servers_router',
+    'models_router'
+]
 
 # Re-export the router for easier imports
 router = models_router

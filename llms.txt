@@ -1,0 +1,161 @@
+# Supported LLM Models
+
+This file lists the supported LLM models and their configurations for the LLM MCP server, including support for various fine-tuning methods.
+
+## Fine-Tuning Methods
+
+### 1. LoRA (Low-Rank Adaptation)
+- **Supported Models**: All transformer-based models
+- **Key Features**:
+  - Efficient parameter updates
+  - Minimal memory overhead
+  - Compatible with full fine-tuning
+- **Recommended For**: General fine-tuning tasks with limited compute
+
+### 2. QLoRA (Quantized LoRA)
+- **Supported Models**: All models >7B parameters
+- **Key Features**:
+  - 4-bit quantization
+  - Reduced memory usage
+  - Near full fine-tuning performance
+- **Recommended For**: Large models on consumer GPUs
+
+### 3. DoRA (Dropout LoRA)
+- **Supported Models**: All models with linear layers
+- **Key Features**:
+  - Dropout on low-rank matrices
+  - Improved regularization
+  - Better generalization
+- **Recommended For**: Small to medium datasets
+
+### 4. Sparse Fine-Tuning
+- **Supported Models**: All models >1B parameters
+- **Key Features**:
+  - Dynamic sparsity
+  - Reduced compute requirements
+  - Better gradient flow
+- **Recommended For**: Resource-constrained environments
+
+## Model Support Matrix
+
+| Model | LoRA | QLoRA | DoRA | Sparse | Notes |
+|-------|------|-------|------|--------|-------|
+| meta-llama/Llama-2-7b | ✅ | ✅ | ✅ | ✅ | Best for 24GB GPUs |
+| meta-llama/Llama-2-13b | ✅ | ✅ | ✅ | ✅ | Requires 40GB+ VRAM |
+| meta-llama/Llama-2-70b | ⚠️ | ✅ | ⚠️ | ⚠️ | Needs multiple GPUs |
+| mistralai/Mistral-7B | ✅ | ✅ | ✅ | ✅ | Good all-rounder |
+| mistralai/Mixtral-8x7B | ⚠️ | ✅ | ⚠️ | ❌ | Very large, needs expert parallelism |
+| tiiuae/falcon-7b | ✅ | ✅ | ✅ | ✅ | Good for instruction tuning |
+| tiiuae/falcon-40b | ✅ | ✅ | ✅ | ✅ | Needs high-end GPU |
+
+## vLLM Supported Models
+
+### LLaMA Family
+- meta-llama/Llama-2-7b-chat-hf
+- meta-llama/Llama-2-13b-chat-hf
+- meta-llama/Llama-2-70b-chat-hf
+- meta-llama/Llama-3-8b-instruct
+- meta-llama/Llama-3-70b-instruct
+
+### Mistral Family
+- mistralai/Mistral-7B-v0.1
+- mistralai/Mistral-7B-Instruct-v0.2
+- mistralai/Mixtral-8x7B-v0.1
+- mistralai/Mixtral-8x7B-Instruct-v0.1
+
+### Sparse Fine-Tuning Optimized Models
+- meta-llama/Llama-2-7b-hf
+- meta-llama/Llama-2-13b-hf
+- mistralai/Mistral-7B-v0.1
+- tiiuae/falcon-7b
+- tiiuae/falcon-40b
+
+### Other Supported Models
+- codellama/CodeLlama-7b-hf
+- codellama/CodeLlama-13b-hf
+- codellama/CodeLlama-34b-hf
+- tiiuae/falcon-7b
+- tiiuae/falcon-40b
+
+## Fine-Tuning Configurations
+
+### 1. LoRA Configuration
+```yaml
+# Example for Llama-2-7b
+lora_rank: 8
+lora_alpha: 16
+lora_dropout: 0.05
+target_modules: ["q_proj", "v_proj"]
+bias: "none"
+task_type: "CAUSAL_LM"
+```
+
+### 2. QLoRA Configuration
+```yaml
+# Example for 4-bit fine-tuning
+load_in_4bit: true
+bnb_4bit_quant_type: "nf4"
+bnb_4bit_compute_dtype: "bfloat16"
+bnb_4bit_use_double_quant: true
+lora_rank: 64
+lora_alpha: 16
+lora_dropout: 0.1
+```
+
+### 3. DoRA Configuration
+```yaml
+# Example with dropout
+lora_rank: 8
+lora_alpha: 32
+lora_dropout: 0.2
+use_dora: true
+dropout_rate: 0.1
+target_modules: ["q_proj", "v_proj"]
+```
+
+### 4. Sparse Fine-Tuning Configuration
+```yaml
+sparsity_ratio: 0.5
+sparsity_type: "unstructured"
+mask_update_interval: 100
+mask_update_fraction: 0.3
+use_rigl: true
+use_topk_attention: true
+topk_ratio: 0.1
+```
+
+## Hardware Recommendations
+
+| GPU Model | VRAM | Recommended For | Max Model Size |
+|-----------|------|-----------------|----------------|
+| RTX 3090/4090 | 24GB | 7B models | 13B (with LoRA/QLoRA) |
+| A6000 | 48GB | 13B models | 30B (with QLoRA) |
+| A100 40GB | 40GB | 13B-30B models | 30B (full fine-tune) |
+| H100 80GB | 80GB | 30B+ models | 70B+ (with optimizations) |
+
+## Best Practices
+
+1. **For small datasets (1K-10K examples)**:
+   - Use LoRA or DoRA with higher dropout
+   - Lower learning rate (1e-5 to 5e-5)
+   - More training epochs (5-10)
+
+2. **For large datasets (100K+ examples)**:
+   - Use QLoRA for better memory efficiency
+   - Higher learning rate (5e-5 to 1e-4)
+   - Fewer epochs with larger batches
+
+3. **For resource-constrained environments**:
+   - Use sparse fine-tuning
+   - Enable gradient checkpointing
+   - Use mixed precision training
+
+## Notes
+- All models are loaded from the Hugging Face Hub by default
+- Custom model paths are supported by providing a local path
+- For best performance, use a GPU with at least 16GB of VRAM
+- Quantization (8-bit/4-bit) is recommended for GPUs with limited memory
+- Monitor GPU memory usage during training to avoid OOM errors
+
+## Model Cards
+For detailed information about each model, refer to their respective model cards on the Hugging Face Hub.

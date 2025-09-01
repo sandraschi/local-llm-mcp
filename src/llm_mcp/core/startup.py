@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastmcp import FastMCP
 
 from .config import Settings, get_settings
-from ..services.model_manager import ModelManager
+from ..managers.model_manager import ModelManager
 from ..models.base import ModelStatus, ModelProvider
 
 async def startup_event(app: FastAPI) -> None:

@@ -6,8 +6,9 @@ import logging
 
 from ....services.mcp_server_manager import mcp_server_manager, MCPServerConfig
 from ..models.mcp_servers import (
-    MCPServer, MCPServerCreate, MCPServerUpdate, MCPServerStatus,
-    MCPServerOperation, MCPServerLogs, MCPServerDiscovery, ServerStatus
+    MCPServer, MCPServerCreate, MCPServerUpdate,
+    MCPServerStatus, MCPServerOperation, MCPServerLogs, 
+    MCPServerDiscovery, ServerStatus
 )
 from ....core.config import get_settings
 

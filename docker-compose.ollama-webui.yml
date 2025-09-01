@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  ollama-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: ollama-webui
+    ports:
+      - "3000:8080"
+    volumes:
+      - ollama-webui-data:/app/backend/data
+    environment:
+      - OLLAMA_API_BASE_URL=http://host.docker.internal:11434  # Connect to host's Ollama
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  ollama-webui-data:

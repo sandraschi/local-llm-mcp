@@ -9,6 +9,8 @@ from .ollama import OllamaProvider
 # Map of provider names to their respective classes
 PROVIDER_CLASSES = {
     "ollama": OllamaProvider,
+    "vllm": "llm_mcp.providers.vllm_v1.provider.VLLMv1Provider",
+    "vllm_v1": "llm_mcp.providers.vllm_v1.provider.VLLMv1Provider",
     # Add other providers here as they are implemented
 }
 
@@ -22,7 +24,7 @@ class ProviderFactory:
         """Create a new provider instance.
         
         Args:
-            provider_name: Name of the provider (e.g., 'ollama', 'openai')
+            provider_name: Name of the provider (e.g., 'ollama', 'vllm')
             config: Configuration dictionary for the provider
             
         Returns:
@@ -30,13 +32,26 @@ class ProviderFactory:
             
         Raises:
             ValueError: If the provider is not supported
+            ImportError: If the provider module cannot be imported
         """
         provider_name = provider_name.lower()
         
         # Try to get the provider class from the built-in providers
-        provider_class = PROVIDER_CLASSES.get(provider_name)
+        provider_class_or_path = PROVIDER_CLASSES.get(provider_name)
         
-        # If not found, try to import it dynamically
+        # If it's a string path, import the class
+        if isinstance(provider_class_or_path, str):
+            try:
+                module_path, class_name = provider_class_or_path.rsplit('.', 1)
+                module = importlib.import_module(module_path)
+                provider_class = getattr(module, class_name)
+            except (ImportError, AttributeError, ValueError) as e:
+                logger.error(f"Failed to import provider {provider_name} from {provider_class_or_path}: {str(e)}")
+                raise ImportError(f"Failed to import provider {provider_name}: {str(e)}")
+        else:
+            provider_class = provider_class_or_path
+        
+        # If still not found, try to import it dynamically using the provider name
         if provider_class is None:
             try:
                 module = importlib.import_module(f"llm_mcp.providers.{provider_name}")

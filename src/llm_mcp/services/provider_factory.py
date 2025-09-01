@@ -2,10 +2,11 @@
 from typing import Dict, Optional, Type, Any
 
 from ..models.base import BaseProvider, ModelProvider
-from .providers.ollama import OllamaProvider
-from .providers.lmstudio import LMStudioProvider
-from .providers.vllm import VLLMProvider
-from .providers.anthropic import AnthropicProvider
+from ..providers.ollama import OllamaProvider
+from ..providers.lmstudio import LMStudioProvider
+from ..providers.vllm import VLLMProvider
+from ..providers.anthropic import AnthropicProvider
+from ..providers.huggingface import HuggingFaceProvider
 
 # Map provider types to their implementation classes
 PROVIDER_CLASSES: Dict[ModelProvider, Type[BaseProvider]] = {
@@ -13,6 +14,7 @@ PROVIDER_CLASSES: Dict[ModelProvider, Type[BaseProvider]] = {
     ModelProvider.LMSTUDIO: LMStudioProvider,
     ModelProvider.VLLM: VLLMProvider,
     ModelProvider.ANTHROPIC: AnthropicProvider,
+    ModelProvider.HUGGINGFACE: HuggingFaceProvider,
     # Add other providers here as they are implemented
     # ModelProvider.OPENAI: OpenAIProvider,
     # ModelProvider.GEMINI: GeminiProvider,
