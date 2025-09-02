@@ -1,0 +1,78 @@
+# vLLM v0.10.1.1 Docker Setup with RTX 4090 Optimization
+
+FROM nvidia/cuda:12.4-devel-ubuntu22.04 AS builder
+
+# Set environment variables for RTX 4090 Ada Lovelace architecture
+ENV TORCH_CUDA_ARCH_LIST=8.9
+ENV CUDA_VISIBLE_DEVICES=0
+ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+ENV MAX_JOBS=8
+ENV PIP_NO_BUILD_ISOLATION=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-dev \
+    git \
+    build-essential \
+    cmake \
+    ninja-build \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip and install PyTorch 2.4+ with CUDA 12.4
+RUN pip3 install --upgrade pip setuptools wheel
+RUN pip3 install torch==2.4.0 torchvision==0.19.0 torchaudio==0.19.0 \
+    --index-url https://download.pytorch.org/whl/cu124
+
+# Install vLLM v0.10.1.1 from source for RTX 4090 optimization
+RUN git clone --branch v0.10.1 --depth 1 https://github.com/vllm-project/vllm.git /vllm
+WORKDIR /vllm
+
+# Install Flash Attention for Ada Lovelace (RTX 4090)
+RUN pip3 install flash-attn==2.6.3 --no-build-isolation
+
+# Install vLLM with optimizations
+RUN pip3 install -e . --verbose
+
+# Production stage
+FROM nvidia/cuda:12.4-runtime-ubuntu22.04
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV CUDA_VISIBLE_DEVICES=0
+
+# Install Python runtime
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy vLLM installation from builder
+COPY --from=builder /usr/local/lib/python3.10/dist-packages /usr/local/lib/python3.10/dist-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /vllm /vllm
+
+# Set working directory
+WORKDIR /app
+
+# vLLM V1 engine environment variables
+ENV VLLM_USE_V1=1
+ENV VLLM_ATTENTION_BACKEND=FLASHINFER  
+ENV VLLM_ENABLE_PREFIX_CACHING=1
+ENV VLLM_GPU_MEMORY_UTILIZATION=0.9
+ENV VLLM_FLASH_ATTN_VERSION=2
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD python3 -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
+
+# Default command
+CMD ["python3", "-m", "vllm.entrypoints.openai.api_server", \
+     "--host", "0.0.0.0", \
+     "--port", "8000", \
+     "--model", "meta-llama/Meta-Llama-3.1-8B-Instruct"]

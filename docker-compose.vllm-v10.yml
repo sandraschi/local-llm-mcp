@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  # vLLM v0.10.1.1 Server with RTX 4090 Optimization
+  vllm-v10:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.vllm-v10
+    image: local-llm-mcp/vllm-v10:latest
+    container_name: local-llm-mcp-vllm-v10
+    
+    environment:
+      # V1 Engine Configuration
+      VLLM_USE_V1: "1"
+      VLLM_ATTENTION_BACKEND: "FLASHINFER"
+      VLLM_ENABLE_PREFIX_CACHING: "1"
+      VLLM_GPU_MEMORY_UTILIZATION: "0.9"
+      
+      # RTX 4090 Specific Optimizations
+      CUDA_VISIBLE_DEVICES: "0"
+      PYTORCH_CUDA_ALLOC_CONF: "expandable_segments:True,max_split_size_mb:128"
+      TORCH_CUDA_ARCH_LIST: "8.9"
+      
+      # FlashAttention Configuration
+      VLLM_FLASH_ATTN_VERSION: "2"
+      
+      # Performance Settings
+      VLLM_MAX_NUM_BATCHED_TOKENS: "8192"
+      VLLM_MAX_NUM_SEQS: "256"
+      
+    ports:
+      - "8000:8000"  # OpenAI-compatible API
+      
+    volumes:
+      # HuggingFace cache for models
+      - ~/.cache/huggingface:/root/.cache/huggingface
+      # Local models directory (optional)
+      - ./models:/models
+      # Configuration
+      - ./docker/config:/config
+      
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    
+    # Custom command for specific model
+    command: >
+      python3 -m vllm.entrypoints.openai.api_server
+      --host 0.0.0.0
+      --port 8000
+      --model meta-llama/Meta-Llama-3.1-8B-Instruct
+      --gpu-memory-utilization 0.9
+      --max-model-len 4096
+      --tensor-parallel-size 1
+      --enable-prefix-caching
+      --max-num-batched-tokens 8192
+      --trust-remote-code
+      --served-model-name llama-3.1-8b
+      
+    restart: unless-stopped
+    
+    networks:
+      - llm-network
+      
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  # Local LLM MCP Server
+  local-llm-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    image: local-llm-mcp/server:latest
+    container_name: local-llm-mcp-server
+    
+    environment:
+      # MCP Configuration
+      MCP_SERVER_NAME: "local-llm-mcp"
+      MCP_LOG_LEVEL: "INFO"
+      
+      # vLLM Provider Configuration
+      VLLM_V10_BASE_URL: "http://vllm-v10:8000"
+      VLLM_V10_ENABLED: "true"
+      
+      # Other providers
+      OLLAMA_BASE_URL: "http://host.docker.internal:11434"
+      LMSTUDIO_BASE_URL: "http://host.docker.internal:1234"
+    
+    ports:
+      - "3001:3001"  # MCP Server
+      
+    volumes:
+      - ./config:/app/config
+      - ./logs:/app/logs
+      
+    depends_on:
+      vllm-v10:
+        condition: service_healthy
+        
+    restart: unless-stopped
+    networks:
+      - llm-network
+      
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  llm-network:
+    driver: bridge
+
+volumes:
+  huggingface-cache:
+    driver: local
