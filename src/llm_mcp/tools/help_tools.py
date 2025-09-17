@@ -162,7 +162,8 @@ async def _list_tools_impl(mcp: Any, detail: int = 1) -> Dict[str, Any]:
         Dictionary with tool information
     """
     tools = {}
-    for name, tool in mcp._tools.items():
+    mcp_tools = await mcp.get_tools()
+    for name, tool in mcp_tools.items():
         if detail == 0:
             tools[name] = {"description": (inspect.getdoc(tool) or "").split('\n')[0]}
         else:
@@ -182,7 +183,8 @@ async def _get_tool_help_impl(mcp: Any, tool_name: str) -> Dict[str, Any]:
     Returns:
         Detailed documentation for the tool
     """
-    for name, tool in mcp._tools.items():
+    mcp_tools = await mcp.get_tools()
+    for name, tool in mcp_tools.items():
         if name == tool_name:
             return {"tool": tool_name, **get_tool_info(tool)}
     return {"error": f"Tool '{tool_name}' not found"}
@@ -201,7 +203,7 @@ async def _search_tools_impl(mcp: Any, query: str) -> Dict[str, Any]:
     query = query.lower()
     matches = []
     
-    for name, tool in mcp._tools.items():
+    for name, tool in mcp.get_tools().items():
         doc = (inspect.getdoc(tool) or "").lower()
         if query in name.lower() or query in doc:
             matches.append({
@@ -222,7 +224,7 @@ async def _get_tool_signature_impl(mcp: Any, tool_name: str) -> Dict[str, Any]:
     Returns:
         Dictionary with tool signature information
     """
-    for name, tool in mcp._tools.items():
+    for name, tool in mcp.get_tools().items():
         if name == tool_name:
             sig = inspect.signature(tool)
             return {

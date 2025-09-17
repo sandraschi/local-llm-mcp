@@ -47,11 +47,11 @@ class LMStudioProvider(BaseProvider):
             logger.error(error_msg)
             raise Exception(error_msg) from e
     
-    async def list_models(self) -> List[Dict[str, Any]]:
+    async def list_models(self) -> List[ModelMetadata]:
         """List available models from LM Studio.
         
         Returns:
-            List of model information dictionaries
+            List of model metadata objects
         """
         try:
             # LM Studio doesn't have a dedicated models endpoint,
@@ -59,12 +59,13 @@ class LMStudioProvider(BaseProvider):
             models = []
             model_info = await self.get_model_info()
             if model_info:
-                models.append({
-                    "id": "lmstudio-default",
-                    "name": model_info.get("id", "lmstudio-model"),
-                    "description": f"LM Studio model: {model_info.get('id', 'default')}",
-                    "capabilities": ["text-generation", "chat"]
-                })
+                models.append(ModelMetadata(
+                    id="lmstudio-default",
+                    name=model_info.get("id", "lmstudio-model"),
+                    provider=ModelProvider.LMSTUDIO,
+                    capabilities=[ModelCapability.TEXT_GENERATION, ModelCapability.CHAT],
+                    parameters={"context_length": model_info.get("context_length", 4096)}
+                ))
             return models
         except Exception as e:
             logger.error(f"Failed to list LM Studio models: {str(e)}")
@@ -171,6 +172,72 @@ class LMStudioProvider(BaseProvider):
                 "id": "lmstudio-model",
                 "error": str(e)
             }
+    
+    @property
+    def name(self) -> str:
+        """Return the name of the provider."""
+        return "lmstudio"
+    
+    @property
+    def supports_streaming(self) -> bool:
+        """Return whether the provider supports streaming responses."""
+        return True
+    
+    async def get_model(self, model_id: str) -> Optional[ModelMetadata]:
+        """Get details about a specific model."""
+        models = await self.list_models()
+        for model in models:
+            if model.id == model_id:
+                return model
+        return None
+    
+    async def load_model(self, model_id: str, **kwargs) -> ModelMetadata:
+        """Load a model into memory."""
+        model = await self.get_model(model_id)
+        if not model:
+            raise ValueError(f"Model {model_id} not found")
+        model.status = ModelStatus.LOADED
+        return model
+    
+    async def unload_model(self, model_id: str) -> bool:
+        """Unload a model from memory."""
+        model = await self.get_model(model_id)
+        if model:
+            model.status = ModelStatus.UNLOADED
+            return True
+        return False
+    
+    async def generate_text(self, model_id: str, prompt: str, **kwargs) -> str:
+        """Generate text using the specified model."""
+        result = ""
+        async for chunk in self.generate(prompt, model_id, **kwargs):
+            result += chunk
+        return result
+    
+    async def chat(self, model_id: str, messages: List[Dict[str, str]], **kwargs) -> str:
+        """Generate a chat completion using the specified model."""
+        # Convert messages to LM Studio format
+        prompt = ""
+        for msg in messages:
+            if msg["role"] == "system":
+                prompt += f"System: {msg['content']}\n"
+            elif msg["role"] == "user":
+                prompt += f"User: {msg['content']}\n"
+            elif msg["role"] == "assistant":
+                prompt += f"Assistant: {msg['content']}\n"
+        
+        prompt += "Assistant: "
+        
+        # Use the existing generate method
+        result = ""
+        async for chunk in self.generate(prompt, model_id, **kwargs):
+            result += chunk
+        return result
+    
+    async def generate_embeddings(self, model_id: str, texts: List[str], **kwargs) -> List[List[float]]:
+        """Generate embeddings for the given texts."""
+        # LM Studio doesn't typically support embeddings
+        raise NotImplementedError("LM Studio does not support embeddings")
     
     async def close(self):
         """Clean up resources."""

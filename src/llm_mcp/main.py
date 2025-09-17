@@ -35,7 +35,7 @@ from llm_mcp.services.provider_factory import ProviderFactory
 from llm_mcp.services.model_manager import ModelManager
 from llm_mcp.tools import register_all_tools
 from llm_mcp.config import Config
-from fastmcp.transports import StdioTransport
+# from fastmcp.transports import StdioTransport
 
 shutdown_event = asyncio.Event()
 
@@ -62,7 +62,7 @@ class GracefulShutdown:
             await asyncio.sleep(0.1)  # Allow final log writes
             
         except Exception as e:
-            logger.error("Error during cleanup", error=str(e), exc_info=True)
+            logger.error(f"Error during cleanup: {str(e)}", exc_info=True)
         
         logger.info("Cleanup complete")
     
@@ -104,7 +104,7 @@ async def create_mcp_server() -> FastMCP:
     try:
         # Load configuration
         config = Config.load()
-        logger.info("Configuration loaded", config_path=str(config.config_path))
+        logger.info(f"Configuration loaded from {config.config_path}")
         
         # Initialize MCP server with FastMCP 2.12+ API
         mcp = FastMCP(
@@ -126,13 +126,10 @@ async def create_mcp_server() -> FastMCP:
                 logger.debug(f"Tool registered successfully: {tool_name}")
             else:
                 failed_tools.append({"tool": tool_name, "error": str(status)})
-                logger.warning(f"Tool registration failed: {tool_name}", error=str(status))
+                logger.warning(f"Tool registration failed: {tool_name} - {str(status)}")
         
         logger.info(
-            "Tool registration complete",
-            successful_count=len(successful_tools),
-            failed_count=len(failed_tools),
-            successful_tools=successful_tools
+            f"Tool registration complete - successful: {len(successful_tools)}, failed: {len(failed_tools)}"
         )
         
         # Add health check tool
@@ -158,7 +155,22 @@ async def create_mcp_server() -> FastMCP:
         return mcp
         
     except Exception as e:
-        logger.error("Failed to create MCP server", error=str(e), exc_info=True)
+        logger.error(f"Failed to create MCP server: {str(e)}", exc_info=True)
+        raise
+
+def run_server_sync():
+    """Run the MCP server synchronously."""
+    try:
+        logger.info("Starting MCP server")
+        
+        # Create the MCP server
+        server = asyncio.run(create_mcp_server())
+        
+        # Run server directly (FastMCP 2.12+ handles transport automatically)
+        server.run()
+            
+    except Exception as e:
+        logger.critical(f"Fatal server error: {str(e)}", exc_info=True)
         raise
 
 async def run_server():
@@ -172,26 +184,22 @@ async def run_server():
         # Create the MCP server
         server = await create_mcp_server()
         
-        # Create stdio transport (FastMCP 2.12+ pattern)
-        transport = StdioTransport()
+        logger.info("Starting MCP server")
         
-        logger.info("Starting MCP server with stdio transport")
-        
-        # Run server with transport - FIXED for FastMCP 2.12+
-        async with transport:
-            await server.run(transport)
+        # Run server directly (FastMCP 2.12+ handles transport automatically)
+        server.run()
             
     except Exception as e:
-        logger.critical("Fatal server error", error=str(e), exc_info=True)
+        logger.critical(f"Fatal server error: {str(e)}", exc_info=True)
         raise
 
 async def main():
     """Main entry point with comprehensive error handling."""
     try:
-        logger.info("Starting LLM MCP Server", version="1.0.0")
+        logger.info("Starting LLM MCP Server v1.0.0")
         
         # Run the server
-        server_task = asyncio.create_task(run_server())
+        server_task = asyncio.create_task(asyncio.to_thread(run_server_sync))
         
         # Wait for shutdown signal or server completion
         done, pending = await asyncio.wait(
@@ -213,7 +221,7 @@ async def main():
                 try:
                     await task  # Re-raise any exception
                 except Exception as e:
-                    logger.error("Server task failed", error=str(e))
+                    logger.error(f"Server task failed: {str(e)}")
                     return 1
         
         logger.info("Server shutdown complete")
@@ -224,7 +232,7 @@ async def main():
         await shutdown_handler.shutdown()
         return 0
     except Exception as e:
-        logger.error("Unhandled exception in main", error=str(e), exc_info=True)
+        logger.error(f"Unhandled exception in main: {str(e)}", exc_info=True)
         return 1
     finally:
         await shutdown_handler.cleanup()
@@ -239,7 +247,7 @@ def cli():
         logger.info("Shutdown by user")
         sys.exit(0)
     except Exception as e:
-        logger.critical("CLI fatal error", error=str(e), exc_info=True)
+        logger.critical(f"CLI fatal error: {str(e)}", exc_info=True)
         sys.exit(1)
 
 if __name__ == "__main__":

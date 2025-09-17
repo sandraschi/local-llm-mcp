@@ -4,21 +4,23 @@ from typing import Dict, Optional, Type, Any
 from ..models.base import BaseProvider, ModelProvider
 from ..providers.ollama import OllamaProvider
 from ..providers.lmstudio import LMStudioProvider
-from ..providers.vllm import VLLMv1Provider as VLLMProvider
+# from ..providers.vllm import VLLMv1Provider as VLLMProvider
 from ..providers.anthropic import AnthropicProvider
+from ..providers.openai import OpenAIProvider
+from ..providers.gemini import GeminiProvider
+from ..providers.perplexity import PerplexityProvider
 from ..providers.huggingface import HuggingFaceProvider
 
 # Map provider types to their implementation classes
 PROVIDER_CLASSES: Dict[ModelProvider, Type[BaseProvider]] = {
     ModelProvider.OLLAMA: OllamaProvider,
     ModelProvider.LMSTUDIO: LMStudioProvider,
-    ModelProvider.VLLM: VLLMProvider,
+    # ModelProvider.VLLM: VLLMProvider,
     ModelProvider.ANTHROPIC: AnthropicProvider,
+    ModelProvider.OPENAI: OpenAIProvider,
+    ModelProvider.GEMINI: GeminiProvider,
+    ModelProvider.PERPLEXITY: PerplexityProvider,
     ModelProvider.HUGGINGFACE: HuggingFaceProvider,
-    # Add other providers here as they are implemented
-    # ModelProvider.OPENAI: OpenAIProvider,
-    # ModelProvider.GEMINI: GeminiProvider,
-    # ModelProvider.PERPLEXITY: PerplexityProvider,
 }
 
 class ProviderFactory:
