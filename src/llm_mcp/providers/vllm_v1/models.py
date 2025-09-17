@@ -66,6 +66,255 @@ class VLLMMultimodalModel(VLLMModel):
 
 # Pre-defined model configurations for vLLM v0.10+
 VLLM_MODELS = {
+    # ===== Top-Tier Models (2024) =====
+    "meta-llama/Meta-Llama-3.1-8B-Instruct": VLLMModel(
+        id="meta-llama/Meta-Llama-3.1-8B-Instruct",
+        name="Llama 3.1 8B Instruct",
+        type=ModelType.TEXT,
+        capabilities=[ModelCapability.TEXT_GENERATION, ModelCapability.CHAT, ModelCapability.TOOL_CALLING],
+        vram_required="8GB",
+        context_length=128000,  # 128K context
+        supports_v1_engine=True
+    ),
+    
+    "Qwen/Qwen2-7B-Instruct": VLLMModel(
+        id="Qwen/Qwen2-7B-Instruct",
+        name="Qwen2 7B Instruct",
+        type=ModelType.TEXT,
+        capabilities=[ModelCapability.TEXT_GENERATION, ModelCapability.CHAT, ModelCapability.TOOL_CALLING],
+        vram_required="7GB",
+        context_length=131072,  # 128K context
+        supports_v1_engine=True
+    ),
+    
+    "Qwen/Qwen2-72B-Instruct-4bit": VLLMModel(
+        id="Qwen/Qwen2-72B-Instruct-4bit",
+        name="Qwen2 72B Instruct (4-bit)",
+        type=ModelType.TEXT,
+        capabilities=[ModelCapability.TEXT_GENERATION, ModelCapability.CHAT, ModelCapability.TOOL_CALLING],
+        vram_required="24GB",  # Fits in RTX 4090 with 4-bit quantization
+        context_length=131072,  # 128K context
+        supports_v1_engine=True
+    ),
+    
+    "mistralai/Mixtral-8x22B-v0.1-4bit": VLLMModel(
+        id="mistralai/Mixtral-8x22B-v0.1-4bit",
+        name="Mixtral 8x22B v0.1 (4-bit)",
+        type=ModelType.TEXT,
+        capabilities=[ModelCapability.TEXT_GENERATION, ModelCapability.CHAT, ModelCapability.TOOL_CALLING],
+        vram_required="24GB",  # Fits in RTX 4090 with 4-bit quantization
+        context_length=65536,  # 64K context
+        supports_v1_engine=True
+    ),
+    
+    # ==== Specialized Models ====
+    "deepseek-ai/deepseek-coder-33b-instruct-4bit": VLLMModel(
+        id="deepseek-ai/deepseek-coder-33b-instruct-4bit",
+        name="DeepSeek Coder 33B (4-bit)",
+        type=ModelType.CODE,
+        capabilities=[ModelCapability.CODE_GENERATION, ModelCapability.CHAT, ModelCapability.TOOL_CALLING],
+        vram_required="20GB",
+        context_length=16384,
+        supports_v1_engine=True
+    ),
+    
+    "Qwen/Qwen2-VL-7B-Instruct": VLLMMultimodalModel(
+        id="Qwen/Qwen2-VL-7B-Instruct",
+        name="Qwen2-VL 7B Instruct",
+        type=ModelType.MULTIMODAL,
+        capabilities=[
+            ModelCapability.TEXT_GENERATION, 
+            ModelCapability.CHAT, 
+            ModelCapability.VISION,
+            ModelCapability.TOOL_CALLING
+        ],
+        vram_required="12GB",
+        context_length=131072,  # 128K context
+        max_images=20,
+        max_image_size=2048,
+        supports_v1_engine=True
+    ),
+    
+    # ==== Embedding Models ====
+    "BAAI/bge-large-en-v1.5": VLLMModel(
+        id="BAAI/bge-large-en-v1.5",
+        name="BGE Large v1.5 (Embedding)",
+        type=ModelType.EMBEDDING,
+        capabilities=[ModelCapability.EMBEDDING],
+        vram_required="6GB",
+        context_length=512,
+        supports_v1_engine=True
+    ),
+    # === Embedding Models ===
+    "BAAI/bge-large-en-v1.5": VLLMModel(
+        id="BAAI/bge-large-en-v1.5",
+        name="BGE Large v1.5",
+        type=ModelType.EMBEDDING,
+        capabilities=[ModelCapability.EMBEDDING],
+        vram_required="6GB",
+        context_length=512,
+        supports_v1_engine=True
+    ),
+    
+    "intfloat/multilingual-e5-large": VLLMModel(
+        id="intfloat/multilingual-e5-large",
+        name="Multilingual E5 Large",
+        type=ModelType.EMBEDDING,
+        capabilities=[ModelCapability.EMBEDDING],
+        vram_required="6GB",
+        context_length=512,
+        supports_v1_engine=True
+    ),
+
+    # === Code Models (2024) ===
+    "deepseek-ai/DeepSeek-Coder-33B-instruct-4bit": VLLMModel(
+        id="deepseek-ai/DeepSeek-Coder-33B-instruct-4bit",
+        name="DeepSeek Coder 33B Instruct (4-bit)",
+        type=ModelType.CODE,
+        capabilities=[
+            ModelCapability.CODE_GENERATION, 
+            ModelCapability.CHAT, 
+            ModelCapability.TOOL_CALLING,
+            ModelCapability.PYTHON
+        ],
+        vram_required="20GB",
+        context_length=16384,
+        tensor_parallel_recommended=2,
+        supports_v1_engine=True
+    ),
+    
+    "Qwen/CodeQwen2-7B-Instruct": VLLMModel(
+        id="Qwen/CodeQwen2-7B-Instruct",
+        name="CodeQwen2 7B Instruct",
+        type=ModelType.CODE,
+        capabilities=[
+            ModelCapability.CODE_GENERATION, 
+            ModelCapability.CHAT, 
+            ModelCapability.TOOL_CALLING,
+            ModelCapability.PYTHON
+        ],
+        vram_required="8GB",
+        context_length=131072,  # 128K context
+        supports_v1_engine=True
+    ),
+    
+    "m-a-p/OpenCodeInterpreter-DS-33B-4bit": VLLMModel(
+        id="m-a-p/OpenCodeInterpreter-DS-33B-4bit",
+        name="OpenCodeInterpreter DS 33B (4-bit)",
+        type=ModelType.CODE,
+        capabilities=[
+            ModelCapability.CODE_GENERATION, 
+            ModelCapability.CHAT, 
+            ModelCapability.TOOL_CALLING,
+            ModelCapability.PYTHON
+        ],
+        vram_required="20GB",
+        context_length=16384,
+        tensor_parallel_recommended=2,
+        supports_v1_engine=True
+    ),
+    
+    "WizardLM/WizardCoder-Python-34B-V1.0-4bit": VLLMModel(
+        id="WizardLM/WizardCoder-Python-34B-V1.0-4bit",
+        name="WizardCoder Python 34B (4-bit)",
+        type=ModelType.CODE,
+        capabilities=[
+            ModelCapability.CODE_GENERATION, 
+            ModelCapability.PYTHON,
+            ModelCapability.TOOL_CALLING
+        ],
+        vram_required="20GB",
+        context_length=32768,
+        tensor_parallel_recommended=2,
+        supports_v1_engine=True
+    ),
+    
+    "bigcode/starcoder2-15b-4bit": VLLMModel(
+        id="bigcode/starcoder2-15b-4bit",
+        name="StarCoder2 15B (4-bit)",
+        type=ModelType.CODE,
+        capabilities=[
+            ModelCapability.CODE_GENERATION, 
+            ModelCapability.TEXT_GENERATION,
+            ModelCapability.PYTHON
+        ],
+        vram_required="12GB",
+        context_length=16384,
+        supports_v1_engine=True
+    ),
+
+    # === Small/Edge Models ===
+    "TinyLlama/TinyLlama-1.1B-Chat-v1.0": VLLMModel(
+        id="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+        name="TinyLlama 1.1B Chat",
+        type=ModelType.TEXT,
+        capabilities=[ModelCapability.TEXT_GENERATION, ModelCapability.CHAT],
+        vram_required="2GB",
+        context_length=2048,
+        supports_v1_engine=True
+    ),
+    
+    "microsoft/phi-2": VLLMModel(
+        id="microsoft/phi-2",
+        name="Phi-2",
+        type=ModelType.TEXT,
+        capabilities=[ModelCapability.TEXT_GENERATION, ModelCapability.CODE_GENERATION],
+        vram_required="3GB",
+        context_length=2048,
+        supports_v1_engine=True
+    ),
+
+    # === Audio Models ===
+    "openai/whisper-large-v3": VLLMModel(
+        id="openai/whisper-large-v3",
+        name="Whisper Large v3",
+        type=ModelType.AUDIO,
+        capabilities=[ModelCapability.AUDIO_UNDERSTANDING],
+        vram_required="10GB",
+        context_length=30000,  # ~30 seconds of audio
+        supports_v1_engine=True
+    ),
+    
+    "suno/bark-small": VLLMModel(
+        id="suno/bark-small",
+        name="Bark Small",
+        type=ModelType.AUDIO,
+        capabilities=[ModelCapability.TEXT_GENERATION],  # Text-to-speech
+        vram_required="4GB",
+        context_length=256,
+        supports_v1_engine=True
+    ),
+
+    # === Latest Models ===
+    "CohereForAI/c4ai-command-r-plus": VLLMModel(
+        id="CohereForAI/c4ai-command-r-plus",
+        name="Command R+",
+        type=ModelType.TEXT,
+        capabilities=[
+            ModelCapability.TEXT_GENERATION, 
+            ModelCapability.CHAT, 
+            ModelCapability.TOOL_CALLING
+        ],
+        vram_required="40GB",
+        context_length=128000,
+        tensor_parallel_recommended=4,
+        supports_v1_engine=True
+    ),
+    
+    "mistral-community/Mixtral-8x22B-v0.1": VLLMModel(
+        id="mistral-community/Mixtral-8x22B-v0.1",
+        name="Mixtral 8x22B v0.1",
+        type=ModelType.TEXT,
+        capabilities=[
+            ModelCapability.TEXT_GENERATION, 
+            ModelCapability.CHAT,
+            ModelCapability.CODE_GENERATION
+        ],
+        vram_required="80GB",
+        context_length=65536,
+        tensor_parallel_recommended=8,
+        supports_v1_engine=True
+    ),
     # Llama 3.1/3.2 family
     "meta-llama/Llama-3.1-8B-Instruct": VLLMModel(
         id="meta-llama/Llama-3.1-8B-Instruct",

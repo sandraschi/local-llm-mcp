@@ -1,4 +1,4 @@
-"""Docker container management for vLLM v0.10.1.1."""
+"""Docker container management for vLLM v0.9.5."""
 
 import asyncio
 import aiohttp
@@ -11,7 +11,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 class VLLMDockerManager:
-    """Manage vLLM v0.10.1.1 Docker containers with RTX 4090 optimization."""
+    """Manage vLLM v0.9.5 Docker containers with RTX 4090 optimization."""
     
     def __init__(self):
         self.docker_client = docker.from_env()
@@ -28,7 +28,7 @@ class VLLMDockerManager:
         port: int = 8000,
         **kwargs
     ) -> Dict[str, Any]:
-        """Start vLLM v0.10.1.1 Docker container with RTX 4090 optimization."""
+        """Start vLLM v0.9.5 Docker container with RTX 4090 optimization."""
         
         # Check if container is already running
         existing = self._get_existing_container()
@@ -95,7 +95,7 @@ class VLLMDockerManager:
             "--served-model-name", model_id.split("/")[-1] if "/" in model_id else model_id
         ]
         
-        logger.info(f"Starting vLLM v0.10.1.1 container with model: {model_id}")
+        logger.info(f"Starting vLLM v0.9.5 container with model: {model_id}")
         logger.info(f"Command: {' '.join(command)}")
         
         try:
@@ -224,7 +224,7 @@ class VLLMDockerManager:
         test_prompt: str = "Hello, how are you today?",
         max_tokens: int = 50
     ) -> Dict[str, Any]:
-        """Benchmark vLLM v0.10.1.1 performance."""
+        """Benchmark vLLM v0.9.5 performance."""
         try:
             async with aiohttp.ClientSession() as session:
                 payload = {
@@ -277,7 +277,7 @@ class VLLMDockerManager:
             try:
                 result = await self.test_vllm_api()
                 if result.get("status") == "healthy":
-                    logger.info("vLLM v0.10.1.1 server is healthy and ready")
+                    logger.info("vLLM v0.9.5 server is healthy and ready")
                     return
                     
                 logger.info(f"Waiting for vLLM server... Status: {result.get('status')}")

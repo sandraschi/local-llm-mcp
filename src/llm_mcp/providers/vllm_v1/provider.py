@@ -13,8 +13,8 @@ import aiohttp
 import torch
 from pydantic import BaseModel, Field
 
-from ..base import BaseProvider
-from .config import VLLMv1Config
+from llm_mcp.models.base import BaseProvider
+from .vllm_v1.config import VLLMv1Config
 
 logger = logging.getLogger(__name__)
 
@@ -671,6 +671,22 @@ class VLLMv1Provider(BaseProvider):
             },
             "llava-hf/llava-onevision-qwen2-7b-ov-chat-hf": {
                 "id": "llava-hf/llava-onevision-qwen2-7b-ov-chat-hf",
+                "type": "multimodal", 
+                "capabilities": ["text-generation", "chat", "vision"],
+                "vram_required": "10GB",
+                "context_length": 4096,
+                "max_images": 10
+            },
+            
+            # Code models
+            "deepseek-ai/deepseek-coder-33b-instruct": {
+                "id": "deepseek-ai/deepseek-coder-33b-instruct",
+                "type": "code",
+                "capabilities": ["text-generation", "chat", "code-generation"],
+                "vram_required": "20GB", 
+                "context_length": 16384
+            },
+            "llava-hf/llava-onevision-qwen2-7b-ov-chat-hf": {
                 "type": "multimodal", 
                 "capabilities": ["text-generation", "chat", "vision"],
                 "vram_required": "10GB",

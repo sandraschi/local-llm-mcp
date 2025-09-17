@@ -12,7 +12,7 @@ setup(
         "aiohttp>=3.9.0",
         "openai>=1.12.0",
         "anthropic>=0.13.0",
-        "vllm>=1.0.0",
+        "vllm>=0.8.0,<0.9.0",
         "transformers>=4.36.0",
         "sentence-transformers>=2.2.2",
         "Pillow>=10.0.0",

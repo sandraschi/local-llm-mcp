@@ -14,7 +14,7 @@ __all__ = [
 ]
 
 # Current vLLM version we're targeting
-VLLM_VERSION = "0.10.1.1"  # Latest as of August 2025
+VLLM_VERSION = "0.8.3"  # Latest version compatible with Python 3.13
 VLLM_MINIMUM_VERSION = "0.8.1"  # Minimum for V1 engine support
 
 # Key features available in v0.10+

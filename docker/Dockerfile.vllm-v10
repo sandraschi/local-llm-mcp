@@ -1,6 +1,6 @@
-# vLLM v0.10.1.1 Docker Setup with RTX 4090 Optimization
+# vLLM v0.8.3 Docker Setup with RTX 4090 Optimization
 
-FROM nvidia/cuda:12.4-devel-ubuntu22.04 AS builder
+FROM nvidia/cuda:12.2.0-devel-ubuntu20.04 AS builder
 
 # Set environment variables for RTX 4090 Ada Lovelace architecture
 ENV TORCH_CUDA_ARCH_LIST=8.9
@@ -22,15 +22,17 @@ RUN apt-get update && apt-get install -y \
     ninja-build \
     libssl-dev \
     libcurl4-openssl-dev \
+    libsndfile1 \
+    libsndfile1-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip and install PyTorch 2.4+ with CUDA 12.4
+# Upgrade pip and install PyTorch with CUDA 12.2
 RUN pip3 install --upgrade pip setuptools wheel
-RUN pip3 install torch==2.4.0 torchvision==0.19.0 torchaudio==0.19.0 \
-    --index-url https://download.pytorch.org/whl/cu124
+RUN pip3 install torch==2.2.2 torchvision==0.17.2 torchaudio==2.2.2 \
+    --index-url https://download.pytorch.org/whl/cu122
 
-# Install vLLM v0.10.1.1 from source for RTX 4090 optimization
-RUN git clone --branch v0.10.1 --depth 1 https://github.com/vllm-project/vllm.git /vllm
+# Install vLLM v0.8.3 from source for RTX 4090 optimization
+RUN git clone --branch v0.8.3 --depth 1 https://github.com/vllm-project/vllm.git /vllm
 WORKDIR /vllm
 
 # Install Flash Attention for Ada Lovelace (RTX 4090)
@@ -40,7 +42,7 @@ RUN pip3 install flash-attn==2.6.3 --no-build-isolation
 RUN pip3 install -e . --verbose
 
 # Production stage
-FROM nvidia/cuda:12.4-runtime-ubuntu22.04
+FROM nvidia/cuda:12.2.0-runtime-ubuntu20.04
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1

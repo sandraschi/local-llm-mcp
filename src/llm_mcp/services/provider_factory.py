@@ -4,7 +4,7 @@ from typing import Dict, Optional, Type, Any
 from ..models.base import BaseProvider, ModelProvider
 from ..providers.ollama import OllamaProvider
 from ..providers.lmstudio import LMStudioProvider
-from ..providers.vllm import VLLMProvider
+from ..providers.vllm import VLLMv1Provider as VLLMProvider
 from ..providers.anthropic import AnthropicProvider
 from ..providers.huggingface import HuggingFaceProvider
 

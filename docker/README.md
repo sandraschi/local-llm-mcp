@@ -1,4 +1,4 @@
-# vLLM v0.10.1.1 + MCP Docker Setup Guide
+# vLLM v0.8.3 + MCP Docker Setup Guide
 
 ## 🚀 Quick Start
 
@@ -23,7 +23,7 @@ cp docker/.env.example docker/.env
 ### 2. Start Services
 ```bash
 # Start both vLLM and MCP services
-docker-compose -f docker-compose.vllm-v10.yml up -d
+docker-compose -f docker-compose.vllm-v8.yml up -d
 
 # Or use the management script
 ./docker/scripts/docker-manage.sh start
@@ -43,7 +43,7 @@ curl http://localhost:3001/health
 
 ## 📋 Services
 
-### vLLM v0.10.1.1 Server
+### vLLM v0.8.3 Server
 - **Port**: 8000
 - **API**: OpenAI-compatible
 - **Model**: Llama 3.1 8B Instruct (default)
@@ -79,13 +79,13 @@ curl http://localhost:3001/health
 ### Direct Docker Compose
 ```bash
 # Start services
-docker-compose -f docker-compose.vllm-v10.yml up -d
+docker-compose -f docker-compose.vllm-v8.yml up -d
 
 # View logs
-docker-compose -f docker-compose.vllm-v10.yml logs -f
+docker-compose -f docker-compose.vllm-v8.yml logs -f
 
 # Stop services
-docker-compose -f docker-compose.vllm-v10.yml down
+docker-compose -f docker-compose.vllm-v8.yml down
 ```
 
 ## 📚 Model Management

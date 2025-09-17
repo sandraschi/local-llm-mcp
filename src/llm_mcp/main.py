@@ -9,89 +9,34 @@ import logging
 import signal
 import sys
 import traceback
-from pathlib import Path
-from typing import Dict, Any, Optional
 from datetime import datetime
-import structlog
-from rich.console import Console
-from rich.logging import RichHandler
+from pathlib import Path
+from typing import Dict, Any, Optional, List
 
 # Add the parent directory to the path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# Initialize rich console for beautiful output
-console = Console()
+# Import our centralized logging configuration
+from llm_mcp.utils.logging import LoggingConfig, get_logger
 
-# Configure structured logging with rotation
-def setup_logging() -> structlog.BoundLogger:
-    """Set up comprehensive structured logging with file rotation."""
-    log_dir = Path("logs")
-    log_dir.mkdir(exist_ok=True)
-    
-    # Clear any existing handlers
-    logging.root.handlers.clear()
-    
-    # Configure file handler with rotation
-    from logging.handlers import RotatingFileHandler
-    file_handler = RotatingFileHandler(
-        log_dir / "llm_mcp.log",
-        maxBytes=10*1024*1024,  # 10MB
-        backupCount=5,
-        encoding='utf-8'
-    )
-    
-    # Configure rich handler for console
-    rich_handler = RichHandler(
-        console=console,
-        rich_tracebacks=True,
-        markup=True
-    )
-    
-    # Configure structlog
-    structlog.configure(
-        processors=[
-            structlog.stdlib.filter_by_level,
-            structlog.stdlib.add_logger_name,
-            structlog.stdlib.add_log_level,
-            structlog.stdlib.PositionalArgumentsFormatter(),
-            structlog.processors.TimeStamper(fmt="iso"),
-            structlog.processors.StackInfoRenderer(),
-            structlog.processors.format_exc_info,
-            structlog.processors.JSONRenderer()
-        ],
-        wrapper_class=structlog.stdlib.BoundLogger,
-        logger_factory=structlog.stdlib.LoggerFactory(),
-        context_class=dict,
-        cache_logger_on_first_use=True,
-    )
-    
-    # Configure root logger
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[file_handler, rich_handler],
-        force=True
-    )
-    
-    logger = structlog.get_logger(__name__)
-    logger.info("Structured logging initialized", log_file=str(log_dir / "llm_mcp.log"))
-    return logger
+# Initialize logging
+LoggingConfig.initialize(log_level="INFO")
+logger = get_logger(__name__)
 
-logger = setup_logging()
-
+# Import FastMCP after logging is configured
 try:
     from fastmcp import FastMCP
-    from fastmcp.transports import StdioTransport
-    from llm_mcp.tools import register_all_tools
-    from llm_mcp.state import state_manager
-    from llm_mcp.config import Config
 except ImportError as e:
-    logger.error("Failed to import required modules", error=str(e), traceback=traceback.format_exc())
-    console.print(f"[red]Critical import error: {e}[/red]")
+    logger.error("Failed to import FastMCP. Please install it with: pip install fastmcp")
     sys.exit(1)
 
-# Global server instance and shutdown flag
-server: Optional[FastMCP] = None
+# Import local modules
+from llm_mcp.services.provider_factory import ProviderFactory
+from llm_mcp.services.model_manager import ModelManager
+from llm_mcp.tools import register_all_tools
+from llm_mcp.config import Config
+from fastmcp.transports import StdioTransport
+
 shutdown_event = asyncio.Event()
 
 class GracefulShutdown:
@@ -109,15 +54,15 @@ class GracefulShutdown:
         logger.info("Starting graceful shutdown cleanup")
         
         try:
-            # Cleanup state manager
-            if hasattr(state_manager, 'cleanup'):
+            # Cleanup state manager if it exists
+            if 'state_manager' in globals() and hasattr(state_manager, 'cleanup'):
                 await state_manager.cleanup()
             
             # Add any additional cleanup logic here
             await asyncio.sleep(0.1)  # Allow final log writes
             
         except Exception as e:
-            logger.error("Error during cleanup", error=str(e))
+            logger.error("Error during cleanup", error=str(e), exc_info=True)
         
         logger.info("Cleanup complete")
     
@@ -136,7 +81,7 @@ shutdown_handler = GracefulShutdown()
 def setup_signal_handlers():
     """Set up signal handlers for graceful shutdown."""
     def signal_handler(signum, frame):
-        logger.info("Signal received", signal=signum)
+        logger.info(f"Signal {signum} received")
         asyncio.create_task(shutdown_handler.shutdown(signum))
     
     if sys.platform == 'win32':
@@ -147,6 +92,12 @@ def setup_signal_handlers():
         # Unix-like systems
         for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
             signal.signal(sig, signal_handler)
+
+# Global state manager
+state_manager = None
+
+# Global server instance
+server = None
 
 async def create_mcp_server() -> FastMCP:
     """Create and configure the MCP server with all tools - FIXED for FastMCP 2.12+."""
@@ -172,10 +123,10 @@ async def create_mcp_server() -> FastMCP:
         for tool_name, status in registration_results.items():
             if status is True:
                 successful_tools.append(tool_name)
-                logger.info("Tool registered successfully", tool=tool_name)
+                logger.debug(f"Tool registered successfully: {tool_name}")
             else:
                 failed_tools.append({"tool": tool_name, "error": str(status)})
-                logger.warning("Tool registration failed", tool=tool_name, error=str(status))
+                logger.warning(f"Tool registration failed: {tool_name}", error=str(status))
         
         logger.info(
             "Tool registration complete",
@@ -207,7 +158,7 @@ async def create_mcp_server() -> FastMCP:
         return mcp
         
     except Exception as e:
-        logger.error("Failed to create MCP server", error=str(e), traceback=traceback.format_exc())
+        logger.error("Failed to create MCP server", error=str(e), exc_info=True)
         raise
 
 async def run_server():
@@ -231,14 +182,13 @@ async def run_server():
             await server.run(transport)
             
     except Exception as e:
-        logger.error("Fatal server error", error=str(e), traceback=traceback.format_exc())
+        logger.critical("Fatal server error", error=str(e), exc_info=True)
         raise
 
 async def main():
     """Main entry point with comprehensive error handling."""
     try:
-        console.print("[bold green]🚀 Starting Local LLM MCP Server v1.0.0[/bold green]")
-        logger.info("Server startup initiated", version="1.0.0")
+        logger.info("Starting LLM MCP Server", version="1.0.0")
         
         # Run the server
         server_task = asyncio.create_task(run_server())
@@ -270,11 +220,11 @@ async def main():
         return 0
         
     except KeyboardInterrupt:
-        logger.info("Received keyboard interrupt")
+        logger.info("Shutdown by user")
         await shutdown_handler.shutdown()
         return 0
     except Exception as e:
-        logger.error("Unhandled exception in main", error=str(e), traceback=traceback.format_exc())
+        logger.error("Unhandled exception in main", error=str(e), exc_info=True)
         return 1
     finally:
         await shutdown_handler.cleanup()
@@ -282,14 +232,14 @@ async def main():
 def cli():
     """Command line interface entry point."""
     try:
+        logger.info("Starting LLM MCP Server CLI")
         exit_code = asyncio.run(main())
         sys.exit(exit_code)
     except KeyboardInterrupt:
-        console.print("[yellow]\\nShutdown by user[/yellow]")
+        logger.info("Shutdown by user")
         sys.exit(0)
     except Exception as e:
-        console.print(f"[red]Fatal error: {e}[/red]")
-        logger.error("CLI fatal error", error=str(e), traceback=traceback.format_exc())
+        logger.critical("CLI fatal error", error=str(e), exc_info=True)
         sys.exit(1)
 
 if __name__ == "__main__":

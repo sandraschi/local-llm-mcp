@@ -1,0 +1,38 @@
+# Performance Tuning Configuration for vLLM v0.10.1.1
+
+# RTX 4090 Optimized Settings
+gpu_memory_utilization: 0.9
+tensor_parallel_size: 1
+max_model_len: 4096
+
+# V1 Engine Settings
+use_v1_engine: true
+attention_backend: "FLASHINFER"
+enable_prefix_caching: true
+
+# Batch Processing
+max_num_batched_tokens: 8192
+max_num_seqs: 256
+max_paddings: 512
+
+# Memory Management
+enable_chunked_prefill: true
+swap_space: 4  # GB
+cpu_offload_gb: 0
+
+# Advanced Performance
+disable_sliding_window: false
+disable_log_stats: false
+max_log_len: 128
+
+# Quantization (uncomment if needed)
+# quantization: "awq"
+# load_format: "auto"
+
+# Multi-Modal (uncomment for vision models)
+# image_input_type: "pixel_values"
+# image_token_id: 128256
+
+# Distributed Settings (for multi-GPU)
+# pipeline_parallel_size: 1
+# distributed_executor_backend: "ray"

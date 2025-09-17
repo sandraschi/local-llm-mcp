@@ -1,53 +1,87 @@
-# 🚀 Local-LLM-MCP - FIXED & MODERNIZED
+# 🚀 Local LLM MCP
 
-**High-performance local LLM server with FastMCP 2.12+ and vLLM 1.0+ integration**
+A FastMCP 2.12 compliant server for local LLM management and integration
 
-[![FastMCP](https://img.shields.io/badge/FastMCP-2.12+-blue.svg)](https://github.com/jlowin/fastmcp)
-[![vLLM](https://img.shields.io/badge/vLLM-1.0+-green.svg)](https://github.com/vllm-project/vllm)
+[![FastMCP](https://img.shields.io/badge/FastMCP-2.12-blue.svg)](https://github.com/jlowin/fastmcp)
+[![vLLM](https://img.shields.io/badge/vLLM-0.10.1.1-green.svg)](https://github.com/vllm-project/vllm)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🔥 What's New - CRITICAL FIXES APPLIED
+## 🌟 Overview
 
-### ✅ FIXED ISSUES (September 2025)
-- **FastMCP 2.12+ Integration**: Fixed broken server startup with proper transport handling
-- **vLLM 1.0+ Support**: Updated from ancient v0.2.0 to modern v1.0+ with 19x performance boost  
-- **Dependency Hell Resolved**: Fixed pydantic version conflicts and outdated requirements
-- **Structured Logging**: Added JSON logging with rotation for production use
-- **Error Isolation**: Tool registration with error recovery prevents startup crashes
-- **Configuration System**: Complete YAML config with environment variable overrides
+Local LLM MCP is a high-performance Model Control Protocol (MCP) server designed for managing and serving local large language models. Built on FastMCP 2.12 and vLLM 0.10.1.1, it provides a robust, production-ready solution for deploying LLMs with enterprise-grade features.
 
-### 🚀 PERFORMANCE IMPROVEMENTS
-- **vLLM V1 Engine**: 19x faster than Ollama (793 TPS vs 41 TPS)
-- **FlashAttention 3**: Automatic optimization with FLASHINFER backend
-- **Prefix Caching**: Zero-overhead context reuse
-- **Multimodal Ready**: Vision model support for image analysis
-- **Structured Output**: JSON schema validation for reliable API responses
+## 🔑 Key Features
 
-## 📦 Quick Start
+- **Multi-Model Support**: Unified interface for multiple LLM providers
+- **High-Performance Inference**: Optimized with vLLM's continuous batching
+- **Dual Interface Architecture**:
+  - **Stdio Interface**: Primary interface for MCP clients (Claude Desktop, etc.) using JSON-RPC over stdio
+  - **HTTP/WebSocket Interface**: Secondary interface for testing, debugging, and monitoring
+- **RESTful API**: Standardized endpoints for model interaction
+- **WebSocket Support**: Real-time streaming of model outputs
+- **Authentication & Authorization**: Secure access control for both interfaces
+- **Monitoring & Metrics**: Built-in Prometheus metrics and health checks
+
+## 🚀 Performance
+
+- **vLLM Engine**: Up to 19x faster than traditional serving methods
+- **FlashAttention 3**: Optimized attention mechanisms for efficiency
+- **Prefix Caching**: Minimize redundant computations
+- **Continuous Batching**: Maximize GPU utilization
+- **Multi-GPU Support**: Scale across multiple GPUs with tensor parallelism
+
+## 🛠️ Getting Started
 
 ### Prerequisites
-- Python 3.10+ 
-- CUDA-capable GPU (recommended) or CPU fallback
-- 8GB+ RAM (16GB+ recommended for larger models)
+
+- Python 3.10+
+- Docker and Docker Compose
+- NVIDIA Container Toolkit (for GPU acceleration)
+- 16GB+ RAM (32GB+ recommended for larger models)
+- Linux or Windows with WSL2
+
+> **Note on vLLM**: vLLM currently requires running in a Docker container on Windows systems due to the lack of Windows wheels. The provided `docker-compose.vllm-v10.yml` configures vLLM with GPU support.
 
 ### Installation
 
-```bash
-# Clone the repository
-git clone https://github.com/sandraschi/local-llm-mcp.git
-cd local-llm-mcp
+1. Clone the repository:
 
-# Install dependencies (FIXED versions)
-pip install -r requirements.txt
+   ```bash
+   git clone https://github.com/sandraschi/local-llm-mcp.git
+   cd local-llm-mcp
+   ```
 
-# Or install with development dependencies
-pip install -e ".[dev]"
-```
+2. Start vLLM in Docker:
+   ```bash
+   # Start vLLM with GPU support
+   docker-compose -f docker-compose.vllm-v10.yml up -d
+   
+   # Verify the container is running
+   docker ps | grep vllm
+   ```
+   
+   The vLLM service will be available at `http://localhost:7840`
 
-### Basic Usage
+3. Create and activate a virtual environment for the MCP server:
 
-```bash
-# Start the MCP server
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
+
+3. Install dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   
+   # For development
+   pip install -e ".[dev]"
+   ```
+
+## Quick Start
+
+1. Start the MCP server:
 python -m llm_mcp.main
 
 # Or use the CLI entry point

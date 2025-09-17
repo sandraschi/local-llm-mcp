@@ -14,8 +14,9 @@ torch>=2.4.0
 transformers>=4.44.0
 tokenizers>=0.19.0
 
-# vLLM 1.0+ - CRITICAL PERFORMANCE UPDATE
-vllm>=1.0.0
+# vLLM - Compatible version for Python 3.13 on Windows
+# Note: v0.9+ requires Python <3.13, so using v0.8.x for Python 3.13 compatibility
+vllm>=0.8.0,<0.9.0
 
 # Training & Fine-tuning - Updated versions
 peft>=0.12.0
@@ -23,7 +24,7 @@ bitsandbytes>=0.43.0
 accelerate>=0.32.0
 datasets>=2.20.0
 
-# Multimodal support for vLLM 1.0 vision models
+# Optional dependencies for future vLLM versions
 Pillow>=10.4.0
 opencv-python>=4.10.0
 sentence-transformers>=3.0.0

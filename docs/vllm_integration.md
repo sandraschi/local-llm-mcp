@@ -27,7 +27,7 @@ This document provides comprehensive information about the vLLM integration in t
 1. Ensure you have a CUDA-compatible GPU with drivers installed
 2. Install vLLM and its dependencies:
    ```bash
-   pip install vllm>=1.0.0
+   pip install vllm==0.10.1.1
    ```
 3. Verify installation:
    ```python
