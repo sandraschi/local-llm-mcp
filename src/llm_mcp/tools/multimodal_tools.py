@@ -216,7 +216,14 @@ class MultimodalTools:
 multimodal_tools = MultimodalTools()
 
 def register_multimodal_tools(mcp):
-    """Register multimodal tools with the MCP server."""
+    """Register all multimodal tools with the MCP server.
+    
+    Args:
+        mcp: The MCP server instance with tool decorator
+        
+    Returns:
+        The MCP server instance with multimodal tools registered
+    """
     if not HAS_MM_DEPS:
         logger.warning("Not registering multimodal tools - dependencies not installed")
         return

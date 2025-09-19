@@ -1,5 +1,6 @@
 """Ollama provider implementation for LLM MCP Server."""
 import json
+import logging
 from typing import Any, Dict, List, Optional
 import httpx
 from datetime import datetime
@@ -11,6 +12,8 @@ from ...models.base import (
     ModelStatus,
     ModelCapability,
 )
+
+logger = logging.getLogger(__name__)
 
 class OllamaProvider(BaseProvider):
     """Provider for Ollama models."""
@@ -54,7 +57,7 @@ class OllamaProvider(BaseProvider):
             return models
         except Exception as e:
             # If we can't connect to Ollama, return an empty list
-            print(f"Error listing Ollama models: {str(e)}")
+            logger.error(f"Error listing Ollama models: {str(e)}")
             return []
     
     async def get_model(self, model_id: str) -> Optional[ModelMetadata]:
@@ -67,7 +70,7 @@ class OllamaProvider(BaseProvider):
                     return model
             return None
         except Exception as e:
-            print(f"Error getting Ollama model {model_id}: {str(e)}")
+            logger.error(f"Error getting Ollama model {model_id}: {str(e)}")
             return None
     
     async def load_model(self, model_id: str, **kwargs) -> ModelMetadata:

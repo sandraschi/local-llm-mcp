@@ -155,13 +155,15 @@ async def _register_model_impl(
     return {"status": "success", "model_id": model_id}
 
 def register_model_tools(mcp):
-    """Register all model-related tools with the MCP server using FastMCP 2.11.3 stateful features.
+    """Register all model-related tools with the MCP server.
     
-    Tools are registered with stateful=True to maintain state between invocations.
-    This allows for better performance and state management.
+    Args:
+        mcp: The MCP server instance with tool decorator
+        
+    Returns:
+        The MCP server instance with model tools registered
     """
-    
-    @mcp.tool()  # List models
+    @mcp.tool
     async def list_models(provider: Optional[str] = None) -> List[Dict[str, Any]]:
         """List all available models with optional provider filtering.
         
@@ -176,7 +178,7 @@ def register_model_tools(mcp):
         # The state is automatically managed by FastMCP 2.11.3+
         return await _list_models_impl(provider)
     
-    @mcp.tool()  # Get model info
+    @mcp.tool
     async def get_model_info(model_id: str) -> Dict[str, Any]:
         """Get detailed information about a specific model with caching.
         

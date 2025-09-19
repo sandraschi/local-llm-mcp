@@ -1,4 +1,5 @@
 """Factory for creating and managing LLM providers."""
+import logging
 from typing import Dict, Optional, Type, Any
 
 from ..models.base import BaseProvider, ModelProvider
@@ -22,6 +23,8 @@ PROVIDER_CLASSES: Dict[ModelProvider, Type[BaseProvider]] = {
     ModelProvider.PERPLEXITY: PerplexityProvider,
     ModelProvider.HUGGINGFACE: HuggingFaceProvider,
 }
+
+logger = logging.getLogger(__name__)
 
 class ProviderFactory:
     """Factory for creating and managing LLM providers."""
@@ -106,7 +109,7 @@ class ProviderFactory:
                 models = await provider.list_models()
                 all_models[provider_type] = models
             except Exception as e:
-                print(f"Error getting models from {provider_type}: {str(e)}")
+                logger.error(f"Error getting models from {provider_type}: {str(e)}")
                 all_models[provider_type] = []
         
         return all_models

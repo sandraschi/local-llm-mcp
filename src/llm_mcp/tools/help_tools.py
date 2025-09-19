@@ -67,7 +67,11 @@ def get_parameter_docs(func: Callable) -> List[Dict[str, Any]]:
     Returns:
         List of parameter information dictionaries
     """
-    sig = inspect.signature(func)
+    try:
+        sig = inspect.signature(func)
+    except (ValueError, TypeError):
+        # Handle cases where signature inspection fails
+        return []
     type_hints = get_type_hints(func)
     params = []
     
@@ -84,12 +88,16 @@ def get_parameter_docs(func: Callable) -> List[Dict[str, Any]]:
         }
         
         # Get description from docstring
-        doc = inspect.getdoc(func) or ""
-        for line in doc.split('\n'):
-            line = line.strip()
-            if line.startswith(f"{name}:") and ":" in line:
-                param_info["description"] = line.split(":", 1)[1].strip()
-                break
+        try:
+            doc = inspect.getdoc(func) or ""
+            for line in doc.split('\n'):
+                line = line.strip()
+                if line.startswith(f"{name}:") and ":" in line:
+                    param_info["description"] = line.split(":", 1)[1].strip()
+                    break
+        except Exception:
+            # If docstring inspection fails, continue without description
+            pass
                 
         params.append(param_info)
     
@@ -105,23 +113,29 @@ def get_return_docs(func: Callable) -> Dict[str, str]:
     Returns:
         Dictionary with return type and description
     """
-    type_hints = get_type_hints(func)
-    return_type = type_hints.get("return", "None")
+    try:
+        type_hints = get_type_hints(func)
+        return_type = type_hints.get("return", "None")
+    except Exception:
+        return_type = "None"
     
-    doc = inspect.getdoc(func) or ""
-    description = ""
-    
-    # Extract return description from docstring
-    in_returns = False
-    for line in doc.split('\n'):
-        line = line.strip()
-        if line.lower().startswith("returns:"):
-            in_returns = True
-            description = line[8:].strip()
-        elif in_returns and line and not line.startswith(" "):
-            break
-        elif in_returns:
-            description += " " + line.strip()
+    try:
+        doc = inspect.getdoc(func) or ""
+        description = ""
+        
+        # Extract return description from docstring
+        in_returns = False
+        for line in doc.split('\n'):
+            line = line.strip()
+            if line.lower().startswith("returns:"):
+                in_returns = True
+                description = line[8:].strip()
+            elif in_returns and line and not line.startswith(" "):
+                break
+            elif in_returns:
+                description += " " + line.strip()
+    except Exception:
+        description = ""
     
     return {
         "type": format_type(return_type),
@@ -141,8 +155,11 @@ def get_tool_info(func: Callable) -> Dict[str, Any]:
     doc = inspect.getdoc(func) or ""
     description = doc.split('\n')[0] if doc else ""
     
+    # Safe access to function name
+    func_name = getattr(func, '__name__', getattr(func, 'name', func.__class__.__name__))
+    
     return {
-        "name": func.__name__,
+        "name": func_name,
         "description": description,
         "parameters": get_parameter_docs(func),
         "returns": get_return_docs(func),
@@ -165,7 +182,10 @@ async def _list_tools_impl(mcp: Any, detail: int = 1) -> Dict[str, Any]:
     mcp_tools = await mcp.get_tools()
     for name, tool in mcp_tools.items():
         if detail == 0:
-            tools[name] = {"description": (inspect.getdoc(tool) or "").split('\n')[0]}
+            # Safe access to tool name and docstring
+            tool_name = getattr(tool, '__name__', tool.__class__.__name__)
+            doc = inspect.getdoc(tool) or ""
+            tools[name] = {"description": doc.split('\n')[0]}
         else:
             tools[name] = get_tool_info(tool)
             if detail == 1:
@@ -203,7 +223,9 @@ async def _search_tools_impl(mcp: Any, query: str) -> Dict[str, Any]:
     query = query.lower()
     matches = []
     
-    for name, tool in mcp.get_tools().items():
+    # Fix: await the get_tools() call since it returns a coroutine
+    mcp_tools = await mcp.get_tools()
+    for name, tool in mcp_tools.items():
         doc = (inspect.getdoc(tool) or "").lower()
         if query in name.lower() or query in doc:
             matches.append({
@@ -224,7 +246,9 @@ async def _get_tool_signature_impl(mcp: Any, tool_name: str) -> Dict[str, Any]:
     Returns:
         Dictionary with tool signature information
     """
-    for name, tool in mcp.get_tools().items():
+    # Fix: await the get_tools() call since it returns a coroutine
+    mcp_tools = await mcp.get_tools()
+    for name, tool in mcp_tools.items():
         if name == tool_name:
             sig = inspect.signature(tool)
             return {
@@ -246,7 +270,7 @@ async def _get_tool_signature_impl(mcp: Any, tool_name: str) -> Dict[str, Any]:
 
 
 def register_help_tools(mcp):
-    """Register help tools with the MCP server using FastMCP 2.11.3 stateful features.
+    """Register help tools with the MCP server using FastMCP 2.12+ features.
     
     Args:
         mcp: The MCP server instance
@@ -258,8 +282,9 @@ def register_help_tools(mcp):
         - Tools are registered with stateful=True to maintain state between invocations
         - State TTL is set based on the expected cache duration for each tool
     """
-    @mcp.tool()  # Tool listing
-    async def list_tools(detail: int = 1) -> Dict[str, Any]:
+    # Tool listing
+    @mcp.tool()
+    async def list_available_tools(detail: int = 1) -> Dict[str, Any]:
         """List all available tools with stateful caching.
         
         This tool maintains a cache of available tools to improve performance.
@@ -318,7 +343,7 @@ def register_help_tools(mcp):
         """
         return await _get_tool_signature_impl(mcp, tool_name)
     
-    @mcp.tool()  # Get hardware requirements
+    @mcp.tool  # Get hardware requirements
     async def hardware_requirements() -> Dict[str, Any]:
         """Get hardware requirements and performance estimates for fine-tuning with caching.
         
@@ -326,7 +351,7 @@ def register_help_tools(mcp):
         The cache is automatically managed by FastMCP's stateful tools.
         
         Returns:
-            Dictionary with hardware requirements and performance estimates
+            Dictionary with hardware requirements information
         """
         return {
             "gpu_recommendations": [

@@ -54,8 +54,15 @@ def safe_import_tool_module(module_name: str, register_func: str):
                       module=module_name, function=register_func, error=str(e))
         return None
 
-def register_all_tools(mcp) -> Dict[str, Any]:
-    """Register all available tools with the MCP server - WITH ERROR ISOLATION."""
+def register_all_tools(mcp):
+    """Register all available tools with the MCP server with error isolation.
+    
+    Args:
+        mcp: The MCP server instance
+        
+    Returns:
+        The MCP server instance with all tools registered
+    """
     registration_results = {}
     
     # Core tools (always available) - these should work without heavy dependencies
@@ -65,19 +72,21 @@ def register_all_tools(mcp) -> Dict[str, Any]:
         ("monitoring_tools", "register_monitoring_tools"),
     ]
     
-    logger.info("Registering core tools")
+    # Suppress verbose logging during tool registration
     for module_name, func_name in core_tools:
         try:
             register_func = safe_import_tool_module(module_name, func_name)
             if register_func:
-                mcp = register_func(mcp)
+                mcp = register_func(mcp)  # Update mcp with the returned instance
                 registration_results[func_name] = True
-                logger.info("Core tool registered", tool=func_name)
+                # Successfully registered (suppress logging)
             else:
                 registration_results[func_name] = "Import failed"
+                logger.warning(f"Failed to import {func_name}")
         except Exception as e:
-            logger.error("Failed to register core tool", tool=func_name, error=str(e))
-            registration_results[func_name] = str(e)
+            error_msg = f"Error registering {func_name}: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            registration_results[func_name] = error_msg
     
     # Model management tools (require basic ML dependencies)
     ml_basic_tools = [
@@ -92,18 +101,32 @@ def register_all_tools(mcp) -> Dict[str, Any]:
             try:
                 register_func = safe_import_tool_module(module_name, func_name)
                 if register_func:
-                    mcp = register_func(mcp)
+                    mcp = register_func(mcp)  # Update mcp with the returned instance
                     registration_results[func_name] = True
-                    logger.info("ML tool registered", tool=func_name)
+                    # Successfully registered (suppress logging)
                 else:
                     registration_results[func_name] = "Import failed"
+                    logger.warning(f"Failed to import {func_name}")
             except Exception as e:
-                logger.error("Failed to register ML tool", tool=func_name, error=str(e))
-                registration_results[func_name] = str(e)
+                # Use safe error message to avoid Unicode encoding issues
+                error_msg = f"Error registering {func_name}: {str(e)}"
+                try:
+                    logger.error(error_msg, exc_info=True)
+                except UnicodeEncodeError:
+                    # Fallback for Unicode encoding issues
+                    logger.error(f"Error registering {func_name}: {type(e).__name__}")
+                registration_results[func_name] = error_msg
     else:
-        logger.warning("Skipping ML tools - missing torch or transformers")
+        missing_deps = []
+        if not dependency_status.get('torch', False):
+            missing_deps.append('torch')
+        if not dependency_status.get('transformers', False):
+            missing_deps.append('transformers')
+            
+        warning_msg = f"Skipping ML tools - missing dependencies: {', '.join(missing_deps)}"
+        logger.warning(warning_msg)
         for _, func_name in ml_basic_tools:
-            registration_results[func_name] = "Missing dependencies: torch or transformers"
+            registration_results[func_name] = warning_msg
     
     # Advanced tools with specific requirements
     advanced_tools = [
@@ -114,7 +137,6 @@ def register_all_tools(mcp) -> Dict[str, Any]:
             "deps": ["vllm", "torch"],
             "description": "vLLM 1.0+ high-performance inference"
         },
-        
         # Training and fine-tuning
         {
             "module": "lora_tools",
@@ -237,7 +259,7 @@ def register_all_tools(mcp) -> Dict[str, Any]:
     if failed_tools:
         logger.warning("Some tools failed to register", failed_tools=failed_tools)
     
-    return registration_results
+    return mcp
 
 # Tool registration functions for backward compatibility
 def register_help_tools(mcp):

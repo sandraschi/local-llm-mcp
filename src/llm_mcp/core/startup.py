@@ -1,4 +1,5 @@
 """Application startup and shutdown handlers."""
+import logging
 from typing import Any, Dict
 
 from fastapi import FastAPI
@@ -7,6 +8,8 @@ from fastmcp import FastMCP
 from .config import Settings, get_settings
 from ..managers.model_manager import ModelManager
 from ..models.base import ModelStatus, ModelProvider
+
+logger = logging.getLogger(__name__)
 
 async def startup_event(app: FastAPI) -> None:
     """Initialize application services on startup."""
@@ -21,7 +24,7 @@ async def startup_event(app: FastAPI) -> None:
     # Initialize model manager
     await model_manager.initialize()
     
-    print("Application startup complete")
+    logger.info("Application startup complete")
 
 async def shutdown_event(app: FastAPI) -> None:
     """Clean up resources on shutdown."""
@@ -29,7 +32,7 @@ async def shutdown_event(app: FastAPI) -> None:
     if hasattr(app.state, 'model_manager'):
         await app.state.model_manager.close()
     
-    print("Application shutdown complete")
+    logger.info("Application shutdown complete")
 
 def setup_mcp(mcp: FastMCP) -> None:
     """Set up FastMCP-specific configurations and register tools."""

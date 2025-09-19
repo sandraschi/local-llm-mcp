@@ -1,10 +1,13 @@
 """Model management service for LLM MCP Server."""
+import logging
 from typing import Dict, List, Optional, Any
 import asyncio
 from datetime import datetime
 
 from ..models.base import ModelMetadata, ModelProvider, ModelStatus
 from .provider_factory import ProviderFactory
+
+logger = logging.getLogger(__name__)
 
 class ModelManager:
     """Manages LLM models across different providers."""
@@ -164,7 +167,7 @@ class ModelManager:
             
             return success
         except Exception as e:
-            print(f"Error unloading model {model_id}: {str(e)}")
+            logger.error(f"Error unloading model {model_id}: {str(e)}")
             return False
     
     async def generate_text(

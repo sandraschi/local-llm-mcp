@@ -1,4 +1,4 @@
-"""Main entry point for the LLM MCP server - FIXED for FastMCP 2.12+.
+"""Main entry point for the LLM MCP server - FastMCP 2.12+ compliant.
 
 This module initializes and runs the LLM Model Control Protocol server with all available tools.
 Includes comprehensive error handling, structured logging, and graceful shutdown.
@@ -9,9 +9,14 @@ import logging
 import signal
 import sys
 import traceback
+import uuid
+import warnings
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Callable, Awaitable
+
+# Suppress warnings to prevent them from interfering with JSON-RPC communication
+warnings.filterwarnings('ignore')
 
 # Add the parent directory to the path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -19,15 +24,34 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Import our centralized logging configuration
 from llm_mcp.utils.logging import LoggingConfig, get_logger
 
-# Initialize logging
-LoggingConfig.initialize(log_level="INFO")
+# Initialize logging with reduced verbosity for MCP stdio transport
+LoggingConfig.initialize(log_level="WARNING")  # Reduce log verbosity
 logger = get_logger(__name__)
 
 # Import FastMCP after logging is configured
+# Try to import FastMCP with version check
 try:
-    from fastmcp import FastMCP
+    import pkg_resources
+    from fastmcp import FastMCP, __version__ as fastmcp_version_installed
+    from fastmcp.tools import Tool
+    
+    # Check if the installed version meets our requirements
+    required_version = pkg_resources.parse_version("2.12.0")
+    installed_version = pkg_resources.parse_version(fastmcp_version_installed)
+    
+    if installed_version < required_version:
+        raise ImportError(f"FastMCP version {required_version} or higher is required. Installed version: {installed_version}")
+    
+    FASTMCP_AVAILABLE = True
+    logger.info(f"Using FastMCP version: {fastmcp_version_installed}")
+    
 except ImportError as e:
-    logger.error("Failed to import FastMCP. Please install it with: pip install fastmcp")
+    logger.error(f"FastMCP import error: {str(e)}")
+    logger.error("Please install the required version with: pip install 'fastmcp>=2.12.0'")
+    FASTMCP_AVAILABLE = False
+except Exception as e:
+    logger.error(f"Error checking FastMCP version: {str(e)}")
+    FASTMCP_AVAILABLE = False
     sys.exit(1)
 
 # Import local modules
@@ -35,9 +59,10 @@ from llm_mcp.services.provider_factory import ProviderFactory
 from llm_mcp.services.model_manager import ModelManager
 from llm_mcp.tools import register_all_tools
 from llm_mcp.config import Config
-# from fastmcp.transports import StdioTransport
 
+# Global state
 shutdown_event = asyncio.Event()
+server = None
 
 class GracefulShutdown:
     """Handle graceful shutdown with cleanup."""
@@ -99,82 +124,82 @@ state_manager = None
 # Global server instance
 server = None
 
-async def create_mcp_server() -> FastMCP:
-    """Create and configure the MCP server with all tools - FIXED for FastMCP 2.12+."""
+async def create_mcp_server_sync() -> Optional[FastMCP]:
+    """Create and configure the MCP server with all tools for FastMCP 2.12+ (synchronous version).
+    
+    Returns:
+        FastMCP: Configured MCP server instance or None if initialization fails
+    """
     try:
         # Load configuration
         config = Config.load()
         logger.info(f"Configuration loaded from {config.config_path}")
         
         # Initialize MCP server with FastMCP 2.12+ API
-        mcp = FastMCP(
-            name="Local LLM MCP Server",
-            version="1.0.0"
-        )
-        
-        # Register all tools with error isolation
-        logger.info("Registering tools...")
-        registration_results = register_all_tools(mcp)
-        
-        # Log registration results with structured data
-        successful_tools = []
-        failed_tools = []
-        
-        for tool_name, status in registration_results.items():
-            if status is True:
-                successful_tools.append(tool_name)
-                logger.debug(f"Tool registered successfully: {tool_name}")
-            else:
-                failed_tools.append({"tool": tool_name, "error": str(status)})
-                logger.warning(f"Tool registration failed: {tool_name} - {str(status)}")
-        
-        logger.info(
-            f"Tool registration complete - successful: {len(successful_tools)}, failed: {len(failed_tools)}"
-        )
-        
-        # Add health check tool
-        @mcp.tool()
-        async def health_check() -> Dict[str, Any]:
-            """Check the health of the MCP server."""
-            return {
-                "status": "healthy",
-                "timestamp": datetime.utcnow().isoformat(),
-                "server_version": "1.0.0",
-                "models_loaded": len(state_manager.models) if hasattr(state_manager, 'models') else 0,
-                "active_sessions": len(state_manager.sessions) if hasattr(state_manager, 'sessions') else 0,
-                "registered_tools": len(successful_tools),
-                "failed_tools": len(failed_tools),
-                "system": {
-                    "python": sys.version,
-                    "platform": sys.platform,
-                    "executable": sys.executable
+        try:
+            mcp = FastMCP(
+                name="LLM MCP Server",
+                version="1.0.0"
+            )
+            
+            logger.info("MCP server instance created successfully")
+            
+            # Add health check tool
+            @mcp.tool(
+                name="health_check",
+                description="Check the health of the MCP server and list available tools."
+            )
+            async def health_check(verbose: bool = False) -> Dict[str, Any]:
+                """Check the health of the MCP server."""
+                response = {
+                    "status": "healthy",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "server_version": "1.0.0",
+                    "registered_tools": list((await mcp.get_tools()).keys())
                 }
-            }
-        
-        logger.info("MCP server created successfully")
-        return mcp
-        
-    except Exception as e:
-        logger.error(f"Failed to create MCP server: {str(e)}", exc_info=True)
-        raise
+                
+                if verbose:
+                    response.update({
+                        "system": {
+                            "python": sys.version,
+                            "platform": sys.platform,
+                            "executable": sys.executable
+                        }
+                    })
+                
+                return response
 
-def run_server_sync():
-    """Run the MCP server synchronously."""
-    try:
-        logger.info("Starting MCP server")
-        
-        # Create the MCP server
-        server = asyncio.run(create_mcp_server())
-        
-        # Run server directly (FastMCP 2.12+ handles transport automatically)
-        server.run()
+            # Register all tools with error isolation
+            try:
+                # Register all tools (suppress logging during registration)
+                mcp = register_all_tools(mcp)
+                
+                # Log registered tools
+                tools = await mcp.get_tools()
+                tool_count = len([name for name in tools.keys() if not name.startswith('_')])
+                logger.warning(f"MCP server ready with {tool_count} tools")
+                
+                
+                logger.info("MCP server initialized successfully")
+                return mcp
+                
+            except Exception as e:
+                logger.error(f"Failed to register tools: {str(e)}", exc_info=True)
+                logger.error("This might be due to missing dependencies or configuration issues")
+                # Try to return the server even if some tools failed to register
+                return mcp if 'mcp' in locals() else None
+                
+        except Exception as e:
+            logger.error(f"Failed to initialize MCP server: {str(e)}", exc_info=True)
+            return None
             
     except Exception as e:
-        logger.critical(f"Fatal server error: {str(e)}", exc_info=True)
-        raise
+        logger.error(f"Failed to create MCP server: {str(e)}", exc_info=True)
+        return None
+
 
 async def run_server():
-    """Run the MCP server with proper FastMCP 2.12+ transport handling."""
+    """Run the MCP server with stdio transport for FastMCP 2.12+."""
     global server
     
     try:
@@ -182,72 +207,74 @@ async def run_server():
         setup_signal_handlers()
         
         # Create the MCP server
-        server = await create_mcp_server()
+        server = await create_mcp_server_sync()
         
-        logger.info("Starting MCP server")
+        if server is None:
+            logger.error("Failed to create MCP server")
+            return 1
         
-        # Run server directly (FastMCP 2.12+ handles transport automatically)
-        server.run()
+        logger.info("Starting MCP server with stdio transport")
+        
+        # Run server with stdio transport (handled by FastMCP 2.12+)
+        await server.run_stdio_async()
+        
+        logger.info("MCP server stopped")
+        return 0
             
+    except KeyboardInterrupt:
+        logger.info("Server shutdown requested by user")
+        return 0
     except Exception as e:
         logger.critical(f"Fatal server error: {str(e)}", exc_info=True)
-        raise
+        return 1
 
-async def main():
-    """Main entry point with comprehensive error handling."""
+async def main() -> int:
+    """Main entry point for the LLM MCP server."""
     try:
-        logger.info("Starting LLM MCP Server v1.0.0")
+        if not FASTMCP_AVAILABLE:
+            logger.error("Cannot start server: FastMCP is not available")
+            logger.error("Please ensure you have installed the package in development mode with: pip install -e .")
+            logger.error("Also verify that the package is in your PYTHONPATH")
+            return 1
         
-        # Run the server
-        server_task = asyncio.create_task(asyncio.to_thread(run_server_sync))
+        # Log Python path and environment for debugging
+        logger.info(f"Python path: {sys.path}")
+        logger.info(f"Python executable: {sys.executable}")
         
-        # Wait for shutdown signal or server completion
-        done, pending = await asyncio.wait(
-            [server_task, asyncio.create_task(shutdown_event.wait())],
-            return_when=asyncio.FIRST_COMPLETED
-        )
-        
-        # Cancel pending tasks
-        for task in pending:
-            task.cancel()
-            try:
-                await task
-            except asyncio.CancelledError:
-                pass
-        
-        # Handle completed task
-        for task in done:
-            if task == server_task and not task.cancelled():
-                try:
-                    await task  # Re-raise any exception
-                except Exception as e:
-                    logger.error(f"Server task failed: {str(e)}")
-                    return 1
-        
-        logger.info("Server shutdown complete")
-        return 0
-        
+        # Run the server directly
+        return await run_server()
+            
     except KeyboardInterrupt:
-        logger.info("Shutdown by user")
-        await shutdown_handler.shutdown()
+        logger.info("Main task cancelled by user")
         return 0
     except Exception as e:
-        logger.error(f"Unhandled exception in main: {str(e)}", exc_info=True)
+        logger.critical(f"Fatal error in main: {str(e)}", exc_info=True)
         return 1
     finally:
-        await shutdown_handler.cleanup()
+        logger.info("Server shutdown complete")
 
 def cli():
     """Command line interface entry point."""
     try:
         logger.info("Starting LLM MCP Server CLI")
+        
+        # Set up signal handlers for graceful shutdown
+        def signal_handler(signum, frame):
+            logger.info(f"Received signal {signum}, shutting down...")
+            shutdown_event.set()
+            
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            signal.signal(sig, signal_handler)
+        
+        # Run the main async function
         exit_code = asyncio.run(main())
         sys.exit(exit_code)
+        
     except KeyboardInterrupt:
         logger.info("Shutdown by user")
         sys.exit(0)
     except Exception as e:
-        logger.critical(f"CLI fatal error: {str(e)}", exc_info=True)
+        logger.critical(f"Fatal error: {str(e)}", exc_info=True)
         sys.exit(1)
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 """Configuration management for the LLM MCP Server."""
 from typing import List, Optional
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class ServerSettings(BaseModel):
@@ -70,14 +70,16 @@ class Settings(BaseSettings):
     # Provider settings
     providers: ProviderSettings = Field(default_factory=ProviderSettings)
     
-    @validator("server", pre=True)
+    @field_validator("server", mode='before')
+    @classmethod
     def parse_server_settings(cls, v):
         """Parse server settings from environment variables."""
         if isinstance(v, dict):
             return v
         return {}
     
-    @validator("providers", pre=True)
+    @field_validator("providers", mode='before')
+    @classmethod
     def parse_provider_settings(cls, v):
         """Parse provider settings from environment variables."""
         if isinstance(v, dict):

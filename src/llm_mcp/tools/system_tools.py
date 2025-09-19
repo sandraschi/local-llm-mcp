@@ -93,7 +93,7 @@ def get_service_status() -> Dict[str, Any]:
     return services
 
 def register_system_tools(mcp):
-    """Register all system-related tools with the MCP server using FastMCP 2.11.3 stateful features.
+    """Register all system-related tools with the MCP server.
     
     Args:
         mcp: The MCP server instance with tool decorator
@@ -106,9 +106,7 @@ def register_system_tools(mcp):
         - State TTL is set based on the expected cache duration for each tool
         - Critical system operations like restart/shutdown are not cached
     """
-    tool = mcp.tool
-    
-    @tool()  # Get system info
+    @mcp.tool
     async def system_info() -> Dict[str, Any]:
         """Get detailed system information with stateful caching.
         
@@ -120,7 +118,7 @@ def register_system_tools(mcp):
         """
         return get_system_info()
     
-    @tool()  # Get service status
+    @mcp.tool
     async def service_status() -> Dict[str, Any]:
         """Check the status of dependent services with stateful caching.
         
@@ -132,7 +130,7 @@ def register_system_tools(mcp):
         """
         return get_service_status()
     
-    @tool()  # Get server health
+    @mcp.tool
     async def server_health() -> Dict[str, Any]:
         """Get the health status of the MCP server with stateful caching.
         
@@ -177,7 +175,7 @@ def register_system_tools(mcp):
         
         return health
     
-    @tool()  # Restart server
+    @mcp.tool()  # Restart server
     async def server_restart(delay: int = 0) -> Dict[str, Any]:
         """Restart the MCP server.
         
@@ -195,7 +193,7 @@ def register_system_tools(mcp):
         # In a real implementation, this would trigger a restart
         return {"status": "not_implemented", "message": "Restart functionality not implemented"}
     
-    @tool()  # Shutdown server
+    @mcp.tool()  # Shutdown server
     async def server_shutdown(delay: int = 0) -> Dict[str, Any]:
         """Shut down the MCP server.
         

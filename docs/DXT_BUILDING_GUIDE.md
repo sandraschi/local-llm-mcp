@@ -1071,7 +1071,7 @@ httpx>=0.24.0
     }
   },
   "dependencies": [
-    "fastmcp>=2.10.1,<3.0.0",
+    "fastmcp>=2.12.0,<3.0.0",
     "pydantic>=2.0.0",
     "httpx>=0.25.0",
     "loguru>=0.7.0"
@@ -1088,7 +1088,7 @@ httpx>=0.24.0
 npm install -g @anthropic-ai/dxt
 
 # Install Python dependencies (EXACT VERSIONS)
-pip install "fastmcp>=2.10.1,<3.0.0"
+pip install "fastmcp>=2.12.0,<3.0.0"
 pip install -r requirements.txt
 ```
 
@@ -1379,14 +1379,14 @@ ImportError: cannot import name 'FastMCP' from 'fastmcp'
 AttributeError: 'FastMCP' object has no attribute 'some_method'
 ```
 
-#### Solution: Update to FastMCP 2.10.1+
+#### Solution: Update to FastMCP 2.12.0+
 
 ```bash
 # Uninstall old version
 pip uninstall fastmcp
 
 # Install exact version
-pip install "fastmcp>=2.10.1,<3.0.0"
+pip install "fastmcp>=2.12.0,<3.0.0"
 
 # Verify installation
 python -c "import fastmcp; print(fastmcp.__version__)"
@@ -1396,7 +1396,7 @@ python -c "import fastmcp; print(fastmcp.__version__)"
 
 ```txt
 # CRITICAL: Use exact version constraints
-fastmcp>=2.10.1,<3.0.0
+fastmcp>=2.12.0,<3.0.0
 fastapi>=0.95.0
 uvicorn[standard]>=0.22.0
 pydantic>=2.0.0,<3.0.0
@@ -1446,7 +1446,7 @@ jobs:
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install "fastmcp>=2.10.1,<3.0.0"
+        pip install "fastmcp>=2.12.0,<3.0.0"
         pip install -r requirements.txt
         
     - name: Create dist directory
@@ -1513,7 +1513,7 @@ dxt validate dxt/manifest.json
 
 # Common issues:
 # - Missing cwd and PYTHONPATH for Python servers
-# - fastmcp version < 2.10.1 in dependencies
+# - fastmcp version < 2.12.0 in dependencies
 # - Invalid template literal syntax
 # - Incorrect user_config types
 ```
@@ -1528,8 +1528,8 @@ python -c "import your_mcp.server; print('✅ Module imports successfully')"
 # Test FastMCP version
 python -c "import fastmcp; print(f'FastMCP version: {fastmcp.__version__}')"
 
-# Verify >= 2.10.1
-python -c "import fastmcp; assert fastmcp.__version__ >= '2.10.1', 'Update FastMCP!'"
+# Verify >= 2.12.0
+python -c "import fastmcp; assert fastmcp.__version__ >= '2.12.0', 'Update FastMCP!'"
 ```
 
 ### DXT Package Testing
@@ -1635,7 +1635,7 @@ dxt pack . ../package.dxt
 
 ### Development
 
-- [ ] Use fastmcp>=2.10.1,<3.0.0 in requirements.txt
+- [ ] Use fastmcp>=2.12.0,<3.0.0 in requirements.txt
 - [ ] Structure Python modules in `src/your_mcp/` directory
 - [ ] Create comprehensive manifest.json with AI
 - [ ] Include `cwd: "src"` and `PYTHONPATH: "src"` in mcp_config
@@ -1654,7 +1654,7 @@ dxt pack . ../package.dxt
 ### Release
 
 - [ ] Setup GitHub Actions workflow with Python 3.11
-- [ ] Include fastmcp>=2.10.1 installation step in CI
+- [ ] Include fastmcp>=2.12.0 installation step in CI
 - [ ] Create release tag: `git tag v1.0.0`
 - [ ] Verify automatic build and release
 - [ ] Test downloaded .dxt package installation
@@ -1676,7 +1676,7 @@ dxt pack . ../package.dxt
 
 ```json
 {
-  "dependencies": ["fastmcp>=2.10.1,<3.0.0"],
+  "dependencies": ["fastmcp>=2.12.0,<3.0.0"],
   "server": {
     "type": "python",
     "entry_point": "src/blender_mcp/server.py",
@@ -1697,7 +1697,7 @@ dxt pack . ../package.dxt
 
 ```json
 {
-  "dependencies": ["fastmcp>=2.10.1,<3.0.0"],
+  "dependencies": ["fastmcp>=2.12.0,<3.0.0"],
   "server": {
     "type": "python", 
     "entry_point": "src/docker_mcp/server.py",
@@ -1718,7 +1718,7 @@ dxt pack . ../package.dxt
 
 ```json
 {
-  "dependencies": ["fastmcp>=2.10.1,<3.0.0"],
+  "dependencies": ["fastmcp>=2.12.0,<3.0.0"],
   "server": {
     "type": "python",
     "entry_point": "src/database_mcp/server.py", 
@@ -1755,7 +1755,7 @@ dxt pack . ../package.dxt
 
 ### Critical Updates
 
-1. **FastMCP 2.10.1 Requirement**: Mandatory for DXT compatibility
+1. **FastMCP 2.12.0 Requirement**: Mandatory for DXT compatibility
 2. **Python Path Fix**: Explicit `cwd` and `PYTHONPATH` configuration
 3. **Updated Examples**: All examples include new requirements
 4. **Enhanced Troubleshooting**: Manual MCP fallback procedures
@@ -1763,13 +1763,13 @@ dxt pack . ../package.dxt
 
 ### Breaking Changes
 
-- **FastMCP < 2.10.1 no longer supported** in DXT extensions
+- **FastMCP < 2.12.0 no longer supported** in DXT extensions
 - **Python servers require explicit path configuration** in manifest
 - **All existing DXT packages need rebuilding** with new requirements
 
 ### Migration Guide
 
-1. Update `requirements.txt`: `fastmcp>=2.10.1,<3.0.0`
+1. Update `requirements.txt`: `fastmcp>=2.12.0,<3.0.0`
 2. Add to manifest `mcp_config`: `"cwd": "src"` and `"PYTHONPATH": "src"`
 3. Rebuild DXT package: `dxt pack . ../dist/updated-package.dxt`
 4. Test installation and fallback to manual MCP if needed

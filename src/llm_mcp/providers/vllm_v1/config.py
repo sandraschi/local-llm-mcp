@@ -1,6 +1,6 @@
 """Configuration for vLLM V1 provider with v1.0.0+ support."""
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List, Literal, Dict, Any, Union
 from pathlib import Path
 
@@ -133,9 +133,11 @@ class VLLMv1Config(BaseModel):
         description="Random seed for reproducibility"
     )
     
-    @validator('base_url', always=True)
-    def set_base_url(cls, v, values):
+    @field_validator('base_url', mode='before')
+    @classmethod
+    def set_base_url(cls, v, info):
         """Ensure base_url is properly formatted."""
+        values = info.data
         if 'host' in values and 'port' in values:
             return f"http://{values['host']}:{values['port']}"
         return v

@@ -91,6 +91,12 @@ class LoggingConfig:
                 console_handler = logging.StreamHandler(sys.stderr)
                 console_handler.setFormatter(formatter)
                 console_handler.setLevel(log_level)
+                # Set encoding to UTF-8 to handle Unicode characters
+                if hasattr(console_handler.stream, 'reconfigure'):
+                    try:
+                        console_handler.stream.reconfigure(encoding='utf-8', errors='replace')
+                    except Exception:
+                        pass  # Ignore if reconfigure fails
                 root_logger.addHandler(console_handler)
             
             # Disable propagation for third-party loggers

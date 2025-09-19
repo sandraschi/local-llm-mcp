@@ -9,7 +9,7 @@ from typing import Dict, Any, List, Optional, Union
 from dataclasses import dataclass, field
 from enum import Enum
 import yaml
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 import structlog
 
 logger = structlog.get_logger(__name__)
@@ -92,7 +92,8 @@ class ModelConfig(BaseModel):
     default_temperature: float = 0.7
     default_top_p: float = 0.9
     
-    @validator('model_cache_dir')
+    @field_validator('model_cache_dir')
+    @classmethod
     def validate_model_cache_dir(cls, v):
         Path(v).mkdir(parents=True, exist_ok=True)
         return v

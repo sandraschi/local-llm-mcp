@@ -200,7 +200,7 @@ async def _cleanup_models_impl():
         _lmstudio = None
 
 def register_model_management_tools(mcp):
-    """Register model management tools with the MCP server using FastMCP 2.11.3 stateful features.
+    """Register all model management tools with the MCP server.
     
     Args:
         mcp: The MCP server instance with tool decorator
@@ -335,11 +335,5 @@ def register_model_management_tools(mcp):
         # Invalidate the list cache when unloading a model
         mcp.invalidate_state(lmstudio_list_models)
         return await _lmstudio_unload_model_impl()
-    
-    # Cleanup on server shutdown
-    @mcp.on_shutdown
-    async def cleanup():
-        """Cleanup resources on server shutdown."""
-        await _cleanup_models_impl()
     
     return mcp

@@ -267,7 +267,7 @@ async def collect_system_metrics():
         await asyncio.sleep(60)  # Collect every minute
 
 def register_monitoring_tools(mcp):
-    """Register all monitoring-related tools with the MCP server using FastMCP 2.11.3 stateful features.
+    """Register all monitoring-related tools with the MCP server.
     
     Args:
         mcp: The MCP server instance with tool decorator

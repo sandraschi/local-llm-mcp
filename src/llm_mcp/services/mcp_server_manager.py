@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import logging
 from fastmcp import FastMCP
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +17,9 @@ class MCPServerConfig(BaseModel):
     config: Dict[str, Any] = Field(default_factory=dict, description="Server-specific configuration")
     enabled: bool = Field(True, description="Whether the server is enabled")
 
-    @validator('name')
-    def name_must_be_valid(cls, v):
+    @field_validator('name')
+    @classmethod
+    def name_must_be_valid(cls, v: str) -> str:
         """Validate the server name."""
         if not v or not v.strip():
             raise ValueError("Server name cannot be empty")

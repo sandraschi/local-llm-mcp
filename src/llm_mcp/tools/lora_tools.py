@@ -286,13 +286,13 @@ async def _lora_list_loaded_impl() -> Dict[str, Any]:
 
 
 def register_lora_tools(mcp):
-    """Register LoRA tools with the MCP server.
+    """Register all LoRA-related tools with the MCP server.
     
     Args:
-        mcp: The MCP server instance
+        mcp: The MCP server instance with tool decorator
         
     Returns:
-        The MCP server with LoRA tools registered
+        The MCP server instance with LoRA tools registered
     """
     if not PEFT_AVAILABLE:
         logger.warning("PEFT is not installed. LoRA tools will not be available.")

@@ -239,7 +239,7 @@ async def embed_text_impl(
     }
 
 def register_generation_tools(mcp):
-    """Register all generation-related tools with the MCP server using FastMCP 2.11.3 stateful features.
+    """Register all generation-related tools with the MCP server.
     
     Args:
         mcp: The MCP server instance with tool decorator
@@ -253,15 +253,14 @@ def register_generation_tools(mcp):
     """
     tool = mcp.tool
     
-    @tool(stateful=True, state_ttl=300)  # 5-minute cache for text generation
+    @mcp.tool()  # Text generation
     async def generate_text(
         model: str,
         prompt: str,
         temperature: float = 0.7,
         max_tokens: int = 1000,
         top_p: float = 1.0,
-        stream: bool = False,
-        **kwargs
+        stream: bool = False
     ) -> Dict[str, Any]:
         """Generate text using the specified model with stateful caching.
         
@@ -286,19 +285,17 @@ def register_generation_tools(mcp):
             temperature=temperature,
             max_tokens=max_tokens,
             top_p=top_p,
-            stream=stream,
-            **kwargs
+            stream=stream
         )
         
-    @tool(stateful=True, state_ttl=600)  # 10-minute cache for chat completions
+    @mcp.tool()  # Chat completion
     async def chat_completion(
         model: str,
         messages: List[Dict[str, str]],
         temperature: float = 0.7,
         max_tokens: int = 1000,
         top_p: float = 1.0,
-        stream: bool = False,
-        **kwargs
+        stream: bool = False
     ) -> Dict[str, Any]:
         """Generate a chat completion with stateful conversation management.
         
@@ -323,15 +320,13 @@ def register_generation_tools(mcp):
             temperature=temperature,
             max_tokens=max_tokens,
             top_p=top_p,
-            stream=stream,
-            **kwargs
+            stream=stream
         )
         
-    @tool(stateful=True, state_ttl=86400)  # 24-hour cache for embeddings
+    @mcp.tool()  # Generate embeddings
     async def embed_text(
         model: str,
-        text: Union[str, List[str]],
-        **kwargs
+        text: Union[str, List[str]]
     ) -> Dict[str, Any]:
         """Generate and cache embeddings for the input text.
         

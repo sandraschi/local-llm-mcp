@@ -251,7 +251,7 @@ class MoEMLP(nn.Module):
 
 # Tool registration function
 def register_moe_tools(mcp):
-    """Register MoE-related tools with the MCP server using FastMCP 2.11.3 stateful features.
+    """Register all MoE-related tools with the MCP server.
     
     Args:
         mcp: The MCP server instance with tool decorator
