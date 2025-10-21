@@ -1,6 +1,6 @@
 """Model definitions for vLLM V1 provider."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any
 from enum import Enum
 
@@ -47,8 +47,9 @@ class VLLMModel(BaseModel):
     supports_prefix_caching: bool = Field(default=True, description="Supports prefix caching")
     supports_flashattention: bool = Field(default=True, description="Supports FlashAttention")
     
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(
+        use_enum_values=True
+    )
 
 
 class VLLMMultimodalModel(VLLMModel):

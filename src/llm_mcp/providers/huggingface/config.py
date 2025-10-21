@@ -64,3 +64,4 @@ class HuggingFaceConfig:
             "model_kwargs": self.model_kwargs,
             "pipeline_kwargs": self.pipeline_kwargs,
         }
+

@@ -72,14 +72,15 @@ def register_all_tools(mcp):
         ("monitoring_tools", "register_monitoring_tools"),
     ]
     
-    # Suppress verbose logging during tool registration
+    # Log tool registration progress
+    logger.info("Registering core tools...")
     for module_name, func_name in core_tools:
         try:
             register_func = safe_import_tool_module(module_name, func_name)
             if register_func:
                 mcp = register_func(mcp)  # Update mcp with the returned instance
                 registration_results[func_name] = True
-                # Successfully registered (suppress logging)
+                logger.info(f"Successfully registered {func_name}")
             else:
                 registration_results[func_name] = "Import failed"
                 logger.warning(f"Failed to import {func_name}")
@@ -96,14 +97,15 @@ def register_all_tools(mcp):
     ]
     
     if dependency_status.get('torch', False) and dependency_status.get('transformers', False):
-        logger.info("Registering basic ML tools")
+        # Log ML tool registration progress
+        logger.info("Registering ML tools...")
         for module_name, func_name in ml_basic_tools:
             try:
                 register_func = safe_import_tool_module(module_name, func_name)
                 if register_func:
                     mcp = register_func(mcp)  # Update mcp with the returned instance
                     registration_results[func_name] = True
-                    # Successfully registered (suppress logging)
+                    logger.info(f"Successfully registered {func_name}")
                 else:
                     registration_results[func_name] = "Import failed"
                     logger.warning(f"Failed to import {func_name}")
@@ -200,7 +202,8 @@ def register_all_tools(mcp):
         },
     ]
     
-    logger.info("Registering advanced tools", count=len(advanced_tools))
+    # Log advanced tool registration progress
+    logger.info("Registering advanced tools...")
     for tool_config in advanced_tools:
         module_name = tool_config["module"]
         func_name = tool_config["function"]
@@ -212,10 +215,7 @@ def register_all_tools(mcp):
         
         if missing_deps:
             registration_results[func_name] = f"Missing dependencies: {', '.join(missing_deps)}"
-            logger.info("Skipping advanced tool", 
-                       tool=func_name, 
-                       missing=missing_deps,
-                       description=description)
+            logger.info(f"Skipping advanced tool {func_name} - missing dependencies: {', '.join(missing_deps)}")
             continue
         
         # Try to register the tool with error isolation
@@ -228,14 +228,14 @@ def register_all_tools(mcp):
                 if isinstance(result, dict):
                     if result.get("vllm_available", True):  # vLLM-specific check
                         registration_results[func_name] = True
-                        logger.info("Advanced tool registered", tool=func_name, description=description)
+                        logger.info(f"Advanced tool registered: {func_name}")
                     else:
                         registration_results[func_name] = result.get("error", "Registration returned false")
                         logger.warning("Advanced tool registration failed", tool=func_name, result=result)
                 else:
                     # Assume success if function returns mcp instance or None
                     registration_results[func_name] = True
-                    logger.info("Advanced tool registered", tool=func_name, description=description)
+                    logger.info(f"Advanced tool registered: {func_name}")
                     
             else:
                 registration_results[func_name] = "Import failed"
@@ -251,13 +251,10 @@ def register_all_tools(mcp):
     successful_tools = [k for k, v in registration_results.items() if v is True]
     failed_tools = {k: v for k, v in registration_results.items() if v is not True}
     
-    logger.info("Tool registration complete",
-                total_tools=len(registration_results),
-                successful=len(successful_tools),
-                failed=len(failed_tools))
+    logger.info("Tool registration complete")
     
     if failed_tools:
-        logger.warning("Some tools failed to register", failed_tools=failed_tools)
+        logger.warning(f"Some tools failed to register: {failed_tools}")
     
     return mcp
 

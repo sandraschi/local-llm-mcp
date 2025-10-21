@@ -3,6 +3,21 @@
 This module initializes and runs the LLM Model Control Protocol server with all available tools.
 Includes comprehensive error handling, structured logging, and graceful shutdown.
 """
+# Suppress ALL warnings before any imports to prevent JSON-RPC interference
+import warnings
+warnings.filterwarnings('ignore')
+warnings.simplefilter('ignore')
+
+import os
+os.environ['PYTHONWARNINGS'] = 'ignore'
+
+# Redirect warnings to stderr (which won't interfere with JSON-RPC)
+def suppress_warnings():
+    """Suppress all warnings to prevent JSON-RPC interference."""
+    warnings.showwarning = lambda *args, **kwargs: None
+
+suppress_warnings()
+
 import asyncio
 import json
 import logging
@@ -10,13 +25,9 @@ import signal
 import sys
 import traceback
 import uuid
-import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Callable, Awaitable
-
-# Suppress warnings to prevent them from interfering with JSON-RPC communication
-warnings.filterwarnings('ignore')
 
 # Add the parent directory to the path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -24,8 +35,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Import our centralized logging configuration
 from llm_mcp.utils.logging import LoggingConfig, get_logger
 
-# Initialize logging with reduced verbosity for MCP stdio transport
-LoggingConfig.initialize(log_level="WARNING")  # Reduce log verbosity
+# Initialize logging with minimal verbosity for MCP stdio transport
+LoggingConfig.initialize(log_level="ERROR")  # Only show errors
 logger = get_logger(__name__)
 
 # Import FastMCP after logging is configured
@@ -177,7 +188,7 @@ async def create_mcp_server_sync() -> Optional[FastMCP]:
                 # Log registered tools
                 tools = await mcp.get_tools()
                 tool_count = len([name for name in tools.keys() if not name.startswith('_')])
-                logger.warning(f"MCP server ready with {tool_count} tools")
+                logger.info(f"MCP server ready with {tool_count} tools")
                 
                 
                 logger.info("MCP server initialized successfully")
@@ -256,6 +267,9 @@ async def main() -> int:
 def cli():
     """Command line interface entry point."""
     try:
+        logger.info("=== LOCAL LLM MCP SERVER STARTUP ===")
+        logger.info(f"Python version: {sys.version}")
+        logger.info(f"Command line args: {sys.argv}")
         logger.info("Starting LLM MCP Server CLI")
         
         # Set up signal handlers for graceful shutdown
@@ -266,15 +280,21 @@ def cli():
         for sig in (signal.SIGINT, signal.SIGTERM):
             signal.signal(sig, signal_handler)
         
+        logger.info("=== STARTING ASYNC MAIN FUNCTION ===")
         # Run the main async function
         exit_code = asyncio.run(main())
+        logger.info(f"=== MAIN FUNCTION COMPLETED WITH EXIT CODE: {exit_code} ===")
         sys.exit(exit_code)
         
     except KeyboardInterrupt:
-        logger.info("Shutdown by user")
+        logger.info("=== SHUTDOWN BY USER (Ctrl+C) ===")
+        print("Shutdown by user", file=sys.stderr)
         sys.exit(0)
     except Exception as e:
-        logger.critical(f"Fatal error: {str(e)}", exc_info=True)
+        logger.critical(f"=== FATAL ERROR ===", exc_info=True)
+        logger.critical(f"Error type: {type(e).__name__}")
+        logger.critical(f"Error message: {e}")
+        print(f"FATAL ERROR: {e}", file=sys.stderr)
         sys.exit(1)
 
 if __name__ == "__main__":

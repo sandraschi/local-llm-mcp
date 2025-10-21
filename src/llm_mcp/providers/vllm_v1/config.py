@@ -1,6 +1,6 @@
 """Configuration for vLLM V1 provider with v1.0.0+ support."""
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import Optional, List, Literal, Dict, Any, Union
 from pathlib import Path
 
@@ -157,5 +157,6 @@ class VLLMv1Config(BaseModel):
     log_level: str = "INFO"
     disable_log_requests: bool = False
     
-    class Config:
-        env_prefix = "VLLM_"
+    model_config = ConfigDict(
+        env_prefix="VLLM_"
+    )

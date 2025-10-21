@@ -1,7 +1,7 @@
 """Perplexity provider configuration."""
 
 from typing import Dict, Any, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class PerplexityConfig(BaseModel):
     """Configuration for Perplexity provider."""
@@ -21,5 +21,6 @@ class PerplexityConfig(BaseModel):
     # Safety settings
     stop: Optional[list] = Field(None, description="Stop sequences")
     
-    class Config:
-        env_prefix = "PERPLEXITY_"
+    model_config = ConfigDict(
+        env_prefix="PERPLEXITY_"
+    )

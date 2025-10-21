@@ -1,7 +1,7 @@
 """OpenAI provider configuration."""
 
 from typing import Dict, Any, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class OpenAIConfig(BaseModel):
     """Configuration for OpenAI provider."""
@@ -23,5 +23,6 @@ class OpenAIConfig(BaseModel):
     stop: Optional[list] = Field(None, description="Stop sequences")
     user: Optional[str] = Field(None, description="User identifier for tracking")
     
-    class Config:
-        env_prefix = "OPENAI_"
+    model_config = ConfigDict(
+        env_prefix="OPENAI_"
+    )

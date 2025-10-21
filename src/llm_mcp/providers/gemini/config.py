@@ -1,7 +1,7 @@
 """Gemini provider configuration."""
 
 from typing import Dict, Any, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class GeminiConfig(BaseModel):
     """Configuration for Gemini provider."""
@@ -21,5 +21,6 @@ class GeminiConfig(BaseModel):
     # Safety settings
     stop_sequences: Optional[list] = Field(None, description="Stop sequences")
     
-    class Config:
-        env_prefix = "GEMINI_"
+    model_config = ConfigDict(
+        env_prefix="GEMINI_"
+    )

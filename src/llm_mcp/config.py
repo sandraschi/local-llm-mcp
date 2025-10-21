@@ -9,7 +9,7 @@ from typing import Dict, Any, List, Optional, Union
 from dataclasses import dataclass, field
 from enum import Enum
 import yaml
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 import structlog
 
 logger = structlog.get_logger(__name__)
@@ -108,9 +108,10 @@ class Config(BaseModel):
     config_path: Optional[Path] = None
     environment_overrides: Dict[str, Any] = Field(default_factory=dict)
     
-    class Config:
-        env_prefix = "LLM_MCP_"
-        env_nested_delimiter = "__"
+    model_config = ConfigDict(
+        env_prefix="LLM_MCP_",
+        env_nested_delimiter="__"
+    )
     
     @classmethod
     def load(cls, config_path: Optional[Union[str, Path]] = None) -> "Config":

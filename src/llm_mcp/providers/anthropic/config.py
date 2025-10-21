@@ -1,7 +1,7 @@
 """Anthropic provider configuration."""
 
 from typing import Dict, Any, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class AnthropicConfig(BaseModel):
     """Configuration for Anthropic provider."""
@@ -22,5 +22,6 @@ class AnthropicConfig(BaseModel):
     stop_sequences: Optional[list] = Field(None, description="Stop sequences")
     metadata: Optional[Dict[str, Any]] = Field(None, description="Metadata to include in requests")
     
-    class Config:
-        env_prefix = "ANTHROPIC_"
+    model_config = ConfigDict(
+        env_prefix="ANTHROPIC_"
+    )
