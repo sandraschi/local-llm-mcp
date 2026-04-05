@@ -1,0 +1,193 @@
+{
+  "name": "local-llm-mcp",
+  "description": "State-of-the-Art MCP server for managing local and cloud Large Language Models with comprehensive tool suite",
+  "version": "1.0.0",
+  "author": "Sandra Schipal",
+  "homepage": "https://github.com/sandraschi/local-llm-mcp",
+  "repository": "https://github.com/sandraschi/local-llm-mcp",
+  "license": "MIT",
+  "mcp": {
+    "command": "python",
+    "args": ["-m", "llm_mcp"],
+    "env": {
+      "PYTHONPATH": "${workspaceFolder}",
+      "PYTHONUNBUFFERED": "1"
+    }
+  },
+  "tools": [
+    {
+      "name": "llm_health_tool",
+      "description": "Comprehensive health monitoring and system management operations",
+      "category": "system"
+    },
+    {
+      "name": "llm_models_tool",
+      "description": "Model management, registration, and provider operations",
+      "category": "models"
+    },
+    {
+      "name": "llm_generation_tool",
+      "description": "Text generation, chat completion, and embedding operations",
+      "category": "generation"
+    },
+    {
+      "name": "llm_multimodal_tool",
+      "description": "Image analysis, generation, and comparison operations",
+      "category": "multimodal"
+    },
+    {
+      "name": "llm_finetuning_tool",
+      "description": "LoRA, Sparse, and DoRA fine-tuning operations",
+      "category": "training"
+    },
+    {
+      "name": "llm_ollama_tool",
+      "description": "Ollama model management operations",
+      "category": "ollama"
+    },
+    {
+      "name": "llm_lmstudio_tool",
+      "description": "LM Studio model management operations",
+      "category": "lmstudio"
+    },
+    {
+      "name": "llm_vllm_tool",
+      "description": "vLLM high-performance inference operations",
+      "category": "vllm"
+    },
+    {
+      "name": "gpu_status",
+      "description": "Get comprehensive NVIDIA GPU status and monitoring",
+      "category": "gpu"
+    },
+    {
+      "name": "gpu_clear_memory",
+      "description": "Clear GPU memory to prevent fragmentation",
+      "category": "gpu"
+    },
+    {
+      "name": "gpu_optimize",
+      "description": "Advanced GPU memory optimization",
+      "category": "gpu"
+    },
+    {
+      "name": "gpu_health_check",
+      "description": "Comprehensive GPU health monitoring and diagnostics",
+      "category": "gpu"
+    },
+    {
+      "name": "list_models",
+      "description": "List available models from configured providers",
+      "category": "models"
+    },
+    {
+      "name": "get_model_info",
+      "description": "Get detailed information about a specific model",
+      "category": "models"
+    },
+    {
+      "name": "register_model",
+      "description": "Register a new model with the system",
+      "category": "models"
+    },
+    {
+      "name": "generate_text",
+      "description": "Generate text using configured language models",
+      "category": "generation"
+    },
+    {
+      "name": "chat_completion",
+      "description": "Perform chat completion with context and history",
+      "category": "generation"
+    },
+    {
+      "name": "embed_text",
+      "description": "Generate embeddings for text inputs",
+      "category": "generation"
+    },
+  ],
+  "categories": {
+    "system": {
+      "description": "System monitoring, health checks, and diagnostics",
+      "tools": ["llm_health_tool"]
+    },
+    "models": {
+      "description": "Model discovery, management, and provider operations",
+      "tools": ["llm_models_tool", "list_models", "get_model_info", "register_model"]
+    },
+    "generation": {
+      "description": "Text generation, chat completion, and embeddings",
+      "tools": ["llm_generation_tool", "generate_text", "chat_completion", "embed_text"]
+    },
+    "multimodal": {
+      "description": "Image analysis, generation, and visual AI operations",
+      "tools": ["llm_multimodal_tool"]
+    },
+    "training": {
+      "description": "Model fine-tuning and customization operations",
+      "tools": ["llm_finetuning_tool"]
+    },
+    "ollama": {
+      "description": "Ollama model management operations",
+      "tools": ["llm_ollama_tool"]
+    },
+    "lmstudio": {
+      "description": "LM Studio model management operations",
+      "tools": ["llm_lmstudio_tool"]
+    },
+    "vllm": {
+      "description": "vLLM high-performance inference operations",
+      "tools": ["llm_vllm_tool"]
+    },
+    "huggingface": {
+      "description": "Hugging Face model and dataset management operations",
+      "tools": ["llm_huggingface_tool"]
+    },
+    "gpu": {
+      "description": "NVIDIA GPU monitoring and control (RTX 4090 optimized)",
+      "tools": ["gpu_status", "gpu_clear_memory", "gpu_optimize", "gpu_health_check"]
+    },
+    "help": {
+      "description": "Extensive multilevel help system with 5 detail levels",
+      "tools": ["list_available_tools", "get_tool_help", "search_tools", "get_tool_signature", "get_workflow_guides", "get_performance_guide", "get_troubleshooting_guide", "get_hardware_requirements", "get_quick_reference", "get_integration_guide"]
+    },
+    "google_cloud": {
+      "description": "Google Cloud AI operations including Gemini models, Vertex AI, and Cloud Storage",
+      "tools": ["llm_google_cloud_tool"]
+    }
+  },
+  "examples": [
+    {
+      "title": "Basic Text Generation",
+      "description": "Generate text using a local LLM",
+      "code": "result = await generate_text(model='llama3', prompt='Explain machine learning')"
+    },
+    {
+      "title": "Model Health Check",
+      "description": "Check system and model health",
+      "code": "health = await llm_health_tool('health_check')"
+    },
+    {
+      "title": "Ollama Model Management",
+      "description": "Download and use Ollama models",
+      "code": "await ollama_pull_model(model='llama3:8b')"
+    }
+  ],
+  "keywords": [
+    "llm",
+    "ai",
+    "mcp",
+    "ollama",
+    "lmstudio",
+    "text-generation",
+    "chat",
+    "embeddings",
+    "fine-tuning",
+    "multimodal",
+    "local-ai"
+  ],
+  "sota_compliant": true,
+  "fastmcp_version": "2.14.1+",
+  "portmanteau_tools": 5,
+  "total_tools": 31
+}

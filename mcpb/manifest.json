@@ -1,0 +1,164 @@
+{
+  "manifest_version": "0.2",
+  "name": "local-llm-mcp",
+  "version": "1.0.0",
+  "description": "State-of-the-Art MCP server for managing local and cloud Large Language Models with comprehensive tool suite",
+  "author": {
+    "name": "Sandra Schipal"
+  },
+  "server": {
+    "type": "python",
+    "entry_point": "src/llm_mcp/__main__.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["-m", "llm_mcp"],
+      "env": {
+        "PYTHONPATH": "${PWD}",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  },
+  "user_config": {
+    "api_key": {
+      "type": "string",
+      "title": "API Key (optional)",
+      "description": "API key for external LLM providers (OpenAI, Anthropic, etc.)",
+      "required": false,
+      "default": ""
+    },
+    "timeout": {
+      "type": "string",
+      "title": "Operation Timeout (seconds)",
+      "description": "Maximum time for LLM operations",
+      "default": "300"
+    },
+    "model_cache_dir": {
+      "type": "string",
+      "title": "Model Cache Directory",
+      "description": "Directory for caching downloaded models",
+      "default": "~/.cache/llm-mcp"
+    }
+  },
+  "tools": [
+    {
+      "name": "llm_health_tool",
+      "description": "Comprehensive health monitoring and system management operations"
+    },
+    {
+      "name": "llm_models_tool",
+      "description": "Model management, registration, and provider operations"
+    },
+    {
+      "name": "llm_generation_tool",
+      "description": "Text generation, chat completion, and embedding operations"
+    },
+    {
+      "name": "llm_multimodal_tool",
+      "description": "Image analysis, generation, and comparison operations"
+    },
+    {
+      "name": "llm_finetuning_tool",
+      "description": "LoRA, Sparse, and DoRA fine-tuning operations"
+    },
+    {
+      "name": "llm_ollama_tool",
+      "description": "Ollama model management operations"
+    },
+    {
+      "name": "llm_lmstudio_tool",
+      "description": "LM Studio model management operations"
+    },
+    {
+      "name": "llm_vllm_tool",
+      "description": "vLLM high-performance inference operations"
+    },
+    {
+      "name": "llm_huggingface_tool",
+      "description": "Hugging Face model and dataset management operations"
+    },
+    {
+      "name": "llm_google_cloud_tool",
+      "description": "Google Cloud AI operations including Gemini models, Vertex AI, and Cloud Storage"
+    },
+    {
+      "name": "gpu_status",
+      "description": "Get comprehensive NVIDIA GPU status and monitoring"
+    },
+    {
+      "name": "gpu_clear_memory",
+      "description": "Clear GPU memory to prevent fragmentation"
+    },
+    {
+      "name": "gpu_optimize",
+      "description": "Advanced GPU memory optimization"
+    },
+    {
+      "name": "gpu_health_check",
+      "description": "Comprehensive GPU health monitoring and diagnostics"
+    },
+    {
+      "name": "list_models",
+      "description": "List available models from configured providers"
+    },
+    {
+      "name": "get_model_info",
+      "description": "Get detailed information about a specific model"
+    },
+    {
+      "name": "register_model",
+      "description": "Register a new model with the system"
+    },
+    {
+      "name": "generate_text",
+      "description": "Generate text using configured language models"
+    },
+    {
+      "name": "chat_completion",
+      "description": "Perform chat completion with context and history"
+    },
+    {
+      "name": "embed_text",
+      "description": "Generate embeddings for text inputs"
+    },
+    {
+      "name": "list_available_tools",
+      "description": "Tool discovery with 5 levels of detail (0-4)"
+    },
+    {
+      "name": "get_tool_help",
+      "description": "Comprehensive tool documentation and examples"
+    },
+    {
+      "name": "search_tools",
+      "description": "Advanced tool search with relevance scoring"
+    },
+    {
+      "name": "get_tool_signature",
+      "description": "Function signatures with type annotations and metadata"
+    },
+    {
+      "name": "get_workflow_guides",
+      "description": "Complete workflow documentation and best practices"
+    },
+    {
+      "name": "get_performance_guide",
+      "description": "Performance optimization and benchmarking guide"
+    },
+    {
+      "name": "get_troubleshooting_guide",
+      "description": "Comprehensive troubleshooting and issue resolution"
+    },
+    {
+      "name": "get_hardware_requirements",
+      "description": "Hardware recommendations and performance estimates"
+    },
+    {
+      "name": "get_quick_reference",
+      "description": "Essential commands, settings, and quick fixes"
+    },
+    {
+      "name": "get_integration_guide",
+      "description": "External system integration guides and examples"
+    }
+  ]
+}

@@ -5,6 +5,7 @@ and proper dependency management.
 """
 import importlib.metadata
 import logging
+import os
 from typing import Optional, Dict, Any, List
 import structlog
 
@@ -56,47 +57,157 @@ def safe_import_tool_module(module_name: str, register_func: str):
 
 def register_all_tools(mcp):
     """Register all available tools with the MCP server with error isolation.
-    
+
+    PORTMANTEAU ARCHITECTURE:
+    This server now uses a SOTA portmanteau architecture following Advanced Memory MCP patterns.
+    Instead of 30+ individual tools, we provide 5 consolidated portmanteau tools:
+
+    - llm_health: Health, monitoring, system, and server management operations
+    - llm_models: Model management, registration, and provider operations
+    - llm_generation: Text generation, chat completion, and embedding operations
+    - llm_multimodal: Image analysis, generation, and comparison operations
+    - llm_finetuning: LoRA, Sparse, and DoRA fine-tuning operations
+
+    Legacy individual tools can be enabled with LLM_MCP_ENABLE_LEGACY_TOOLS=true for migration testing.
+
     Args:
         mcp: The MCP server instance
-        
+
     Returns:
         The MCP server instance with all tools registered
     """
     registration_results = {}
     
-    # Core tools (always available) - these should work without heavy dependencies
-    core_tools = [
-        ("help_tools", "register_help_tools"),
-        ("system_tools", "register_system_tools"),
-        ("monitoring_tools", "register_monitoring_tools"),
+    # PORTMANTEAU TOOLS - SOTA consolidated interface
+    # Following Advanced Memory MCP pattern to reduce tool count and improve UX
+    portmanteau_tools = [
+        ("portmanteau_health", "register_llm_health_tools"),
+        ("portmanteau_models", "register_llm_models_tools"),
+        ("portmanteau_generation", "register_llm_generation_tools"),
+        ("portmanteau_multimodal", "register_llm_multimodal_tools"),
+        ("portmanteau_finetuning", "register_llm_finetuning_tools"),
+        ("portmanteau_ollama", "register_llm_ollama_tools"),
+        ("portmanteau_lmstudio", "register_llm_lmstudio_tools"),
+        ("portmanteau_vllm", "register_llm_vllm_tools"),
+        ("portmanteau_huggingface", "register_llm_huggingface_tools"),
+        ("portmanteau_google_cloud", "register_llm_google_cloud_tools"),
+        ("portmanteau_help", "register_llm_help_tools"),
+        ("portmanteau_gpu", "register_gpu_manager_tools"),
     ]
-    
-    # Log tool registration progress
-    logger.info("Registering core tools...")
-    for module_name, func_name in core_tools:
+
+    # Log portmanteau tool registration progress
+    logger.info("Registering SOTA portmanteau tools...")
+    for module_name, func_name in portmanteau_tools:
         try:
             register_func = safe_import_tool_module(module_name, func_name)
             if register_func:
                 mcp = register_func(mcp)  # Update mcp with the returned instance
                 registration_results[func_name] = True
-                logger.info(f"Successfully registered {func_name}")
+                logger.info(f"Successfully registered portmanteau tool: {func_name}")
             else:
                 registration_results[func_name] = "Import failed"
-                logger.warning(f"Failed to import {func_name}")
+                logger.warning(f"Failed to import portmanteau tool: {func_name}")
         except Exception as e:
-            error_msg = f"Error registering {func_name}: {str(e)}"
+            error_msg = f"Error registering portmanteau tool {func_name}: {str(e)}"
             logger.error(error_msg, exc_info=True)
             registration_results[func_name] = error_msg
-    
+
+    # PORTMANTEAU HELP SYSTEM - Consolidated help operations
+    # Single comprehensive help tool replacing 10+ individual help tools
+    portmanteau_help_tools = [
+        ("portmanteau_help", "register_llm_help_tools"),  # Portmanteau help tool
+    ]
+
+    logger.info("Registering portmanteau help system...")
+    for module_name, func_name in portmanteau_help_tools:
+        try:
+            register_func = safe_import_tool_module(module_name, func_name)
+            if register_func:
+                # Pass register_individual_tools=False to disable individual help tools
+                mcp = register_func(mcp, register_individual_tools=False)
+                registration_results[func_name] = True
+                logger.info(f"Successfully registered portmanteau help tool: {func_name}")
+            else:
+                registration_results[func_name] = "Import failed"
+                logger.warning(f"Failed to import portmanteau help tool: {func_name}")
+        except Exception as e:
+            error_msg = f"Error registering portmanteau help tool {func_name}: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            registration_results[func_name] = error_msg
+
+    # PORTMANTEAU GPU SYSTEM - Consolidated GPU operations
+    # Single comprehensive GPU tool replacing 4+ individual GPU tools
+    portmanteau_gpu_tools = [
+        ("gpu_manager", "register_gpu_manager_tools"),  # Portmanteau GPU tool
+    ]
+
+    logger.info("Registering portmanteau GPU system...")
+    for module_name, func_name in portmanteau_gpu_tools:
+        try:
+            register_func = safe_import_tool_module(module_name, func_name)
+            if register_func:
+                # Pass register_individual_tools=False to disable individual GPU tools
+                mcp = register_func(mcp, register_individual_tools=False)
+                registration_results[func_name] = True
+                logger.info(f"Successfully registered portmanteau GPU tool: {func_name}")
+            else:
+                registration_results[func_name] = "Import failed"
+                logger.warning(f"Failed to import portmanteau GPU tool: {func_name}")
+        except Exception as e:
+            error_msg = f"Error registering portmanteau GPU tool {func_name}: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            registration_results[func_name] = error_msg
+
+    # LEGACY INDIVIDUAL TOOLS - kept for backward compatibility but marked as deprecated
+    # These will be removed in a future version after migration period
+    legacy_core_tools = [
+        ("system_tools", "register_system_tools"),
+        ("monitoring_tools", "register_monitoring_tools"),
+    ]
+
+    # Register legacy tools only if explicitly requested (for migration testing)
+    if os.getenv("LLM_MCP_ENABLE_LEGACY_TOOLS", "").lower() in ("true", "1", "yes"):
+        logger.warning("Registering legacy individual tools - consider migrating to portmanteau interface")
+        for module_name, func_name in legacy_core_tools:
+            try:
+                register_func = safe_import_tool_module(module_name, func_name)
+                if register_func:
+                    mcp = register_func(mcp)
+                    registration_results[f"legacy_{func_name}"] = True
+                    logger.info(f"Registered legacy tool: {func_name}")
+                else:
+                    registration_results[f"legacy_{func_name}"] = "Import failed"
+            except Exception as e:
+                error_msg = f"Error registering legacy tool {func_name}: {str(e)}"
+                logger.error(error_msg)
+                registration_results[f"legacy_{func_name}"] = error_msg
+
     # Model management tools (require basic ML dependencies)
+    # Note: Individual Ollama/LM Studio/vLLM tools are now consolidated into portmanteau tools
+    # and should not be exposed in the UI/UX to prevent duplication
     ml_basic_tools = [
         ("model_tools", "register_model_tools"),
         ("generation_tools", "register_generation_tools"),
-        ("model_management_tools", "register_model_management_tools"),
+        # ("model_management_tools", "register_model_management_tools"),  # DISABLED: Now in portmanteau tools
     ]
     
-    if dependency_status.get('torch', False) and dependency_status.get('transformers', False):
+    # Check for torch and transformers (allow any installed version)
+    torch_installed = False
+    transformers_installed = False
+
+    try:
+        import torch
+        torch_installed = True
+    except ImportError:
+        pass
+
+    try:
+        import transformers
+        transformers_installed = True
+    except ImportError:
+        pass
+
+    if torch_installed and transformers_installed:
         # Log ML tool registration progress
         logger.info("Registering ML tools...")
         for module_name, func_name in ml_basic_tools:
@@ -114,7 +225,7 @@ def register_all_tools(mcp):
                 error_msg = f"Error registering {func_name}: {str(e)}"
                 try:
                     logger.error(error_msg, exc_info=True)
-                except UnicodeEncodeError:
+                except (UnicodeEncodeError, UnicodeDecodeError):
                     # Fallback for Unicode encoding issues
                     logger.error(f"Error registering {func_name}: {type(e).__name__}")
                 registration_results[func_name] = error_msg
@@ -130,75 +241,56 @@ def register_all_tools(mcp):
         for _, func_name in ml_basic_tools:
             registration_results[func_name] = warning_msg
     
-    # Advanced tools with specific requirements
+    # Advanced tools with specific requirements (non-portmanteau)
+    # Note: LoRA, multimodal, and other fine-tuning tools are now consolidated into portmanteau_finetuning
+    # Note: vLLM tools are now consolidated into portmanteau_vllm
     advanced_tools = [
-        # vLLM 1.0+ tools - high priority
+        # vLLM 1.0+ tools - DISABLED: Now consolidated into portmanteau_vllm
+        # {
+        #     "module": "vllm_tools",
+        #     "function": "register_vllm_tools",
+        #     "deps": ["vllm", "torch"],
+        #     "description": "vLLM 1.0+ high-performance inference"
+        # },
+
+        # Portmanteau GPU tools (individual GPU tools now consolidated)
         {
-            "module": "vllm_tools",
-            "function": "register_vllm_tools", 
-            "deps": ["vllm", "torch"],
-            "description": "vLLM 1.0+ high-performance inference"
-        },
-        # Training and fine-tuning
-        {
-            "module": "lora_tools",
-            "function": "register_lora_tools",
-            "deps": ["peft", "torch"],
-            "description": "LoRA parameter-efficient fine-tuning"
-        },
-        
-        # Multimodal capabilities  
-        {
-            "module": "multimodal_tools",
-            "function": "register_multimodal_tools",
-            "deps": ["torch", "transformers"],
-            "description": "Vision and multimodal model support"
-        },
-        
-        # Advanced training methods
-        {
-            "module": "unsloth_tools",
-            "function": "register_unsloth_tools", 
+            "module": "gpu_manager",
+            "function": "register_gpu_manager_tools",
             "deps": ["torch"],
-            "description": "Unsloth efficient fine-tuning"
+            "description": "GPU monitoring and control tools (NVIDIA RTX 4090 optimized)",
+            "kwargs": {"register_individual_tools": False}  # Disable individual GPU tools
         },
-        
+
         {
-            "module": "qloraevolved_tools",
-            "function": "register_qloraevolved_tools",
-            "deps": ["peft", "torch"],
-            "description": "QLoRA evolved training methods"
-        },
-        
-        # Specialized architectures
-        {
-            "module": "sparse_tools",
-            "function": "register_sparse_tools",
-            "deps": ["torch"],
-            "description": "Sparse model optimization"
-        },
-        
-        {
-            "module": "moe_tools", 
+            "module": "moe_tools",
             "function": "register_moe_tools",
             "deps": ["torch"],
             "description": "Mixture of Experts models"
         },
-        
-        # DoRA (Weight-Decomposed Low-Rank Adaptation)
-        {
-            "module": "dora_tools",
-            "function": "register_dora_tools",
-            "deps": ["peft", "torch"],
-            "description": "DoRA weight decomposition"
-        },
-        
-        # UI and visualization
+
+        # UI and visualization tools
         {
             "module": "gradio_tools",
             "function": "register_gradio_tools",
             "deps": ["gradio"],
             "description": "Gradio web interface tools"
+        },
+
+        # Legacy fine-tuning tools (available via LLM_MCP_ENABLE_LEGACY_TOOLS=true)
+        # These are now consolidated into portmanteau_finetuning but kept for migration
+        {
+            "module": "unsloth_tools",
+            "function": "register_unsloth_tools",
+            "deps": ["torch"],
+            "description": "Unsloth efficient fine-tuning (LEGACY - use portmanteau_finetuning)"
+        },
+
+        {
+            "module": "qloraevolved_tools",
+            "function": "register_qloraevolved_tools",
+            "deps": ["peft", "torch"],
+            "description": "QLoRA evolved training methods (LEGACY - use portmanteau_finetuning)"
         },
     ]
     
@@ -222,7 +314,9 @@ def register_all_tools(mcp):
         try:
             register_func = safe_import_tool_module(module_name, func_name)
             if register_func:
-                result = register_func(mcp)
+                # Pass kwargs if specified in tool config
+                kwargs = tool_config.get("kwargs", {})
+                result = register_func(mcp, **kwargs)
                 
                 # Handle different return types from registration functions
                 if isinstance(result, dict):

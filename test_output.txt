@@ -1,0 +1,38 @@
+============================= test session starts =============================
+platform win32 -- Python 3.10.11, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\sandr\AppData\Local\Programs\Python\Python310\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'default'
+metadata: {'Python': '3.10.11', 'Platform': 'Windows-10-10.0.28020-SP0', 'Packages': {'pytest': '8.4.2', 'pluggy': '1.6.0'}, 'Plugins': {'anyio': '4.11.0', 'respx': '0.22.0', 'dash': '3.2.0', 'hypothesis': '6.148.8', 'aio': '2.0.0', 'asyncio': '1.2.0', 'cov': '7.0.0', 'html': '4.1.1', 'metadata': '3.1.1', 'mock': '3.15.1', 'timeout': '2.4.0', 'xdist': '3.8.0'}, 'JAVA_HOME': 'C:\\Program Files\\Eclipse Adoptium\\jdk-25.0.1.8-hotspot'}
+rootdir: D:\Dev\repos\local-llm-mcp
+configfile: pyproject.toml
+plugins: anyio-4.11.0, respx-0.22.0, dash-3.2.0, hypothesis-6.148.8, aio-2.0.0, asyncio-1.2.0, cov-7.0.0, html-4.1.1, metadata-3.1.1, mock-3.15.1, timeout-2.4.0, xdist-3.8.0
+asyncio: mode=auto, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 0 items / 1 error
+
+=================================== ERRORS ====================================
+____________ ERROR collecting tests/test_generation_integration.py ____________
+tests\test_generation_integration.py:5: in <module>
+    from llm_mcp.tools.generation_tools import GenerationManager, GenerationConfig
+src\llm_mcp\tools\generation_tools.py:11: in <module>
+    from ..services.provider_factory import _provider_factory
+src\llm_mcp\services\provider_factory.py:9: in <module>
+    from ..providers.vllm_v1 import VLLMv1Provider as VLLMProvider
+src\llm_mcp\providers\vllm_v1\__init__.py:5: in <module>
+    from .models import VLLMModel, VLLMMultimodalModel, ModelType, ModelCapability
+src\llm_mcp\providers\vllm_v1\models.py:179: in <module>
+    ModelCapability.PYTHON
+C:\Users\sandr\AppData\Local\Programs\Python\Python310\lib\enum.py:437: in __getattr__
+    raise AttributeError(name) from None
+E   AttributeError: PYTHON
+------------------------------- Captured stdout -------------------------------
+2026-01-02 04:46:11 [debug    ] Package version OK             package=fastmcp version=2.14.1
+2026-01-02 04:46:11 [warning  ] Outdated package version       installed=2.12.5 package=pydantic required=2.8.0
+2026-01-02 04:46:11 [warning  ] Outdated package version       installed=4.25.0 package=transformers required=4.44.0
+2026-01-02 04:46:11 [debug    ] Package version OK             package=torch version=2.4.0+cu124
+2026-01-02 04:46:11 [warning  ] Package not installed          package=vllm
+2026-01-02 04:46:11 [warning  ] Package not installed          package=peft
+2026-01-02 04:46:11 [debug    ] Package version OK             package=accelerate version=1.10.1
+=========================== short test summary info ===========================
+ERROR tests/test_generation_integration.py - AttributeError: PYTHON
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+============================== 1 error in 8.16s ===============================

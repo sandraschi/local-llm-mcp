@@ -305,3 +305,24 @@ def reload_config(config_path: Optional[Union[str, Path]] = None) -> Config:
     global _config_instance
     _config_instance = Config.load(config_path)
     return _config_instance
+
+
+class Settings:
+    """API/compat settings with .default_provider and .providers (used by model_service and API)."""
+    def __init__(self) -> None:
+        self.default_provider = "vllm"
+        self.providers: Dict[str, Any] = {}
+
+
+_settings_instance: Optional[Settings] = None
+
+
+def get_settings() -> Settings:
+    """Return settings for API and model_service (default_provider, providers from Config)."""
+    global _settings_instance
+    if _settings_instance is None:
+        c = get_config()
+        _settings_instance = Settings()
+        _settings_instance.default_provider = c.model.default_provider
+        _settings_instance.providers = getattr(c, "providers", {})
+    return _settings_instance

@@ -1,4 +1,4 @@
-﻿# LLM MCP Chat Terminal
+# LLM MCP Chat Terminal
 
 An advanced chat terminal for interacting with various LLM providers, featuring personas, rulebooks, and powerful
 conversation management.

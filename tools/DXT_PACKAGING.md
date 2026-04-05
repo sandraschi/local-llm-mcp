@@ -1,4 +1,4 @@
-﻿# DXT Packaging for LLM MCP Server
+# DXT Packaging for LLM MCP Server
 
 This document explains how to package the LLM MCP Server as a DXT (Desktop eXtension) for use with Claude Desktop and
 other MCP-compatible applications.

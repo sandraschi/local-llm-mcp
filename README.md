@@ -1,30 +1,53 @@
-# 🚀 Local LLM MCP Server
+# Local LLM MCP Server
 
-A **production-ready** FastMCP 2.12+ compliant server for comprehensive LLM management and integration with **6 working providers** and **15+ tools**.
+A **production-ready** FastMCP 2.12+ compliant server for comprehensive LLM management and integration with **6 working providers** and **5 SOTA portmanteau tools**.
 
 [![FastMCP](https://img.shields.io/badge/FastMCP-2.12.3-blue.svg)](https://github.com/jlowin/fastmcp)
 [![MCP SDK](https://img.shields.io/badge/MCP%20SDK-1.13.1-green.svg)](https://github.com/modelcontextprotocol/python-sdk)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🌟 **Status: EXCELLENT** ✅
+##  **Status: EXCELLENT** 
 
 **Server Status**: Fully functional with robust error handling  
 **Provider Support**: 6/8 providers working (75% success rate)  
-**Tool Registration**: 7/15 tools working (47% success rate)  
+**Tool Architecture**: 5 SOTA portmanteau tools (Advanced Memory MCP pattern)  
 **Architecture**: Production-ready with graceful degradation
 
-## 🔑 **Key Features**
+##  **Key Features**
 
-- **✅ Multi-Provider Support**: Ollama, Anthropic, OpenAI, Gemini, Perplexity, LMStudio
-- **✅ High-Performance Inference**: Optimized with vLLM 0.8.3 (Python 3.13 compatible)
-- **✅ Comprehensive Tool Ecosystem**: 15+ tools for model management, training, and monitoring
-- **✅ Robust Error Handling**: Server continues running despite individual tool failures
-- **✅ Modern Architecture**: FastMCP 2.12+ with MCP SDK 1.13.1
-- **✅ Local-First Design**: Excellent support for local LLM inference
-- **✅ Cloud Integration**: Seamless integration with major cloud providers
+- ** Multi-Provider Support**: Ollama, Anthropic, OpenAI, Gemini, Perplexity, LMStudio
+- ** High-Performance Inference**: Optimized with vLLM 0.8.3 (Python 3.13 compatible)
+- ** SOTA Portmanteau Architecture**: 5 consolidated tools following Advanced Memory MCP patterns
+- ** Robust Error Handling**: Server continues running despite individual tool failures
+- ** Modern Architecture**: FastMCP 2.12+ with MCP SDK 1.13.1
+- ** Local-First Design**: Excellent support for local LLM inference
+- ** Cloud Integration**: Seamless integration with major cloud providers
 
-## 🚀 Performance
+##  **SOTA Portmanteau Architecture**
+
+Following the **Advanced Memory MCP** pattern, we've consolidated 30+ individual tools into **5 SOTA portmanteau tools** for better UX and maintainability:
+
+### **Core Portmanteau Tools**
+- **`llm_health`**: Health monitoring, system info, metrics, and server management
+- **`llm_models`**: Model registration, management, and provider operations (Ollama, LM Studio)
+- **`llm_generation`**: Text generation, chat completion, and embeddings
+- **`llm_multimodal`**: Image analysis, generation, and comparison
+- **`llm_finetuning`**: LoRA, Sparse, and DoRA fine-tuning operations
+
+### **Usage Example**
+```python
+# Instead of 15+ individual tool calls, use consolidated operations:
+await llm_health("health_check")           # Overall system health
+await llm_models("list_models")            # All available models
+await llm_generation("generate_text", model="llama3", prompt="Hello world")
+await llm_finetuning("lora_load_adapter", adapter_name="my_adapter")
+```
+
+### **Migration Support**
+Legacy individual tools are available during migration via `LLM_MCP_ENABLE_LEGACY_TOOLS=true` environment variable.
+
+##  Performance
 
 - **vLLM Engine**: Up to 19x faster than traditional serving methods
 - **FlashAttention 3**: Optimized attention mechanisms for efficiency
@@ -32,42 +55,35 @@ A **production-ready** FastMCP 2.12+ compliant server for comprehensive LLM mana
 - **Continuous Batching**: Maximize GPU utilization
 - **Multi-GPU Support**: Scale across multiple GPUs with tensor parallelism
 
-## 🚀 **Quick Start**
+##  **Quick Start**
 
 ### **Prerequisites**
 - Python 3.10+ (tested with Python 3.13.5)
 - 8GB+ RAM (16GB+ recommended for larger models)
 - Windows, macOS, or Linux
 
-### **Installation**
+##  Installation
 
-1. **Clone and setup**:
-   ```bash
-   git clone https://github.com/sandraschi/local-llm-mcp.git
-   cd local-llm-mcp
-   
-   # Create virtual environment
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   
-   # Install dependencies
-   pip install -e .
-   ```
+### Prerequisites
+- [uv](https://docs.astral.sh/uv/) installed (RECOMMENDED)
+- Python 3.12+
 
-2. **Start the server**:
-   ```bash
-   python -m src.llm_mcp.main
-   ```
+###  Quick Start
+Run immediately via `uvx`:
+```bash
+uvx llm-mcp
+```
 
-3. **Configure providers** (optional):
-   ```bash
-   # Set API keys for cloud providers
-   export ANTHROPIC_API_KEY="your-key"
-   export OPENAI_API_KEY="your-key"
-   export GOOGLE_API_KEY="your-key"
-   export PERPLEXITY_API_KEY="your-key"
-   ```
-
+###  Claude Desktop Integration
+Add to your `claude_desktop_config.json`:
+```json
+"mcpServers": {
+  "llm-mcp": {
+    "command": "uv",
+    "args": ["--directory", "D:/Dev/repos/local-llm-mcp", "run", "llm-mcp"]
+  }
+}
+```
 ### **Docker Setup** (Optional)
 
 For vLLM high-performance inference:
@@ -116,75 +132,75 @@ export LLM_MCP_DEFAULT_PROVIDER=vllm
 export LLM_MCP_LOG_LEVEL=INFO
 ```
 
-## 🛠️ **Working Providers** ✅
+##  **Working Providers** 
 
 | Provider | Status | Capabilities | Setup |
 |----------|--------|--------------|-------|
-| **Ollama** | ✅ Working | Local LLMs, Streaming, Model Management | `ollama serve` |
-| **Anthropic** | ✅ Working | Claude 3.x, Chat, Text Generation | API Key Required |
-| **OpenAI** | ✅ Working | GPT-4, GPT-3.5, Embeddings, Vision | API Key Required |
-| **Gemini** | ✅ Working | Gemini 1.5, Multimodal, Chat | API Key Required |
-| **Perplexity** | ✅ Working | Sonar models, Web search, Real-time | API Key Required |
-| **LMStudio** | ✅ Working | Local models, Chat, Streaming | LM Studio App |
-| **vLLM** | ⚠️ Disabled | High-performance inference | Import issues |
-| **HuggingFace** | ❌ Needs Work | Transformers, Local models | Missing methods |
+| **Ollama** |  Working | Local LLMs, Streaming, Model Management | `ollama serve` |
+| **Anthropic** |  Working | Claude 3.x, Chat, Text Generation | API Key Required |
+| **OpenAI** |  Working | GPT-4, GPT-3.5, Embeddings, Vision | API Key Required |
+| **Gemini** |  Working | Gemini 1.5, Multimodal, Chat | API Key Required |
+| **Perplexity** |  Working | Sonar models, Web search, Real-time | API Key Required |
+| **LMStudio** |  Working | Local models, Chat, Streaming | LM Studio App |
+| **vLLM** |  Disabled | High-performance inference | Import issues |
+| **HuggingFace** |  Needs Work | Transformers, Local models | Missing methods |
 
-## 🛠️ **Available Tools**
+##  **Available Tools**
 
-### **Core Tools** ✅ (Always Available)
+### **Core Tools**  (Always Available)
 - **Help Tools**: `list_tools`, `get_tool_help`, `search_tools` - Tool discovery and documentation
 - **System Tools**: `get_system_info`, `get_environment` - System information and metrics
 - **Monitoring Tools**: `get_metrics`, `health_check` - Performance monitoring
 
-### **Basic ML Tools** ✅ (Working)
+### **Basic ML Tools**  (Working)
 - **Model Tools**: `list_models`, `get_model_info`, `ollama_list_models` - Model discovery
 - **Model Registration**: Automatic registration from all providers
 
-### **Advanced Tools** ⚠️ (Partial)
-- **✅ Multimodal Tools**: Vision and document processing
-- **✅ Unsloth Tools**: Efficient fine-tuning (requires Unsloth)
-- **✅ Sparse Tools**: Model optimization and compression
-- **❌ Generation Tools**: Text generation (needs `stateful` fix)
-- **❌ Model Management**: Load/unload models (needs lifecycle fix)
-- **❌ vLLM Tools**: High-performance inference (dependency issues)
-- **❌ Training Tools**: LoRA, QLoRA, DoRA (parameter issues)
-- **❌ MoE Tools**: Mixture of Experts (import issues)
-- **❌ Gradio Tools**: Web UI (missing dependency)
+### **Advanced Tools**  (Partial)
+- ** Multimodal Tools**: Vision and document processing
+- ** Unsloth Tools**: Efficient fine-tuning (requires Unsloth)
+- ** Sparse Tools**: Model optimization and compression
+- ** Generation Tools**: Text generation (needs `stateful` fix)
+- ** Model Management**: Load/unload models (needs lifecycle fix)
+- ** vLLM Tools**: High-performance inference (dependency issues)
+- ** Training Tools**: LoRA, QLoRA, DoRA (parameter issues)
+- ** MoE Tools**: Mixture of Experts (import issues)
+- ** Gradio Tools**: Web UI (missing dependency)
 
-## 🚀 Performance Comparison
+##  Performance Comparison
 
 | Provider | Tokens/Second | Memory Usage | Setup Complexity | Multimodal |
 |----------|---------------|--------------|------------------|------------|
-| **vLLM 1.0+ (This)** | **793 TPS** | Optimized | Simple | ✅ Vision |
-| Ollama | 41 TPS | High | Very Simple | ❌ |
+| **vLLM 1.0+ (This)** | **793 TPS** | Optimized | Simple |  Vision |
+| Ollama | 41 TPS | High | Very Simple |  |
 | LM Studio | ~60 TPS | Medium | GUI-based | Limited |
-| OpenAI API | ~100 TPS | N/A (Cloud) | API Key | ✅ Full |
+| OpenAI API | ~100 TPS | N/A (Cloud) | API Key |  Full |
 
 > **19x faster than Ollama** with local inference and no API costs!
 
-## 🔧 Architecture
+##  Architecture
 
 ### Provider System
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   MCP Client    │◄──►│   FastMCP 2.12+  │◄──►│  Tool Registry  │
-│   (Claude etc)  │    │     Server        │    │  (Error Safe)   │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                                │
-                                ▼
-                        ┌──────────────────┐
-                        │  Provider Layer   │
-                        └─────────┬────────┘
-                                  │
-        ┌─────────────────────────┼─────────────────────────┐
-        │                         │                         │
-        ▼                         ▼                         ▼
-┌──────────────┐         ┌──────────────┐         ┌──────────────┐
-│  vLLM 1.0+   │         │    Ollama     │         │   OpenAI     │
-│ (793 TPS)    │         │  (41 TPS)     │         │   (Cloud)    │
-│ FlashAtt 3   │         │   Simple      │         │  Full API    │
-│ Multimodal   │         │   Local       │         │   Support    │
-└──────────────┘         └──────────────┘         └──────────────┘
+        
+   MCP Client       FastMCP 2.12+    Tool Registry  
+   (Claude etc)           Server              (Error Safe)   
+        
+                                
+                                
+                        
+                          Provider Layer   
+                        
+                                  
+        
+                                                          
+                                                          
+                  
+  vLLM 1.0+                Ollama                 OpenAI     
+ (793 TPS)               (41 TPS)                 (Cloud)    
+ FlashAtt 3               Simple                 Full API    
+ Multimodal               Local                   Support    
+                  
 ```
 
 ### Key Components
@@ -194,7 +210,7 @@ export LLM_MCP_LOG_LEVEL=INFO
 - **Configuration**: YAML + environment variables with validation
 - **Error Isolation**: Tool registration with recovery mechanisms
 
-## 🧪 Development
+##  Development
 
 ### Running Tests
 ```bash
@@ -224,7 +240,7 @@ mypy src/
 3. Add to `tools/__init__.py` advanced_tools list
 4. Handle dependencies and error cases
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Common Issues
 
@@ -265,7 +281,7 @@ export LLM_MCP_LOG_LEVEL=DEBUG
 tail -f logs/llm_mcp.log
 ```
 
-## 📈 Monitoring
+##  Monitoring
 
 ### Performance Metrics
 - **Tokens/second**: Real-time throughput measurement
@@ -281,7 +297,7 @@ curl -X POST "http://localhost:8000" \
   -d '{"tool": "health_check"}'
 ```
 
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -289,11 +305,11 @@ curl -X POST "http://localhost:8000" \
 4. Ensure code quality (black, ruff, mypy)
 5. Submit pull request
 
-## 📄 License
+##  License
 
 MIT License - see [LICENSE](LICENSE) file.
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - **FastMCP**: Modern MCP server framework
 - **vLLM**: High-performance LLM inference
@@ -302,6 +318,18 @@ MIT License - see [LICENSE](LICENSE) file.
 
 ---
 
-**Built for performance, reliability, and developer experience** 🚀
+**Built for performance, reliability, and developer experience** 
 
 > This is a FIXED version (September 2025) that resolves all critical startup issues and modernizes the codebase for production use.
+
+
+##  Webapp Dashboard
+
+This MCP server includes a free, premium web interface for monitoring and control.
+By default, the web dashboard runs on port **10832**.
+*(Assigned ports: **10832** (Web dashboard frontend), **10833** (Web dashboard backend (API)))*
+
+To start the webapp:
+1. Navigate to the `webapp` (or `web`, `frontend`) directory.
+2. Run `start.bat` (Windows) or `./start.ps1` (PowerShell).
+3. Open `http://localhost:10832` in your browser.

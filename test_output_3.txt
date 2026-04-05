@@ -1,0 +1,44 @@
+============================= test session starts =============================
+platform win32 -- Python 3.10.11, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\sandr\AppData\Local\Programs\Python\Python310\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'default'
+metadata: {'Python': '3.10.11', 'Platform': 'Windows-10-10.0.28020-SP0', 'Packages': {'pytest': '8.4.2', 'pluggy': '1.6.0'}, 'Plugins': {'anyio': '4.11.0', 'respx': '0.22.0', 'dash': '3.2.0', 'hypothesis': '6.148.8', 'aio': '2.0.0', 'asyncio': '1.2.0', 'cov': '7.0.0', 'html': '4.1.1', 'metadata': '3.1.1', 'mock': '3.15.1', 'timeout': '2.4.0', 'xdist': '3.8.0'}, 'JAVA_HOME': 'C:\\Program Files\\Eclipse Adoptium\\jdk-25.0.1.8-hotspot'}
+rootdir: D:\Dev\repos\local-llm-mcp
+configfile: pyproject.toml
+plugins: anyio-4.11.0, respx-0.22.0, dash-3.2.0, hypothesis-6.148.8, aio-2.0.0, asyncio-1.2.0, cov-7.0.0, html-4.1.1, metadata-3.1.1, mock-3.15.1, timeout-2.4.0, xdist-3.8.0
+asyncio: mode=auto, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 0 items / 1 error
+
+=================================== ERRORS ====================================
+____________ ERROR collecting tests/test_generation_integration.py ____________
+ImportError while importing test module 'D:\Dev\repos\local-llm-mcp\tests\test_generation_integration.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Users\sandr\AppData\Local\Programs\Python\Python310\lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests\test_generation_integration.py:7: in <module>
+    from llm_mcp.services.provider import BaseProvider
+E   ModuleNotFoundError: No module named 'llm_mcp.services.provider'
+------------------------------- Captured stdout -------------------------------
+2026-01-02 05:17:27 [debug    ] Package version OK             package=fastmcp version=2.14.1
+2026-01-02 05:17:27 [warning  ] Outdated package version       installed=2.12.5 package=pydantic required=2.8.0
+2026-01-02 05:17:27 [warning  ] Outdated package version       installed=4.25.0 package=transformers required=4.44.0
+2026-01-02 05:17:27 [debug    ] Package version OK             package=torch version=2.4.0+cu124
+2026-01-02 05:17:27 [warning  ] Package not installed          package=vllm
+2026-01-02 05:17:27 [warning  ] Package not installed          package=peft
+2026-01-02 05:17:27 [debug    ] Package version OK             package=accelerate version=1.10.1
+2026-01-02 05:17:46 [info     ] No config file found, using defaults path=config.yaml
+============================== warnings summary ===============================
+C:\Users\sandr\AppData\Local\Programs\Python\Python310\lib\site-packages\google\api_core\_python_version_support.py:266
+  C:\Users\sandr\AppData\Local\Programs\Python\Python310\lib\site-packages\google\api_core\_python_version_support.py:266: FutureWarning: You are using a Python version (3.10.11) which Google will stop supporting in new releases of google.api_core once it reaches its end of life (2026-10-04). Please upgrade to the latest Python version, or at least Python 3.11, to continue receiving updates for google.api_core past that date.
+    warnings.warn(message, FutureWarning)
+
+src\llm_mcp\services\provider_factory.py:134
+  D:\Dev\repos\local-llm-mcp\src\llm_mcp\services\provider_factory.py:134: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    _provider_factory = ProviderFactory(_config.dict())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+ERROR tests/test_generation_integration.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+======================== 2 warnings, 1 error in 20.23s ========================

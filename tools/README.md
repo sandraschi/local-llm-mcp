@@ -1,4 +1,4 @@
-﻿# Windows Compliance Tools
+# Windows Compliance Tools
 
 This directory contains tools to enforce Windows/PowerShell coding standards across the project.
 

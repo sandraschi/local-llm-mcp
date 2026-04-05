@@ -1,0 +1,484 @@
+{
+  "examples": [
+    {
+      "title": "Basic Text Generation",
+      "description": "Simple text generation using the generate_text tool",
+      "code": "result = await generate_text(model='llama3', prompt='Explain machine learning in simple terms')",
+      "expected_output": {
+        "success": true,
+        "data": "Machine learning is a type of artificial intelligence that allows computers to learn and improve from experience without being explicitly programmed. It works by feeding large amounts of data to algorithms that can identify patterns and make predictions.",
+        "metadata": {
+          "model": "llama3",
+          "tokens_used": 47,
+          "generation_time": 0.8
+        }
+      },
+      "tags": ["basic", "generation", "text"]
+    },
+    {
+      "title": "Chat Completion with Context",
+      "description": "Multi-turn conversation using chat_completion tool",
+      "code": "result = await chat_completion(model='llama3', messages=[{'role': 'user', 'content': 'What is the capital of France?'}])",
+      "expected_output": {
+        "success": true,
+        "data": "The capital of France is Paris.",
+        "metadata": {
+          "model": "llama3",
+          "conversation_length": 1,
+          "total_tokens": 12
+        }
+      },
+      "tags": ["chat", "conversation", "basic"]
+    },
+    {
+      "title": "Model Health Check",
+      "description": "Check overall system health using portmanteau health tool",
+      "code": "result = await llm_health_tool('health_check')",
+      "expected_output": {
+        "success": true,
+        "health_score": 95,
+        "issues": [],
+        "system": {
+          "cpu": {"cpu_percent": [15.2]},
+          "memory": {"percent": 45.8},
+          "disk": {"percent": 32.1}
+        },
+        "services": {
+          "ollama": {"status": "running"},
+          "lmstudio": {"status": "stopped"}
+        }
+      },
+      "tags": ["health", "monitoring", "system"]
+    },
+    {
+      "title": "List Available Models",
+      "description": "Discover all available models across providers",
+      "code": "result = await llm_models_tool('list_models')",
+      "expected_output": {
+        "success": true,
+        "data": [
+          {
+            "name": "llama3:8b",
+            "provider": "ollama",
+            "size": "4.7GB",
+            "status": "available"
+          },
+          {
+            "name": "mistral-7b",
+            "provider": "lmstudio",
+            "size": "4.1GB",
+            "status": "loaded"
+          }
+        ],
+        "count": 2,
+        "providers": ["ollama", "lmstudio"]
+      },
+      "tags": ["models", "discovery", "providers"]
+    },
+    {
+      "title": "Text Embedding Generation",
+      "description": "Generate vector embeddings for text similarity",
+      "code": "result = await embed_text(text=['Hello world', 'Machine learning'], model='text-embedding-ada-002')",
+      "expected_output": {
+        "success": true,
+        "data": {
+          "embeddings": [
+            [0.123, -0.456, 0.789, "..."],
+            [-0.321, 0.654, -0.987, "..."]
+          ],
+          "dimensions": 1536,
+          "model": "text-embedding-ada-002"
+        },
+        "metadata": {
+          "texts_processed": 2,
+          "total_tokens": 6
+        }
+      },
+      "tags": ["embeddings", "similarity", "vectors"]
+    },
+    {
+      "title": "Image Analysis",
+      "description": "Analyze image content using multimodal capabilities",
+      "code": "result = await llm_multimodal_tool('analyze_image', image='/path/to/photo.jpg')",
+      "expected_output": {
+        "success": true,
+        "description": "A beautiful sunset over mountains with vibrant orange and purple colors in the sky",
+        "tags": ["sunset", "mountains", "nature", "landscape"],
+        "metadata": {
+          "model": "clip-ViT-B-32",
+          "confidence": 0.92,
+          "processing_time": 1.2
+        }
+      },
+      "tags": ["multimodal", "vision", "analysis"]
+    },
+    {
+      "title": "Image Generation",
+      "description": "Generate images from text descriptions",
+      "code": "result = await llm_multimodal_tool('generate_image', prompt='A serene lake at dawn with mist rising from the water', width=512, height=512)",
+      "expected_output": {
+        "success": true,
+        "image_data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
+        "metadata": {
+          "model": "stable-diffusion-xl",
+          "width": 512,
+          "height": 512,
+          "steps": 50,
+          "guidance_scale": 7.5
+        }
+      },
+      "tags": ["multimodal", "generation", "images"]
+    },
+    {
+      "title": "Model Fine-tuning Setup",
+      "description": "Prepare a model for LoRA fine-tuning",
+      "code": "result = await llm_finetuning_tool('lora_prepare', model_name='llama3', lora_rank=8, lora_alpha=16)",
+      "expected_output": {
+        "success": true,
+        "config": {
+          "model_name": "llama3",
+          "lora_rank": 8,
+          "lora_alpha": 16,
+          "target_modules": ["q_proj", "v_proj"],
+          "lora_dropout": 0.1
+        },
+        "hardware_check": {
+          "gpu_memory_required": "8GB",
+          "available_memory": "12GB",
+          "compatible": true
+        }
+      },
+      "tags": ["finetuning", "lora", "training"]
+    },
+    {
+      "title": "Ollama Model Management",
+      "description": "Download and manage models with Ollama portmanteau tool",
+      "code": "await llm_ollama_tool('pull_model', model='llama3:8b')\nmodels = await llm_ollama_tool('list_models')\nawait llm_ollama_tool('load_model', model='llama3:8b')",
+      "expected_output": {
+        "success": true,
+        "operations_completed": 3,
+        "models_available": ["llama3:8b"],
+        "loaded_models": ["llama3:8b"]
+      },
+      "tags": ["ollama", "portmanteau", "model-management"]
+    },
+    {
+      "title": "Advanced Text Generation",
+      "description": "Text generation with advanced parameters",
+      "code": "result = await llm_generation_tool('generate_text', model='llama3', prompt='Write a Python function', temperature=0.1, max_tokens=300, frequency_penalty=0.3)",
+      "expected_output": {
+        "success": true,
+        "data": "def calculate_fibonacci(n):\n    if n <= 1:\n        return n\n    return calculate_fibonacci(n-1) + calculate_fibonacci(n-2)",
+        "metadata": {
+          "model": "llama3",
+          "temperature": 0.1,
+          "max_tokens": 300,
+          "tokens_used": 45,
+          "finish_reason": "stop"
+        }
+      },
+      "tags": ["generation", "advanced", "parameters"]
+    },
+    {
+      "title": "System Resource Monitoring",
+      "description": "Monitor system resources during operations",
+      "code": "result = await llm_health_tool('get_metrics', name='cpu_percent', since_minutes=5)",
+      "expected_output": {
+        "success": true,
+        "data": {
+          "metric_name": "cpu_percent",
+          "values": [15.2, 18.7, 12.3, 22.1, 16.8],
+          "timestamps": ["10:30", "10:31", "10:32", "10:33", "10:34"],
+          "average": 17.02,
+          "peak": 22.1
+        },
+        "metadata": {
+          "time_range": "5 minutes",
+          "data_points": 5,
+          "sampling_interval": "1 minute"
+        }
+      },
+      "tags": ["monitoring", "metrics", "performance"]
+    },
+    {
+      "title": "Error Handling Example",
+      "description": "Proper error handling for failed operations",
+      "code": "result = await generate_text(model='nonexistent-model', prompt='test')",
+      "expected_output": {
+        "success": false,
+        "error": "Model 'nonexistent-model' not found. Available models: llama3, mistral, phi3",
+        "next_steps": [
+          "Check available models with list_models()",
+          "Use a valid model name from the list",
+          "Try loading the model first if it's not available"
+        ],
+        "available_models": ["llama3", "mistral", "phi3"]
+      },
+      "tags": ["error-handling", "debugging", "recovery"]
+    },
+    {
+      "title": "Batch Text Processing",
+      "description": "Process multiple texts efficiently",
+      "code": "results = []\nfor prompt in ['Summarize AI', 'Explain quantum', 'Code a function']:\n    result = await generate_text(model='llama3', prompt=prompt, max_tokens=100)\n    results.append(result['data'])",
+      "expected_output": {
+        "success": true,
+        "processed_texts": 3,
+        "results": [
+          "AI is technology that enables machines to perform tasks that typically require human intelligence...",
+          "Quantum computing uses quantum mechanics principles like superposition and entanglement...",
+          "def greet_user(name):\n    return f'Hello, {name}! Welcome to our application.'"
+        ],
+        "total_tokens": 285,
+        "average_time": 0.8
+      },
+      "tags": ["batch", "processing", "efficiency"]
+    },
+    {
+      "title": "Model Comparison",
+      "description": "Compare outputs from different models",
+      "code": "models = ['llama3', 'mistral']\nresults = {}\nfor model in models:\n    result = await generate_text(model=model, prompt='Explain recursion')\n    results[model] = result['data']",
+      "expected_output": {
+        "success": true,
+        "comparisons": {
+          "llama3": "Recursion is a programming technique where a function calls itself to solve a problem...",
+          "mistral": "Recursion occurs when a function invokes itself during its execution...",
+        },
+        "analysis": {
+          "similarity_score": 0.87,
+          "llama3_length": 142,
+          "mistral_length": 135,
+          "llama3_time": 0.9,
+          "mistral_time": 0.7
+        }
+      },
+      "tags": ["comparison", "models", "evaluation"]
+    },
+    {
+      "title": "Interactive Chat Session",
+      "description": "Maintain conversation context across multiple turns",
+      "code": "messages = [{'role': 'user', 'content': 'Help me learn Python'}]\nresponse1 = await chat_completion(model='llama3', messages=messages)\nmessages.append({'role': 'assistant', 'content': response1['data']})\nmessages.append({'role': 'user', 'content': 'Show me a loop example'})\nresponse2 = await chat_completion(model='llama3', messages=messages)",
+      "expected_output": {
+        "success": true,
+        "conversation": [
+          {"turn": 1, "user": "Help me learn Python", "assistant": "I'd be happy to help you learn Python! Python is a versatile programming language..."},
+          {"turn": 2, "user": "Show me a loop example", "assistant": "Here's a simple for loop in Python:\n\nfor i in range(5):\n    print(f'Count: {i}')"}
+        ],
+        "total_turns": 2,
+        "context_retained": true
+      },
+      "tags": ["chat", "conversation", "context"]
+    },
+    {
+      "title": "Ollama Model Management",
+      "description": "Download and manage models with Ollama portmanteau tool",
+      "code": "await llm_ollama_tool('pull_model', model='llama3:8b')\nmodels = await llm_ollama_tool('list_models')\nawait llm_ollama_tool('load_model', model='llama3:8b')",
+      "expected_output": {
+        "success": true,
+        "operations_completed": 3,
+        "models_available": ["llama3:8b"],
+        "loaded_models": ["llama3:8b"]
+      },
+      "tags": ["ollama", "portmanteau", "model-management"]
+    },
+    {
+      "title": "GPU Memory Management",
+      "description": "Monitor and optimize NVIDIA RTX 4090 GPU memory",
+      "code": "status = await gpu_status()\nif status['gpus'][0]['memory_utilization'] > 85:\n    await gpu_clear_memory(gpu_id=0)\n    optimized = await gpu_optimize(gpu_id=0)\n    print(f'Freed {optimized[\"memory_freed_mb\"]:.1f}MB')",
+      "expected_output": {
+        "success": true,
+        "gpu_id": 0,
+        "memory_freed_mb": 2048.5,
+        "current_memory_utilization": 45.2,
+        "optimization_performed": true
+      },
+      "tags": ["gpu", "memory", "optimization", "rtx-4090"]
+    },
+    {
+      "title": "GPU Health Monitoring",
+      "description": "Comprehensive GPU health check with recommendations",
+      "code": "health = await gpu_health_check(gpu_id=0)\nprint(f'Health Score: {health[\"health_score\"]}/100')\nif health['alerts']:\n    print('Alerts:', health['alerts'])",
+      "expected_output": {
+        "success": true,
+        "health_score": 92,
+        "gpu_status": {
+          "memory_utilization": 67.3,
+          "gpu_utilization": 45.8,
+          "temperature": 72
+        },
+        "alerts": [],
+        "recommendations": ["GPU status looks good. No immediate action required."]
+      },
+      "tags": ["gpu", "health", "monitoring", "diagnostics"]
+    },
+    {
+      "title": "Hugging Face Model Management",
+      "description": "Search and download models from Hugging Face Hub (supports gated models like FLUX)",
+      "code": "models = await llm_huggingface_tool('search_models', query='flux')\ninfo = await llm_huggingface_tool('get_model_info', model_id='blackforestlabs/FLUX.1-dev')\ndownload = await llm_huggingface_tool('download_model', model_id='blackforestlabs/FLUX.1-dev', local_path='./models')",
+      "expected_output": {
+        "success": true,
+        "search_results": 8,
+        "model_info": {
+          "id": "blackforestlabs/FLUX.1-dev",
+          "downloads": 50000,
+          "likes": 1200,
+          "pipeline_tag": "text-to-image",
+          "tags": ["diffusion", "text-to-image", "flux"]
+        },
+        "download_path": "./models/blackforestlabs/FLUX.1-dev",
+        "auth_used": true
+      },
+      "tags": ["huggingface", "models", "download", "gated", "flux", "portmanteau"]
+    },
+    {
+      "title": "Google Cloud Gemini Model Usage",
+      "description": "Use Gemini 3 Flash and other Google Cloud AI models",
+      "code": "auth = await llm_google_cloud_tool('authenticate')\nmodels = await llm_google_cloud_tool('list_models')\ninfo = await llm_google_cloud_tool('get_model_info', model_id='gemini-3.0-flash-exp')\ngeneration = await llm_google_cloud_tool('generate_text', model_id='gemini-3.0-flash-exp', prompt='Explain quantum computing')",
+      "expected_output": {
+        "auth_success": true,
+        "models_available": 5,
+        "gemini_3_info": {
+          "id": "gemini-3.0-flash-exp",
+          "name": "Gemini 3.0 Flash (Experimental)",
+          "capabilities": ["text-generation", "chat", "vision", "audio", "code", "advanced-reasoning"],
+          "context_length": 2000000,
+          "experimental": true
+        },
+        "generation": "Quantum computing uses quantum mechanics principles like superposition and entanglement to perform computations..."
+      },
+      "tags": ["google_cloud", "gemini", "gemini-3-flash", "generation", "portmanteau"]
+    },
+    {
+      "title": "Google Cloud Storage Operations",
+      "description": "Upload and manage models/datasets in Google Cloud Storage",
+      "code": "bucket = await llm_google_cloud_tool('create_gcs_bucket', bucket_name='my-ai-models')\nupload = await llm_google_cloud_tool('upload_to_gcs', bucket_name='my-ai-models', file_path='./model.bin', destination_path='models/custom-model.bin')\nfiles = await llm_google_cloud_tool('list_gcs_bucket', bucket_name='my-ai-models')",
+      "expected_output": {
+        "bucket_created": true,
+        "upload_success": true,
+        "gcs_url": "gs://my-ai-models/models/custom-model.bin",
+        "files_in_bucket": 1,
+        "storage_used": "2.1GB"
+      },
+      "tags": ["google_cloud", "cloud_storage", "gcs", "upload", "model_management"]
+    }
+  ],
+  "workflows": [
+    {
+      "name": "Content Creation Pipeline",
+      "description": "Complete workflow for creating and refining content",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Check available models",
+          "code": "models = await list_models()",
+          "purpose": "Discover suitable models for content creation"
+        },
+        {
+          "step": 2,
+          "action": "Generate initial draft",
+          "code": "draft = await generate_text(model='llama3', prompt='Write about sustainable energy', max_tokens=500)",
+          "purpose": "Create first version of content"
+        },
+        {
+          "step": 3,
+          "action": "Refine with chat",
+          "code": "refined = await chat_completion(model='llama3', messages=[{'role': 'user', 'content': f'Improve this draft: {draft[\"data\"]}'}])",
+          "purpose": "Enhance content quality"
+        },
+        {
+          "step": 4,
+          "action": "Generate embeddings",
+          "code": "embeddings = await embed_text(text=[draft['data'], refined['data']])",
+          "purpose": "Compare content similarity"
+        }
+      ]
+    },
+    {
+      "name": "Model Fine-tuning Workflow",
+      "description": "End-to-end model customization process",
+      "steps": [
+        {
+          "step": 1,
+          "action": "System readiness check",
+          "code": "health = await llm_health_tool('health_check')",
+          "purpose": "Ensure system can handle training"
+        },
+        {
+          "step": 2,
+          "action": "Prepare dataset",
+          "code": "dataset = await llm_finetuning_tool('prepare_dataset', dataset_path='./data.json')",
+          "purpose": "Format training data"
+        },
+        {
+          "step": 3,
+          "action": "Configure training",
+          "code": "config = await llm_finetuning_tool('lora_prepare', model_name='llama3', dataset=dataset)",
+          "purpose": "Set up training parameters"
+        },
+        {
+          "step": 4,
+          "action": "Execute training",
+          "code": "result = await llm_finetuning_tool('lora_train', config=config)",
+          "purpose": "Run fine-tuning process"
+        },
+        {
+          "step": 5,
+          "action": "Evaluate results",
+          "code": "eval = await llm_finetuning_tool('evaluate_model', model_path=result['model_path'])",
+          "purpose": "Assess training effectiveness"
+        }
+      ]
+    }
+  ],
+  "error_scenarios": [
+    {
+      "scenario": "Model Not Found",
+      "description": "Attempting to use an unavailable model",
+      "code": "result = await generate_text(model='nonexistent', prompt='test')",
+      "expected_error": "Model 'nonexistent' not found",
+      "recovery": "Use list_models() to see available options"
+    },
+    {
+      "scenario": "Out of Memory",
+      "description": "Loading too many models simultaneously",
+      "code": "await llm_models_tool('load_model', model_name='large-model')",
+      "expected_error": "Insufficient GPU memory",
+      "recovery": "Unload unused models or use smaller models"
+    },
+    {
+      "scenario": "Network Timeout",
+      "description": "Slow network during model download",
+      "code": "await ollama_pull_model(model='large-model')",
+      "expected_error": "Download timeout",
+      "recovery": "Check network connection or try smaller model"
+    }
+  ],
+  "best_practices": [
+    {
+      "category": "Performance",
+      "tips": [
+        "Load models before intensive operations",
+        "Unload models when not needed",
+        "Use appropriate model sizes for tasks",
+        "Monitor system resources during long operations"
+      ]
+    },
+    {
+      "category": "Reliability",
+      "tips": [
+        "Always check operation success status",
+        "Handle errors gracefully with retry logic",
+        "Use appropriate timeouts for operations",
+        "Validate inputs before calling tools"
+      ]
+    },
+    {
+      "category": "Cost Optimization",
+      "tips": [
+        "Use smaller models for simple tasks",
+        "Batch similar operations when possible",
+        "Cache frequently used results",
+        "Choose appropriate token limits"
+      ]
+    }
+  ]
+}
