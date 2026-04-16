@@ -1,5 +1,5 @@
 """Hugging Face provider for LLM MCP."""
 
-from .provider import HuggingFaceProvider, HuggingFaceConfig
+from .provider import HuggingFaceConfig, HuggingFaceProvider
 
-__all__ = ["HuggingFaceProvider", "HuggingFaceConfig"]
+__all__ = ["HuggingFaceConfig", "HuggingFaceProvider"]

@@ -1,7 +1,6 @@
 """Test FastMCP import and basic functionality."""
-import sys
 import logging
-import asyncio
+import sys
 from pathlib import Path
 
 # Add the parent directory to the path
@@ -15,6 +14,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("test_import")
 
+
 def main():
     """Test FastMCP import and basic functionality."""
     try:
@@ -22,20 +22,20 @@ def main():
         logger.info("Attempting to import FastMCP...")
         from fastmcp import FastMCP
         logger.info("Successfully imported FastMCP!")
-        
+
         # Print version
         logger.info(f"FastMCP version: {FastMCP.__version__}")
-        
+
         # Create a simple instance
         logger.info("Creating FastMCP instance...")
-        mcp = FastMCP(
+        FastMCP(
             name="Test Server",
             version="0.1.0"
         )
         logger.info("Successfully created FastMCP instance!")
-        
+
         return 0
-        
+
     except ImportError as e:
         logger.error(f"Failed to import FastMCP: {e}")
         logger.error("Please ensure FastMCP is installed with: pip install fastmcp")
@@ -43,6 +43,7 @@ def main():
     except Exception as e:
         logger.error(f"Error: {e}", exc_info=True)
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -2,16 +2,20 @@
 
 This module provides integration with Ollama's local LLM service.
 """
-from typing import Dict, Any, List, AsyncGenerator
+from collections.abc import AsyncGenerator
+from typing import Any
+
 import httpx
+
 from ..base import BaseProvider
+
 
 class OllamaProvider(BaseProvider):
     """Provider for interacting with Ollama's local LLM service."""
-    
-    def __init__(self, config: Dict[str, Any]):
+
+    def __init__(self, config: dict[str, Any]):
         """Initialize the Ollama provider.
-        
+
         Args:
             config: Configuration dictionary containing:
                 - base_url: Base URL for the Ollama API (default: http://localhost:11434)
@@ -21,20 +25,20 @@ class OllamaProvider(BaseProvider):
         self.base_url = self.config.get("base_url", "http://localhost:11434")
         self.timeout = self.config.get("timeout", 60)
         self.client = httpx.AsyncClient(timeout=self.timeout)
-    
+
     @property
     def name(self) -> str:
         """Return the name of the provider."""
         return "ollama"
-    
+
     @property
     def supports_streaming(self) -> bool:
         """Return whether the provider supports streaming responses."""
         return True
-    
-    async def list_models(self) -> List[Dict[str, Any]]:
+
+    async def list_models(self) -> list[dict[str, Any]]:
         """List all available models from the Ollama server.
-        
+
         Returns:
             List of model information dictionaries.
         """
@@ -42,7 +46,7 @@ class OllamaProvider(BaseProvider):
             response = await self.client.get(f"{self.base_url}/api/tags")
             response.raise_for_status()
             data = response.json()
-            
+
             return [
                 {
                     "id": model["name"],
@@ -57,8 +61,8 @@ class OllamaProvider(BaseProvider):
         except httpx.HTTPStatusError as e:
             raise Exception(f"Failed to list models: {e.response.text}") from e
         except Exception as e:
-            raise Exception(f"Error listing models: {str(e)}") from e
-    
+            raise Exception(f"Error listing models: {e!s}") from e
+
     async def generate(
         self,
         prompt: str,
@@ -66,7 +70,7 @@ class OllamaProvider(BaseProvider):
         **kwargs
     ) -> AsyncGenerator[str, None]:
         """Generate a response from the Ollama model.
-        
+
         Args:
             prompt: The input prompt
             model: The model to use for generation
@@ -76,7 +80,7 @@ class OllamaProvider(BaseProvider):
                 - context: Context from previous messages
                 - format: Format to return response in (e.g., json)
                 - options: Additional model options
-                
+
         Yields:
             Chunks of the generated response as strings
         """
@@ -90,12 +94,12 @@ class OllamaProvider(BaseProvider):
                 if k in ["system", "template", "context", "format", "options"]
             }
         }
-        
+
         try:
             async with httpx.AsyncClient() as client:
                 async with client.stream("POST", url, json=payload) as response:
                     response.raise_for_status()
-                    
+
                     async for line in response.aiter_lines():
                         if not line.strip():
                             continue
@@ -106,26 +110,26 @@ class OllamaProvider(BaseProvider):
                             if data.get("done", False):
                                 break
                         except Exception as e:
-                            raise Exception(f"Error parsing response: {str(e)}") from e
+                            raise Exception(f"Error parsing response: {e!s}") from e
         except Exception as e:
-            raise Exception(f"Error during generation: {str(e)}") from e
-    
-    async def pull_model(self, model_name: str) -> Dict[str, Any]:
+            raise Exception(f"Error during generation: {e!s}") from e
+
+    async def pull_model(self, model_name: str) -> dict[str, Any]:
         """Download a model from the Ollama library.
-        
+
         Args:
             model_name: Name of the model to download
-            
+
         Returns:
             Status information about the download operation
         """
         url = f"{self.base_url}/api/pull"
         payload = {"name": model_name}
-        
+
         try:
             response = await self.client.post(url, json=payload)
             response.raise_for_status()
-            
+
             # If we get here, the pull was successful
             return {
                 "status": "success",
@@ -135,31 +139,31 @@ class OllamaProvider(BaseProvider):
         except httpx.HTTPStatusError as e:
             raise Exception(f"Failed to pull model: {e.response.text}") from e
         except Exception as e:
-            raise Exception(f"Error pulling model: {str(e)}") from e
-    
-    async def get_model_info(self, model_name: str) -> Dict[str, Any]:
+            raise Exception(f"Error pulling model: {e!s}") from e
+
+    async def get_model_info(self, model_name: str) -> dict[str, Any]:
         """Get detailed information about a specific model.
-        
+
         Args:
             model_name: Name of the model to get info for
-            
+
         Returns:
             Detailed model information
         """
         # First get the list of models
         models = await self.list_models()
-        
+
         # Find the requested model
         for model in models:
             if model["name"] == model_name:
                 return model
-        
+
         # If model not found, try to get its details directly
         try:
             url = f"{self.base_url}/api/show"
             response = await self.client.post(url, json={"name": model_name})
             response.raise_for_status()
-            
+
             data = response.json()
             return {
                 "id": data.get("name"),
@@ -176,12 +180,12 @@ class OllamaProvider(BaseProvider):
                 raise ValueError(f"Model '{model_name}' not found") from e
             raise Exception(f"Failed to get model info: {e.response.text}") from e
         except Exception as e:
-            raise Exception(f"Error getting model info: {str(e)}") from e
-    
+            raise Exception(f"Error getting model info: {e!s}") from e
+
     async def close(self):
         """Clean up resources."""
         await self.client.aclose()
-    
+
     def __del__(self):
         """Ensure resources are cleaned up when the object is destroyed."""
         try:

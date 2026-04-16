@@ -1,13 +1,14 @@
 """Base provider interface for LLM services."""
 
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
+from typing import Any
 
 
 class BaseProvider(ABC):
     """Abstract base class for LLM providers."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """Initialize the provider with configuration.
 
         Args:
@@ -16,7 +17,7 @@ class BaseProvider(ABC):
         self.config = config
 
     @abstractmethod
-    async def list_models(self) -> List[Dict[str, Any]]:
+    async def list_models(self) -> list[dict[str, Any]]:
         """List all available models from the provider.
 
         Returns:
@@ -45,7 +46,7 @@ class BaseProvider(ABC):
         pass
 
     @abstractmethod
-    async def pull_model(self, model_name: str) -> Dict[str, Any]:
+    async def pull_model(self, model_name: str) -> dict[str, Any]:
         """Download a model if it's not already available locally.
 
         Args:
@@ -57,7 +58,7 @@ class BaseProvider(ABC):
         pass
 
     @abstractmethod
-    async def get_model_info(self, model_name: str) -> Dict[str, Any]:
+    async def get_model_info(self, model_name: str) -> dict[str, Any]:
         """Get detailed information about a specific model.
 
         Args:
@@ -79,7 +80,7 @@ class BaseProvider(ABC):
         return "".join(response)
 
     async def chat(
-        self, model_id: str, messages: List[Dict[str, str]], **kwargs
+        self, model_id: str, messages: list[dict[str, str]], **kwargs
     ) -> str:
         """Generate a chat response.
 

@@ -1,13 +1,13 @@
 """Monitoring and logging tools for the LLM MCP server."""
 
-import time
-import logging
 import asyncio
-from typing import Dict, List, Any, Optional, Callable, Union
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timedelta
-from collections import deque, defaultdict
+import logging
 import statistics
+import time
+from collections import defaultdict, deque
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class Metric:
     name: str
     value: float
     timestamp: float = field(default_factory=time.time)
-    tags: Dict[str, str] = field(default_factory=dict)
+    tags: dict[str, str] = field(default_factory=dict)
 
 
 class MetricsCollector:
@@ -31,9 +31,7 @@ class MetricsCollector:
         self.metrics = defaultdict(lambda: deque(maxlen=max_metrics))
         self.callbacks = []
 
-    def add_metric(
-        self, name: str, value: float, tags: Optional[Dict[str, str]] = None
-    ):
+    def add_metric(self, name: str, value: float, tags: dict[str, str] | None = None):
         """Add a new metric.
 
         Args:
@@ -57,9 +55,9 @@ class MetricsCollector:
     def get_metrics(
         self,
         name: str,
-        since: Optional[float] = None,
-        tags: Optional[Dict[str, str]] = None,
-    ) -> List[Metric]:
+        since: float | None = None,
+        tags: dict[str, str] | None = None,
+    ) -> list[Metric]:
         """Get metrics by name, optionally filtered by time and tags."""
         if name not in self.metrics:
             return []
@@ -72,18 +70,16 @@ class MetricsCollector:
 
         # Filter by tags
         if tags:
-            metrics = [
-                m for m in metrics if all(m.tags.get(k) == v for k, v in tags.items())
-            ]
+            metrics = [m for m in metrics if all(m.tags.get(k) == v for k, v in tags.items())]
 
         return metrics
 
     def get_stats(
         self,
         name: str,
-        since: Optional[float] = None,
-        tags: Optional[Dict[str, str]] = None,
-    ) -> Dict[str, float]:
+        since: float | None = None,
+        tags: dict[str, str] | None = None,
+    ) -> dict[str, float]:
         """Get statistics for a metric."""
         metrics = self.get_metrics(name, since, tags)
         if not metrics:
@@ -97,15 +93,9 @@ class MetricsCollector:
             "max": max(values),
             "mean": statistics.mean(values),
             "median": statistics.median(values),
-            "p90": statistics.quantiles(values, n=10)[-1]
-            if len(values) > 1
-            else values[0],
-            "p95": statistics.quantiles(values, n=20)[-1]
-            if len(values) > 1
-            else values[0],
-            "p99": statistics.quantiles(values, n=100)[-1]
-            if len(values) > 1
-            else values[0],
+            "p90": statistics.quantiles(values, n=10)[-1] if len(values) > 1 else values[0],
+            "p95": statistics.quantiles(values, n=20)[-1] if len(values) > 1 else values[0],
+            "p99": statistics.quantiles(values, n=100)[-1] if len(values) > 1 else values[0],
         }
 
     def register_callback(self, callback: Callable[[Metric], None]):
@@ -117,7 +107,7 @@ class MetricsCollector:
 metrics_collector = MetricsCollector()
 
 
-def track_metric(name: str, tags: Optional[Dict[str, str]] = None):
+def track_metric(name: str, tags: dict[str, str] | None = None):
     """Decorator to track function execution as a metric."""
 
     def decorator(func):
@@ -175,9 +165,7 @@ def track_metric(name: str, tags: Optional[Dict[str, str]] = None):
 
 
 # Implementation functions (without @tool decorator)
-async def get_metrics_impl(
-    name: str, since_minutes: float = 60, tags: Optional[Dict[str, str]] = None
-) -> Dict[str, Any]:
+async def get_metrics_impl(name: str, since_minutes: float = 60, tags: dict[str, str] | None = None) -> dict[str, Any]:
     """Get metrics for a specific name.
 
     Args:
@@ -219,8 +207,8 @@ async def get_metrics_impl(
 
 
 async def get_metric_stats_impl(
-    name: str, since_minutes: float = 60, tags: Optional[Dict[str, str]] = None
-) -> Dict[str, Any]:
+    name: str, since_minutes: float = 60, tags: dict[str, str] | None = None
+) -> dict[str, Any]:
     """Get statistics for a specific metric.
 
     Args:
@@ -235,9 +223,7 @@ async def get_metric_stats_impl(
     return metrics_collector.get_stats(name, since, tags)
 
 
-async def set_log_level_impl(
-    logger_name: str = "", level: str = "INFO"
-) -> Dict[str, Any]:
+async def set_log_level_impl(logger_name: str = "", level: str = "INFO") -> dict[str, Any]:
     """Set the log level for a logger.
 
     Args:
@@ -270,9 +256,7 @@ async def collect_system_metrics():
             # Memory
             mem = psutil.virtual_memory()
             metrics_collector.add_metric("system.memory.percent", mem.percent)
-            metrics_collector.add_metric(
-                "system.memory.used_mb", mem.used / (1024 * 1024)
-            )
+            metrics_collector.add_metric("system.memory.used_mb", mem.used / (1024 * 1024))
 
             # Disk
             disk = psutil.disk_usage("/")
@@ -285,9 +269,7 @@ async def collect_system_metrics():
                 gpu = gpu_info["gpu"]
                 metrics_collector.add_metric("system.gpu.vram.free_gb", gpu["free_gb"])
                 metrics_collector.add_metric("system.gpu.vram.used_mb", gpu["used_mb"])
-                metrics_collector.add_metric(
-                    "system.gpu.vram.percent", (gpu["used_mb"] / gpu["total_mb"]) * 100
-                )
+                metrics_collector.add_metric("system.gpu.vram.percent", (gpu["used_mb"] / gpu["total_mb"]) * 100)
 
         except Exception as e:
             logger.error(f"Error collecting system metrics: {e}", exc_info=True)
@@ -313,9 +295,7 @@ def register_monitoring_tools(mcp):
     tool = mcp.tool
 
     @tool()  # Get metrics
-    async def get_metrics(
-        name: str, since_minutes: float = 60, tags: Optional[Dict[str, str]] = None
-    ) -> Dict[str, Any]:
+    async def get_metrics(name: str, since_minutes: float = 60, tags: dict[str, str] | None = None) -> dict[str, Any]:
         """Get metrics for a specific name with stateful caching.
 
         This tool caches metrics data to improve performance while ensuring
@@ -333,8 +313,8 @@ def register_monitoring_tools(mcp):
 
     @tool()  # Get metric stats
     async def get_metric_stats(
-        name: str, since_minutes: float = 60, tags: Optional[Dict[str, str]] = None
-    ) -> Dict[str, Any]:
+        name: str, since_minutes: float = 60, tags: dict[str, str] | None = None
+    ) -> dict[str, Any]:
         """Get statistics for a specific metric with stateful caching.
 
         This tool caches metric statistics to improve performance.
@@ -351,9 +331,7 @@ def register_monitoring_tools(mcp):
         return await get_metric_stats_impl(name, since_minutes, tags)
 
     @tool()  # Set log level
-    async def set_log_level(
-        logger_name: str = "", level: str = "INFO"
-    ) -> Dict[str, Any]:
+    async def set_log_level(logger_name: str = "", level: str = "INFO") -> dict[str, Any]:
         """Set the log level for a logger.
 
         This tool does not use caching as it directly modifies logger state.

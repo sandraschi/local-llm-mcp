@@ -1,15 +1,11 @@
 """OpenAI provider implementation."""
 
-import asyncio
 import logging
-from typing import Dict, List, Any, Optional, AsyncGenerator
-import json
 import time
+from collections.abc import AsyncGenerator
+from typing import Any
 
-import aiohttp
-from pydantic import BaseModel
-
-from llm_mcp.models.base import BaseProvider, ModelMetadata, ModelProvider, ModelCapability, ModelStatus
+from llm_mcp.models.base import BaseProvider, ModelCapability, ModelMetadata, ModelProvider, ModelStatus
 
 logger = logging.getLogger(__name__)
 
@@ -21,29 +17,30 @@ except ImportError:
     logger.warning("OpenAI not installed. Install with: pip install openai")
     OPENAI_AVAILABLE = False
 
+
 class OpenAIProvider(BaseProvider):
     """
     OpenAI provider for GPT models.
-    
+
     Features:
     - GPT-4, GPT-4o, GPT-3.5 Turbo
     - Streaming and non-streaming generation
     - Function calling support
     - Vision capabilities (GPT-4V)
     """
-    
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+
+    def __init__(self, config: dict[str, Any] | None = None):
         """Initialize the OpenAI provider.
-        
+
         Args:
             config: Configuration dictionary for the OpenAI provider
         """
         if not OPENAI_AVAILABLE:
             raise ImportError("OpenAI is not installed. Please install it with: pip install openai")
-            
+
         from .config import OpenAIConfig
         self.config = OpenAIConfig(**(config or {}))
-        
+
         # Initialize OpenAI client
         self.client = openai.AsyncOpenAI(
             api_key=self.config.api_key,
@@ -51,9 +48,9 @@ class OpenAIProvider(BaseProvider):
             timeout=self.config.timeout,
             max_retries=self.config.max_retries
         )
-        
+
         self._is_initialized = False
-        
+
         # Initialize metrics
         self.metrics = {
             "total_requests": 0,
@@ -63,51 +60,51 @@ class OpenAIProvider(BaseProvider):
             "total_time_seconds": 0.0,
             "last_error": None
         }
-    
+
     @property
     def name(self) -> str:
         return "openai"
-    
+
     @property
     def is_ready(self) -> bool:
         """Check if the provider is ready to handle requests."""
         return self._is_initialized and self.config.api_key is not None
-    
+
     async def initialize(self) -> None:
         """Initialize the OpenAI provider."""
         if self._is_initialized:
             return
-            
+
         logger.info("Initializing OpenAI provider")
-        
+
         try:
             # Test the connection
             if self.config.api_key:
                 await self._test_connection()
-            
+
             self._is_initialized = True
             logger.info("OpenAI provider initialized successfully")
-            
+
         except Exception as e:
-            error_msg = f"Failed to initialize OpenAI provider: {str(e)}"
+            error_msg = f"Failed to initialize OpenAI provider: {e!s}"
             logger.error(error_msg, exc_info=True)
             self.metrics["last_error"] = error_msg
             raise RuntimeError(error_msg) from e
-    
+
     async def cleanup(self) -> None:
         """Cleanup resources."""
         self._is_initialized = False
         logger.info("OpenAI provider cleaned up")
-    
-    async def list_models(self) -> List[Dict[str, Any]]:
+
+    async def list_models(self) -> list[dict[str, Any]]:
         """List available OpenAI models.
-        
+
         Returns:
             List of model information dictionaries
         """
         if not self.is_ready:
             await self.initialize()
-            
+
         models = [
             {
                 "id": "gpt-4o",
@@ -155,9 +152,9 @@ class OpenAIProvider(BaseProvider):
                 "provider": "openai"
             }
         ]
-        
+
         return models
-    
+
     async def generate(
         self,
         prompt: str,
@@ -165,22 +162,22 @@ class OpenAIProvider(BaseProvider):
         **kwargs
     ) -> AsyncGenerator[str, None]:
         """Generate text from the model.
-        
+
         Args:
             prompt: The input prompt
             model: Model to use (defaults to configured model)
             **kwargs: Additional generation parameters
-            
+
         Yields:
             Chunks of generated text
         """
         if not self.is_ready:
             await self.initialize()
-            
+
         model_id = model or self.config.default_model
         start_time = time.time()
         self.metrics["total_requests"] += 1
-        
+
         try:
             # Prepare generation parameters
             generation_params = {
@@ -194,53 +191,53 @@ class OpenAIProvider(BaseProvider):
                 "user": kwargs.get("user", self.config.user),
                 "stream": True
             }
-            
+
             # Generate text using OpenAI streaming
             stream = await self.client.chat.completions.create(
                 model=model_id,
                 messages=[{"role": "user", "content": prompt}],
                 **generation_params
             )
-            
+
             async for chunk in stream:
                 if chunk.choices[0].delta.content:
                     yield chunk.choices[0].delta.content
-            
+
             # Update metrics
             duration = time.time() - start_time
             self.metrics["successful_requests"] += 1
             self.metrics["total_time_seconds"] += duration
-            
+
         except Exception as e:
-            error_msg = f"Error in text generation: {str(e)}"
+            error_msg = f"Error in text generation: {e!s}"
             logger.error(error_msg, exc_info=True)
             self.metrics["failed_requests"] += 1
             self.metrics["last_error"] = error_msg
             raise RuntimeError(error_msg) from e
-    
+
     async def chat_completion(
         self,
-        messages: List[Dict[str, str]],
-        model: Optional[str] = None,
+        messages: list[dict[str, str]],
+        model: str | None = None,
         **kwargs
     ) -> str:
         """Generate chat completion.
-        
+
         Args:
             messages: List of message dictionaries with 'role' and 'content'
             model: Model to use (defaults to configured model)
             **kwargs: Additional generation parameters
-            
+
         Returns:
             Generated response text
         """
         if not self.is_ready:
             await self.initialize()
-            
+
         model_id = model or self.config.default_model
         start_time = time.time()
         self.metrics["total_requests"] += 1
-        
+
         try:
             # Prepare generation parameters
             generation_params = {
@@ -253,51 +250,51 @@ class OpenAIProvider(BaseProvider):
                 "stop": kwargs.get("stop", self.config.stop),
                 "user": kwargs.get("user", self.config.user)
             }
-            
+
             # Generate response
             response = await self.client.chat.completions.create(
                 model=model_id,
                 messages=messages,
                 **generation_params
             )
-            
+
             # Update metrics
             duration = time.time() - start_time
             self.metrics["successful_requests"] += 1
             self.metrics["total_tokens_generated"] += len(response.choices[0].message.content.split())
             self.metrics["total_time_seconds"] += duration
-            
+
             return response.choices[0].message.content
-            
+
         except Exception as e:
-            error_msg = f"Error in chat completion: {str(e)}"
+            error_msg = f"Error in chat completion: {e!s}"
             logger.error(error_msg, exc_info=True)
             self.metrics["failed_requests"] += 1
             self.metrics["last_error"] = error_msg
             raise RuntimeError(error_msg) from e
-    
-    async def pull_model(self, model_name: str) -> Dict[str, Any]:
+
+    async def pull_model(self, model_name: str) -> dict[str, Any]:
         """Pull a model (not applicable for OpenAI API).
-        
+
         Args:
             model_name: Name of the model
-            
+
         Returns:
             Model information
         """
         logger.info(f"OpenAI models are API-based, no pulling needed for {model_name}")
-        
+
         # Return model info from available models
         models = await self.list_models()
         for model in models:
             if model["id"] == model_name:
                 return model
-        
+
         raise ValueError(f"Model {model_name} not found in available OpenAI models")
-    
-    async def get_metrics(self) -> Dict[str, Any]:
+
+    async def get_metrics(self) -> dict[str, Any]:
         """Get provider metrics.
-        
+
         Returns:
             Dictionary of metrics
         """
@@ -308,12 +305,12 @@ class OpenAIProvider(BaseProvider):
             "base_url": self.config.base_url,
             "default_model": self.config.default_model
         })
-        
+
         return metrics
-    
-    async def health_check(self) -> Dict[str, Any]:
+
+    async def health_check(self) -> dict[str, Any]:
         """Perform a health check of the provider.
-        
+
         Returns:
             Health check results
         """
@@ -326,7 +323,7 @@ class OpenAIProvider(BaseProvider):
             "successful_requests": self.metrics["successful_requests"],
             "failed_requests": self.metrics["failed_requests"],
         }
-        
+
         # Test API connection if possible
         if self.config.api_key:
             try:
@@ -337,15 +334,15 @@ class OpenAIProvider(BaseProvider):
                 status["api_error"] = str(e)
         else:
             status["api_connection"] = "no_api_key"
-            
+
         return status
-    
-    async def get_model_info(self, model_name: str) -> Dict[str, Any]:
+
+    async def get_model_info(self, model_name: str) -> dict[str, Any]:
         """Get detailed information about a specific model.
-        
+
         Args:
             model_name: Name of the model to get info for
-            
+
         Returns:
             Detailed model information
         """
@@ -353,15 +350,15 @@ class OpenAIProvider(BaseProvider):
         for model in models:
             if model["id"] == model_name:
                 return model
-        
+
         raise ValueError(f"Model {model_name} not found in available OpenAI models")
-    
+
     @property
     def supports_streaming(self) -> bool:
         """Return whether the provider supports streaming responses."""
         return True
-    
-    async def get_model(self, model_id: str) -> Optional[ModelMetadata]:
+
+    async def get_model(self, model_id: str) -> ModelMetadata | None:
         """Get details about a specific model."""
         models = await self.list_models()
         for model in models:
@@ -374,7 +371,7 @@ class OpenAIProvider(BaseProvider):
                     parameters={"max_tokens": model.get("max_tokens", 4096)}
                 )
         return None
-    
+
     async def load_model(self, model_id: str, **kwargs) -> ModelMetadata:
         """Load a model into memory."""
         model = await self.get_model(model_id)
@@ -382,7 +379,7 @@ class OpenAIProvider(BaseProvider):
             raise ValueError(f"Model {model_id} not found")
         model.status = ModelStatus.LOADED
         return model
-    
+
     async def unload_model(self, model_id: str) -> bool:
         """Unload a model from memory."""
         model = await self.get_model(model_id)
@@ -390,20 +387,20 @@ class OpenAIProvider(BaseProvider):
             model.status = ModelStatus.UNLOADED
             return True
         return False
-    
+
     async def generate_text(self, model_id: str, prompt: str, **kwargs) -> str:
         """Generate text using the specified model."""
         result = ""
         async for chunk in self.generate(prompt, model_id, **kwargs):
             result += chunk
         return result
-    
-    async def chat(self, model_id: str, messages: List[Dict[str, str]], **kwargs) -> str:
+
+    async def chat(self, model_id: str, messages: list[dict[str, str]], **kwargs) -> str:
         """Generate a chat completion using the specified model."""
         response = await self.chat_completion(model_id=model_id, messages=messages, **kwargs)
         return response["content"]
-    
-    async def generate_embeddings(self, model_id: str, texts: List[str], **kwargs) -> List[List[float]]:
+
+    async def generate_embeddings(self, model_id: str, texts: list[str], **kwargs) -> list[list[float]]:
         """Generate embeddings for the given texts."""
         # OpenAI supports embeddings
         try:
@@ -414,4 +411,4 @@ class OpenAIProvider(BaseProvider):
             )
             return [embedding.embedding for embedding in response.data]
         except Exception as e:
-            raise Exception(f"Failed to generate embeddings: {str(e)}") from e
+            raise Exception(f"Failed to generate embeddings: {e!s}") from e

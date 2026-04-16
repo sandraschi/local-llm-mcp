@@ -10,16 +10,16 @@ MCP Central Docs standards. Features include:
 
 SOTA COMPLIANCE: FastMCP 2.14.1+ Structured Logging Standards
 """
+
 import logging
 import logging.handlers
-import os
 import sys
 from pathlib import Path
-from typing import Optional, Dict, Any
 
 # SOTA: Use structlog for structured logging
 try:
     import structlog
+
     STRUCTLOG_AVAILABLE = True
 except ImportError:
     STRUCTLOG_AVAILABLE = False
@@ -38,14 +38,14 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 # SOTA: Unicode-safe replacements for logging
 UNICODE_REPLACEMENTS = {
-    "\U0001F680": "ROCKET",     # 🚀
-    "\u26A0": "WARNING",        # ⚠️
-    "\u274C": "ERROR",          # ❌
-    "\u2705": "SUCCESS",        # ✅
-    "\U0001F4A1": "IDEA",       # 💡
-    "\U0001F916": "ROBOT",      # 🤖
-    "\U0001F680": "PROCESS",    # 🚀
+    "\U0001f680": "ROCKET",  # 🚀
+    "\u26a0": "WARNING",  # ⚠️
+    "\u274c": "ERROR",  # ❌
+    "\u2705": "SUCCESS",  # ✅
+    "\U0001f4a1": "IDEA",  # 💡
+    "\U0001f916": "ROBOT",  # 🤖
 }
+
 
 # Ensure log directory exists
 def _ensure_log_dir(log_dir: Path) -> None:
@@ -57,6 +57,7 @@ def _ensure_log_dir(log_dir: Path) -> None:
         sys.stderr.flush()
         raise
 
+
 def _sanitize_unicode(text: str) -> str:
     """SOTA: Sanitize unicode characters to prevent encoding issues."""
     if not isinstance(text, str):
@@ -66,6 +67,7 @@ def _sanitize_unicode(text: str) -> str:
         text = text.replace(unicode_char, replacement)
 
     return text
+
 
 class LoggingConfig:
     """SOTA Structured Logging Configuration for Local LLM MCP.
@@ -77,18 +79,19 @@ class LoggingConfig:
     - File rotation with configurable retention
     - MCP-compliant log levels and formatting
     """
+
     _initialized = False
 
     @classmethod
     def initialize(
         cls,
         log_level: str = "INFO",
-        log_dir: Optional[Path] = None,
-        log_file: Optional[str] = None,
+        log_dir: Path | None = None,
+        log_file: str | None = None,
         max_size: int = MAX_LOG_SIZE,
         backup_count: int = BACKUP_COUNT,
         log_to_console: bool = True,
-        structured: bool = True
+        structured: bool = True,
     ) -> None:
         """Initialize SOTA structured logging configuration.
 
@@ -128,7 +131,7 @@ class LoggingConfig:
                         structlog.contextvars.merge_contextvars,
                         structlog.processors.add_log_level,
                         structlog.processors.TimeStamper(fmt="iso"),
-                        structlog.processors.JSONRenderer()
+                        structlog.processors.JSONRenderer(),
                     ],
                     wrapper_class=structlog.make_filtering_bound_logger(log_level_int),
                     context_class=dict,
@@ -145,10 +148,7 @@ class LoggingConfig:
 
                 # File handler for structured logs
                 file_handler = logging.handlers.RotatingFileHandler(
-                    log_path,
-                    maxBytes=max_size,
-                    backupCount=backup_count,
-                    encoding='utf-8'
+                    log_path, maxBytes=max_size, backupCount=backup_count, encoding="utf-8"
                 )
                 file_handler.setFormatter(logging.Formatter("%(message)s"))
                 logging.getLogger().addHandler(file_handler)
@@ -166,7 +166,7 @@ class LoggingConfig:
                 class SanitizedFormatter(logging.Formatter):
                     def format(self, record):
                         # Sanitize the message
-                        if hasattr(record, 'msg'):
+                        if hasattr(record, "msg"):
                             record.msg = _sanitize_unicode(str(record.msg))
                         return super().format(record)
 
@@ -174,10 +174,7 @@ class LoggingConfig:
 
                 # File handler with rotation
                 file_handler = logging.handlers.RotatingFileHandler(
-                    log_path,
-                    maxBytes=max_size,
-                    backupCount=backup_count,
-                    encoding='utf-8'
+                    log_path, maxBytes=max_size, backupCount=backup_count, encoding="utf-8"
                 )
                 file_handler.setFormatter(formatter)
                 root_logger.addHandler(file_handler)
@@ -197,22 +194,18 @@ class LoggingConfig:
 
             cls._initialized = True
 
+            # Log successful initialization
+            logger = logging.getLogger(__name__)
+            logger.info("Logging system initialized")
+            logger.debug("Debug logging enabled")
+
         except Exception as e:
             # SOTA: Fallback with Unicode-safe error logging
             safe_error = _sanitize_unicode(str(e))
             sys.stderr.write(f"SOTA Logging initialization failed: {safe_error}\n")
             sys.stderr.flush()
             raise
-            
-            # Log successful initialization
-            logger = logging.getLogger(__name__)
-            logger.info("Logging system initialized")
-            logger.debug("Debug logging enabled")
-            
-        except Exception as e:
-            sys.stderr.write(f"Failed to initialize logging: {e}\n")
-            sys.stderr.flush()
-            raise
+
 
 def get_logger(name: str):
     """Get a SOTA-compliant logger with the given name.

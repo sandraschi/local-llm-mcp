@@ -9,26 +9,36 @@ This provider integrates:
 
 import asyncio
 import logging
+from collections.abc import AsyncGenerator
+from typing import Any
+
 import torch
-from typing import Dict, Any, Optional, List, Union, AsyncGenerator
-from pathlib import Path
-import numpy as np
 
 try:
-    from transformers import (
-        AutoProcessor, AutoModelForVision2Seq, AutoModel,
-        CLIPProcessor, CLIPModel, CLIPTokenizer,
-        BlipProcessor, BlipForConditionalGeneration,
-        Blip2Processor, Blip2ForConditionalGeneration
-    )
+    from io import BytesIO
+
+    import requests
     from diffusers import (
-        DiffusionPipeline, StableDiffusionXLPipeline,
-        FluxPipeline, StableDiffusionPipeline,
-        AutoencoderKL, UNet2DConditionModel
+        AutoencoderKL,
+        DiffusionPipeline,
+        FluxPipeline,
+        StableDiffusionPipeline,
+        StableDiffusionXLPipeline,
+        UNet2DConditionModel,
     )
     from PIL import Image
-    import requests
-    from io import BytesIO
+    from transformers import (
+        AutoModel,
+        AutoModelForVision2Seq,
+        AutoProcessor,
+        Blip2ForConditionalGeneration,
+        Blip2Processor,
+        BlipForConditionalGeneration,
+        BlipProcessor,
+        CLIPModel,
+        CLIPProcessor,
+        CLIPTokenizer,
+    )
 
     MULTIMODAL_DEPS_AVAILABLE = True
 except ImportError:
@@ -37,6 +47,7 @@ except ImportError:
 from .base import BaseProvider
 
 logger = logging.getLogger(__name__)
+
 
 class MultimodalProvider(BaseProvider):
     """SOTA Multimodal Provider for vision-language and diffusion models.
@@ -65,7 +76,7 @@ class MultimodalProvider(BaseProvider):
         "svd": "stabilityai/stable-video-diffusion-img2vid-xt",
     }
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """Initialize multimodal provider.
 
         Args:
@@ -83,7 +94,7 @@ class MultimodalProvider(BaseProvider):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self._memory_manager = self._setup_memory_management()
 
-    def _setup_memory_management(self) -> Dict[str, Any]:
+    def _setup_memory_management(self) -> dict[str, Any]:
         """Setup GPU memory management for multimodal workloads."""
         if torch.cuda.is_available():
             # Enable memory efficient attention
@@ -148,7 +159,7 @@ class MultimodalProvider(BaseProvider):
             self.vision_models[model_key] = {
                 "model": model,
                 "processor": processor,
-                "loaded_at": asyncio.get_event_loop().time()
+                "loaded_at": asyncio.get_event_loop().time(),
             }
 
             logger.info(f"Successfully loaded vision model: {model_key}")
@@ -203,10 +214,7 @@ class MultimodalProvider(BaseProvider):
                 pipeline.enable_vae_tiling()
 
             pipeline.to(self.device)
-            self.diffusion_models[model_key] = {
-                "pipeline": pipeline,
-                "loaded_at": asyncio.get_event_loop().time()
-            }
+            self.diffusion_models[model_key] = {"pipeline": pipeline, "loaded_at": asyncio.get_event_loop().time()}
 
             logger.info(f"Successfully loaded diffusion model: {model_key}")
             return True
@@ -216,11 +224,8 @@ class MultimodalProvider(BaseProvider):
             return False
 
     async def analyze_image(
-        self,
-        image: Union[str, Image.Image],
-        task: str = "caption",
-        model: str = "blip2"
-    ) -> Dict[str, Any]:
+        self, image: str | Image.Image, task: str = "caption", model: str = "blip2"
+    ) -> dict[str, Any]:
         """Analyze image with SOTA vision-language models.
 
         Args:
@@ -257,7 +262,9 @@ class MultimodalProvider(BaseProvider):
                     return {"caption": caption, "model": model}
 
             elif model == "clip":
-                inputs = model_data["processor"](text=["a photo", "artwork", "diagram"], images=img, return_tensors="pt", padding=True)
+                inputs = model_data["processor"](
+                    text=["a photo", "artwork", "diagram"], images=img, return_tensors="pt", padding=True
+                )
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                 with torch.no_grad():
@@ -269,9 +276,9 @@ class MultimodalProvider(BaseProvider):
                     "classifications": {
                         "photo": float(probs[0][0]),
                         "artwork": float(probs[0][1]),
-                        "diagram": float(probs[0][2])
+                        "diagram": float(probs[0][2]),
                     },
-                    "model": model
+                    "model": model,
                 }
 
             return {"error": f"Unsupported task '{task}' for model '{model}'"}
@@ -288,8 +295,8 @@ class MultimodalProvider(BaseProvider):
         width: int = 1024,
         height: int = 1024,
         num_inference_steps: int = 20,
-        guidance_scale: float = 7.5
-    ) -> Dict[str, Any]:
+        guidance_scale: float = 7.5,
+    ) -> dict[str, Any]:
         """Generate image with SOTA diffusion models.
 
         Args:
@@ -344,8 +351,8 @@ class MultimodalProvider(BaseProvider):
             image = result.images[0]
 
             # Convert to base64 for API response
-            from io import BytesIO
             import base64
+            from io import BytesIO
 
             buffer = BytesIO()
             image.save(buffer, format="PNG")
@@ -357,7 +364,7 @@ class MultimodalProvider(BaseProvider):
                 "prompt": prompt,
                 "width": width,
                 "height": height,
-                "inference_steps": num_inference_steps
+                "inference_steps": num_inference_steps,
             }
 
         except Exception as e:
@@ -365,11 +372,8 @@ class MultimodalProvider(BaseProvider):
             return {"error": str(e)}
 
     async def compare_images(
-        self,
-        image1: Union[str, Image.Image],
-        image2: Union[str, Image.Image],
-        model: str = "clip"
-    ) -> Dict[str, Any]:
+        self, image1: str | Image.Image, image2: str | Image.Image, model: str = "clip"
+    ) -> dict[str, Any]:
         """Compare two images using CLIP similarity.
 
         Args:
@@ -402,11 +406,7 @@ class MultimodalProvider(BaseProvider):
             model_data = self.vision_models[model]
 
             if model == "clip":
-                inputs = model_data["processor"](
-                    images=images,
-                    return_tensors="pt",
-                    padding=True
-                )
+                inputs = model_data["processor"](images=images, return_tensors="pt", padding=True)
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                 with torch.no_grad():
@@ -419,7 +419,7 @@ class MultimodalProvider(BaseProvider):
                 return {
                     "similarity_score": float(similarity),
                     "model": model,
-                    "interpretation": self._interpret_similarity(float(similarity))
+                    "interpretation": self._interpret_similarity(float(similarity)),
                 }
 
             return {"error": f"Model '{model}' doesn't support image comparison"}
@@ -455,6 +455,7 @@ class MultimodalProvider(BaseProvider):
 
         # Force garbage collection
         import gc
+
         gc.collect()
 
         if torch.cuda.is_available():
@@ -465,34 +466,14 @@ class MultimodalProvider(BaseProvider):
         """Generate text response (not used for multimodal)."""
         yield ""
 
-    async def list_models(self) -> List[Dict[str, Any]]:
+    async def list_models(self) -> list[dict[str, Any]]:
         """List available multimodal models."""
         return [
             {
                 "id": f"multimodal-{model_key}",
                 "name": f"{model_key.upper()} ({model_name})",
                 "provider": "multimodal",
-                "type": "vision" if model_key in self.SUPPORTED_VISION_MODELS else "diffusion"
+                "type": "vision" if model_key in self.SUPPORTED_VISION_MODELS else "diffusion",
             }
-            for model_key, model_name in {
-                **self.SUPPORTED_VISION_MODELS,
-                **self.SUPPORTED_DIFFUSION_MODELS
-            }.items()
+            for model_key, model_name in {**self.SUPPORTED_VISION_MODELS, **self.SUPPORTED_DIFFUSION_MODELS}.items()
         ]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -5,7 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2026-04-15
+
+### Added
+- **Model Orchestration Dashboard** (Vite + React + Tailwind)
+  - Unified hub for monitoring and controlling multiple LLM providers.
+  - Interactive **Fleet Launcher** for navigating the local MCP ecosystem.
+  - Real-time **Engine Analytics** dashboard with GPU/RAM telemetry.
+  - Glassmorphism-based premium UI with dark mode support.
+- **Live Configuration API** (`/api/v1/config`)
+  - Enables browser-side updates to provider URLs and API keys.
+  - Persistent storage of configuration directly back to the `.env` file.
+  - Nested Pydantic-aware update engine for complex settings objects.
+
+### Fixed
+- **Backend Stability**: Resolved critical `ImportError` caused by naming collision between `models.py` and the `models/` directory.
+- **Frontend Build**: Fixed TypeScript compilation errors related to `SpeechRecognition` and Vite environment variables.
+- **Process Management**: Improved port cleaner in `start.ps1` to handle orphaned backend/frontend instances.
+- **Documentation**: Corrected port assignments (10832/10833) across the repository.
+
+## [1.0.1] - 2025-01-08
 
 ### Added
 - **Google Cloud Portmanteau Tool** (`llm_google_cloud_tool`)

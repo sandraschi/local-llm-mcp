@@ -1,8 +1,12 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/app-layout';
-import { Dashboard } from '@/pages/dashboard';
-import { Chat } from '@/pages/chat';
-import { Settings } from '@/pages/settings';
+import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import { AppLayout } from "@/components/layout/app-layout";
+import { Analytics } from "@/pages/analytics";
+import { Chat } from "@/pages/chat";
+import { Dashboard } from "@/pages/dashboard";
+import { Fleet } from "@/pages/fleet";
+import { Performance } from "@/pages/performance";
+import { Settings } from "@/pages/settings";
+import { Vision } from "@/pages/vision";
 
 function App() {
   return (
@@ -11,6 +15,10 @@ function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/chat" element={<Chat />} />
+          <Route path="/performance" element={<Performance />} />
+          <Route path="/vision" element={<Vision />} />
+          <Route path="/fleet" element={<Fleet />} />
+          <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

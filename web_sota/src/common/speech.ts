@@ -25,9 +25,37 @@ export function isTTSSupported(): boolean {
   return typeof window !== "undefined" && !!window.speechSynthesis;
 }
 
+// Global interfaces for Speech Recognition
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onend: () => void;
+  onerror: (event: Event) => void;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+}
+
+interface SpeechRecognitionConstructor {
+  new (): SpeechRecognition;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  }
+}
+
 const SpeechRecognitionAPI =
-  typeof window !== "undefined" &&
-  (window.SpeechRecognition || (window as unknown as { webkitSpeechRecognition?: typeof SpeechRecognition }).webkitSpeechRecognition);
+  typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
 
 export function isSTTSupported(): boolean {
   return !!SpeechRecognitionAPI;
@@ -35,7 +63,7 @@ export function isSTTSupported(): boolean {
 
 export function createSpeechRecognition(
   onResult: (transcript: string, isFinal: boolean) => void,
-  onEnd: () => void
+  onEnd: () => void,
 ): { start: () => void; stop: () => void } {
   if (!SpeechRecognitionAPI) return { start: () => {}, stop: () => {} };
   const recognition = new SpeechRecognitionAPI() as SpeechRecognition;

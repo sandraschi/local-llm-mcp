@@ -2,16 +2,16 @@
 
 import asyncio
 import logging
-from typing import Dict, List, Any, Optional, AsyncGenerator, Union
+from collections.abc import AsyncGenerator
+from typing import Any
 
+import torch
 from transformers import (
     AutoModelForCausalLM,
     AutoModelForSeq2SeqLM,
     AutoTokenizer,
     pipeline,
-    set_seed,
 )
-import torch
 
 # Optional diffusion imports
 try:
@@ -38,7 +38,7 @@ class HuggingFaceProvider(BaseProvider):
     with optimizations for GPU inference and batching.
     """
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """Initialize the Hugging Face provider.
 
         Args:
@@ -76,7 +76,6 @@ class HuggingFaceProvider(BaseProvider):
 
     def _load_model(self):
         """Load the model and tokenizer."""
-        from transformers import AutoModelForCausalLM, AutoTokenizer
 
         model_kwargs = {
             "revision": self.config.model_revision,
@@ -167,7 +166,7 @@ class HuggingFaceProvider(BaseProvider):
             return "cuda" if torch.cuda.is_available() else "cpu"
         return self.config.device
 
-    async def list_models(self) -> List[Dict[str, Any]]:
+    async def list_models(self) -> list[dict[str, Any]]:
         """List available models from the Hugging Face Hub.
 
         Note: This is a placeholder implementation. In a real implementation,
@@ -183,7 +182,7 @@ class HuggingFaceProvider(BaseProvider):
         ]
 
     async def generate(
-        self, prompt: str, model: Optional[str] = None, **kwargs
+        self, prompt: str, model: str | None = None, **kwargs
     ) -> AsyncGenerator[str, None]:
         """Generate a response from the model.
 
@@ -247,7 +246,7 @@ class HuggingFaceProvider(BaseProvider):
                 )
                 yield generated_text
 
-    async def pull_model(self, model_name: str) -> Dict[str, Any]:
+    async def pull_model(self, model_name: str) -> dict[str, Any]:
         """Download a model from Hugging Face Hub.
 
         Args:
@@ -256,7 +255,7 @@ class HuggingFaceProvider(BaseProvider):
         Returns:
             Dictionary with download status and model info
         """
-        from huggingface_hub import snapshot_download, model_info
+        from huggingface_hub import model_info, snapshot_download
 
         try:
             # Get model info
@@ -287,10 +286,10 @@ class HuggingFaceProvider(BaseProvider):
             }
 
         except Exception as e:
-            logger.error(f"Failed to pull model {model_name}: {str(e)}")
+            logger.error(f"Failed to pull model {model_name}: {e!s}")
             return {"status": "error", "model_name": model_name, "error": str(e)}
 
-    async def get_model_info(self, model_name: Optional[str] = None) -> Dict[str, Any]:
+    async def get_model_info(self, model_name: str | None = None) -> dict[str, Any]:
         """Get information about a model.
 
         Args:
@@ -330,7 +329,7 @@ class HuggingFaceProvider(BaseProvider):
             }
 
         except Exception as e:
-            logger.error(f"Failed to get info for model {model_name}: {str(e)}")
+            logger.error(f"Failed to get info for model {model_name}: {e!s}")
             return {"status": "error", "model_name": model_name, "error": str(e)}
 
     async def generate_image(
@@ -342,7 +341,7 @@ class HuggingFaceProvider(BaseProvider):
         num_inference_steps: int = 20,
         guidance_scale: float = 7.5,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate image using diffusion model.
 
         Args:
@@ -382,8 +381,8 @@ class HuggingFaceProvider(BaseProvider):
             image = result.images[0]
 
             # Convert to base64
-            from io import BytesIO
             import base64
+            from io import BytesIO
 
             buffer = BytesIO()
             image.save(buffer, format="PNG")

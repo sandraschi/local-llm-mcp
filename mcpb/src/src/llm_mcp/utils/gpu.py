@@ -3,15 +3,15 @@ local-llm-mcp - GPU Detection
 GPU and VRAM detection utilities ported from SongGeneration-Studio.
 """
 
-import subprocess
 import logging
-from typing import Optional, Dict, Any
+import subprocess
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger("llm_mcp.utils.gpu")
 
 
-def get_gpu_info() -> Dict[str, Any]:
+def get_gpu_info() -> dict[str, Any]:
     """Detect GPU and available VRAM using nvidia-smi."""
     try:
         result = subprocess.run(
@@ -70,7 +70,7 @@ def get_gpu_info() -> Dict[str, Any]:
 # ============================================================================
 
 
-def get_audio_duration(audio_path: Path) -> Optional[float]:
+def get_audio_duration(audio_path: Path) -> float | None:
     """Get audio duration in seconds using ffprobe."""
     try:
         cmd = [
@@ -107,7 +107,7 @@ def log_gpu_info():
         logger.warning("No NVIDIA GPU detected or nvidia-smi not available")
 
 
-def refresh_gpu_info() -> Dict[str, Any]:
+def refresh_gpu_info() -> dict[str, Any]:
     """Refresh GPU info and return updated data"""
     global gpu_info
     gpu_info = get_gpu_info()

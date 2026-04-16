@@ -1,19 +1,32 @@
-import { useState, useEffect, useRef } from "react";
+import {
+  Bot,
+  Check,
+  Copy,
+  Loader2,
+  Mic,
+  MicOff,
+  Send,
+  Sparkles,
+  Trash2,
+  User,
+  Volume2,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Send, Bot, User, Loader2, Trash2, Copy, Check, Sparkles, Mic, MicOff, Volume2 } from "lucide-react";
-import { listModels, generate, type ModelInfo } from "@/api/client";
-import { getDefaults } from "@/api/defaults";
 import { getChatPrefs, setChatPrefs } from "@/api/chat-prefs";
-import { PERSONALITIES, getPersonality } from "@/common/personalities";
-import { speak, createSpeechRecognition, isTTSSupported, isSTTSupported } from "@/common/speech";
+import { generate, listModels, type ModelInfo } from "@/api/client";
+import { getDefaults } from "@/api/defaults";
+import { getPersonality, PERSONALITIES } from "@/common/personalities";
+import { createSpeechRecognition, isSTTSupported, isTTSSupported, speak } from "@/common/speech";
 import { cn } from "@/common/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ModelSelector } from "@/components/models/ModelSelector";
 
 const REFINE_PROMPT_PREFIX =
   "Rewrite the following into a single clear, self-contained prompt for an LLM. Preserve the user's intent. Output only the rewritten prompt, no commentary.\n\n";
 
-type Message = { role: "user" | "assistant"; content: string };
+type Message = { id: string; role: "user" | "assistant"; content: string };
 
 const PERSONALITY_COLORS: Record<string, string> = {
   slate: "border-slate-500 bg-slate-500/10",
@@ -65,7 +78,9 @@ function SpeakButton({ text }: { text: string }) {
       }}
       className={cn(
         "p-1.5 rounded transition-colors",
-        speaking ? "text-amber-400 bg-amber-500/20" : "text-slate-400 hover:text-white hover:bg-white/10"
+        speaking
+          ? "text-amber-400 bg-amber-500/20"
+          : "text-slate-400 hover:text-white hover:bg-white/10",
       )}
       title={speaking ? "Stop" : "Speak"}
     >
@@ -75,6 +90,7 @@ function SpeakButton({ text }: { text: string }) {
 }
 
 export function Chat() {
+  const modelSelectId = useRef(`model-select-${Math.random().toString(36).substr(2, 9)}`).current;
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedProvider, setSelectedProvider] = useState<string | undefined>();
@@ -92,7 +108,8 @@ export function Chat() {
   const [personalityId, setPersonalityId] = useState(prefs.personalityId);
   const [promptRefinement, setPromptRefinement] = useState(prefs.promptRefinement);
 
-  const personality = getPersonality(personalityId) ?? getPersonality("neutral")!;
+  const personality =
+    getPersonality(personalityId) ?? getPersonality("neutral") ?? PERSONALITIES[0];
   const personalityColor = PERSONALITY_COLORS[personality.color] ?? PERSONALITY_COLORS.slate;
 
   useEffect(() => {
@@ -110,8 +127,9 @@ export function Chat() {
         }
       })
       .catch(() => setModels([]));
-  }, []);
+  }, [selectedModel]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Trigger scroll on message/loading updates
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
@@ -121,13 +139,13 @@ export function Chat() {
     recognitionRef.current = createSpeechRecognition(
       (transcript, isFinal) => {
         if (isFinal) {
-          setInput((prev) => (prev ? prev + " " + transcript : transcript));
+          setInput((prev) => (prev ? `${prev} ${transcript}` : transcript));
           setInterimTranscript("");
         } else {
           setInterimTranscript(transcript);
         }
       },
-      () => setListening(false)
+      () => setListening(false),
     );
     return () => {
       recognitionRef.current?.stop();
@@ -144,7 +162,7 @@ export function Chat() {
     }
     setError(null);
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", content: text }]);
+    setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "user", content: text }]);
     setLoading(true);
 
     let promptToSend = text;
@@ -154,7 +172,7 @@ export function Chat() {
         const refined = await generate(
           REFINE_PROMPT_PREFIX + text,
           selectedModel,
-          selectedProvider
+          selectedProvider,
         );
         promptToSend = refined.text.trim();
       } catch {
@@ -167,11 +185,15 @@ export function Chat() {
 
     try {
       const res = await generate(fullPrompt, selectedModel, selectedProvider);
-      setMessages((prev) => [...prev, { role: "assistant", content: res.text }]);
+      setMessages((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), role: "assistant", content: res.text },
+      ]);
     } catch (err) {
       setMessages((prev) => [
         ...prev,
         {
+          id: crypto.randomUUID(),
           role: "assistant",
           content: `Error: ${err instanceof Error ? err.message : String(err)}`,
         },
@@ -205,25 +227,14 @@ export function Chat() {
           <p className="text-slate-400">Personality, refinement, and model</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-slate-400">Model</label>
-            <select
-              value={selectedModel}
-              onChange={(e) => {
-                const m = models.find((x) => (x.id ?? x.name) === e.target.value);
-                setSelectedModel(e.target.value);
-                if (m) setSelectedProvider(m.provider);
-              }}
-              className="bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
-            >
-              {models.length === 0 && <option value="">No models</option>}
-              {models.map((m) => (
-                <option key={m.id ?? m.name} value={m.id ?? m.name}>
-                  {m.name} ({m.provider})
-                </option>
-              ))}
-            </select>
-          </div>
+          <ModelSelector 
+            models={models}
+            selectedModel={selectedModel}
+            onSelect={(id, provider) => {
+              setSelectedModel(id);
+              setSelectedProvider(provider);
+            }}
+          />
           <Button
             type="button"
             variant="outline"
@@ -251,8 +262,8 @@ export function Chat() {
             className={cn(
               "px-2.5 py-1 rounded-full text-xs font-medium border transition-colors",
               personalityId === p.id
-                ? PERSONALITY_COLORS[p.color] + " text-white"
-                : "border-slate-700 text-slate-400 hover:border-slate-600 hover:text-slate-300"
+                ? `${PERSONALITY_COLORS[p.color]} text-white`
+                : "border-slate-700 text-slate-400 hover:border-slate-600 hover:text-slate-300",
             )}
             title={p.description}
           >
@@ -288,16 +299,18 @@ export function Chat() {
         <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.length === 0 && (
             <p className="text-slate-500 text-sm">
-              Send a message. Personality: <span className={cn("font-medium", personalityColor)}>{personality.name}</span> — {personality.description}
+              Send a message. Personality:{" "}
+              <span className={cn("font-medium", personalityColor)}>{personality.name}</span> —{" "}
+              {personality.description}
             </p>
           )}
-          {messages.map((msg, i) => (
+          {messages.map((msg) => (
             <div
-              key={i}
+              key={msg.id}
               className={cn(
                 "flex gap-3",
                 msg.role === "assistant" && "border-l-4 pl-3 -ml-1 rounded-r",
-                msg.role === "assistant" && personalityColor
+                msg.role === "assistant" && personalityColor,
               )}
             >
               <div
@@ -358,7 +371,9 @@ export function Chat() {
                 onClick={toggleMic}
                 className={cn(
                   "border-slate-700 flex-shrink-0",
-                  listening ? "text-red-400 border-red-500/50 bg-red-500/10 animate-pulse" : "text-slate-400 hover:bg-slate-800"
+                  listening
+                    ? "text-red-400 border-red-500/50 bg-red-500/10 animate-pulse"
+                    : "text-slate-400 hover:bg-slate-800",
                 )}
                 title={listening ? "Stop listening" : "Voice input"}
               >
@@ -372,7 +387,12 @@ export function Chat() {
               className="flex-1 bg-slate-950 border border-slate-800 rounded-md px-4 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-none disabled:opacity-50"
               placeholder="Message... (Enter to send)"
             />
-            <Button type="submit" size="icon" className="bg-emerald-600 hover:bg-emerald-700 flex-shrink-0" disabled={loading}>
+            <Button
+              type="submit"
+              size="icon"
+              className="bg-emerald-600 hover:bg-emerald-700 flex-shrink-0"
+              disabled={loading}
+            >
               <Send className="h-4 w-4" />
             </Button>
           </div>

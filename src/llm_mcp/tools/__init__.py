@@ -3,26 +3,27 @@
 This package contains all the tools for the LLM MCP server with error isolation
 and proper dependency management.
 """
+
 import importlib.metadata
-import logging
 import os
-from typing import Optional, Dict, Any, List
+
 import structlog
 
 logger = structlog.get_logger(__name__)
 
 # Updated minimum required versions for 2025 standards
 REQUIRED_VERSIONS = {
-    'fastmcp': '2.12.0',
-    'pydantic': '2.8.0', 
-    'transformers': '4.44.0',
-    'torch': '2.4.0',
-    'vllm': '1.0.0',  # vLLM 1.0+ for performance
-    'peft': '0.12.0',
-    'accelerate': '0.32.0',
+    "fastmcp": "2.12.0",
+    "pydantic": "2.8.0",
+    "transformers": "4.44.0",
+    "torch": "2.4.0",
+    "vllm": "1.0.0",  # vLLM 1.0+ for performance
+    "peft": "0.12.0",
+    "accelerate": "0.32.0",
 }
 
-def check_dependencies() -> Dict[str, bool]:
+
+def check_dependencies() -> dict[str, bool]:
     """Check if all required dependencies are installed and at the correct version."""
     results = {}
     for pkg, min_version in REQUIRED_VERSIONS.items():
@@ -39,8 +40,10 @@ def check_dependencies() -> Dict[str, bool]:
             logger.warning("Package not installed", package=pkg)
     return results
 
+
 # Check dependencies on import
 dependency_status = check_dependencies()
+
 
 def safe_import_tool_module(module_name: str, register_func: str):
     """Safely import a tool module with error isolation."""
@@ -51,9 +54,9 @@ def safe_import_tool_module(module_name: str, register_func: str):
         logger.warning("Failed to import tool module", module=module_name, error=str(e))
         return None
     except AttributeError as e:
-        logger.warning("Tool registration function not found", 
-                      module=module_name, function=register_func, error=str(e))
+        logger.warning("Tool registration function not found", module=module_name, function=register_func, error=str(e))
         return None
+
 
 def register_all_tools(mcp):
     """Register all available tools with the MCP server with error isolation.
@@ -77,7 +80,7 @@ def register_all_tools(mcp):
         The MCP server instance with all tools registered
     """
     registration_results = {}
-    
+
     # PORTMANTEAU TOOLS - SOTA consolidated interface
     # Following Advanced Memory MCP pattern to reduce tool count and improve UX
     portmanteau_tools = [
@@ -108,7 +111,7 @@ def register_all_tools(mcp):
                 registration_results[func_name] = "Import failed"
                 logger.warning(f"Failed to import portmanteau tool: {func_name}")
         except Exception as e:
-            error_msg = f"Error registering portmanteau tool {func_name}: {str(e)}"
+            error_msg = f"Error registering portmanteau tool {func_name}: {e!s}"
             logger.error(error_msg, exc_info=True)
             registration_results[func_name] = error_msg
 
@@ -131,7 +134,7 @@ def register_all_tools(mcp):
                 registration_results[func_name] = "Import failed"
                 logger.warning(f"Failed to import portmanteau help tool: {func_name}")
         except Exception as e:
-            error_msg = f"Error registering portmanteau help tool {func_name}: {str(e)}"
+            error_msg = f"Error registering portmanteau help tool {func_name}: {e!s}"
             logger.error(error_msg, exc_info=True)
             registration_results[func_name] = error_msg
 
@@ -154,7 +157,7 @@ def register_all_tools(mcp):
                 registration_results[func_name] = "Import failed"
                 logger.warning(f"Failed to import portmanteau GPU tool: {func_name}")
         except Exception as e:
-            error_msg = f"Error registering portmanteau GPU tool {func_name}: {str(e)}"
+            error_msg = f"Error registering portmanteau GPU tool {func_name}: {e!s}"
             logger.error(error_msg, exc_info=True)
             registration_results[func_name] = error_msg
 
@@ -178,7 +181,7 @@ def register_all_tools(mcp):
                 else:
                     registration_results[f"legacy_{func_name}"] = "Import failed"
             except Exception as e:
-                error_msg = f"Error registering legacy tool {func_name}: {str(e)}"
+                error_msg = f"Error registering legacy tool {func_name}: {e!s}"
                 logger.error(error_msg)
                 registration_results[f"legacy_{func_name}"] = error_msg
 
@@ -190,19 +193,21 @@ def register_all_tools(mcp):
         ("generation_tools", "register_generation_tools"),
         # ("model_management_tools", "register_model_management_tools"),  # DISABLED: Now in portmanteau tools
     ]
-    
+
     # Check for torch and transformers (allow any installed version)
     torch_installed = False
     transformers_installed = False
 
     try:
         import torch
+
         torch_installed = True
     except ImportError:
         pass
 
     try:
         import transformers
+
         transformers_installed = True
     except ImportError:
         pass
@@ -222,7 +227,7 @@ def register_all_tools(mcp):
                     logger.warning(f"Failed to import {func_name}")
             except Exception as e:
                 # Use safe error message to avoid Unicode encoding issues
-                error_msg = f"Error registering {func_name}: {str(e)}"
+                error_msg = f"Error registering {func_name}: {e!s}"
                 try:
                     logger.error(error_msg, exc_info=True)
                 except (UnicodeEncodeError, UnicodeDecodeError):
@@ -231,16 +236,16 @@ def register_all_tools(mcp):
                 registration_results[func_name] = error_msg
     else:
         missing_deps = []
-        if not dependency_status.get('torch', False):
-            missing_deps.append('torch')
-        if not dependency_status.get('transformers', False):
-            missing_deps.append('transformers')
-            
+        if not dependency_status.get("torch", False):
+            missing_deps.append("torch")
+        if not dependency_status.get("transformers", False):
+            missing_deps.append("transformers")
+
         warning_msg = f"Skipping ML tools - missing dependencies: {', '.join(missing_deps)}"
         logger.warning(warning_msg)
         for _, func_name in ml_basic_tools:
             registration_results[func_name] = warning_msg
-    
+
     # Advanced tools with specific requirements (non-portmanteau)
     # Note: LoRA, multimodal, and other fine-tuning tools are now consolidated into portmanteau_finetuning
     # Note: vLLM tools are now consolidated into portmanteau_vllm
@@ -252,48 +257,43 @@ def register_all_tools(mcp):
         #     "deps": ["vllm", "torch"],
         #     "description": "vLLM 1.0+ high-performance inference"
         # },
-
         # Portmanteau GPU tools (individual GPU tools now consolidated)
         {
             "module": "gpu_manager",
             "function": "register_gpu_manager_tools",
             "deps": ["torch"],
             "description": "GPU monitoring and control tools (NVIDIA RTX 4090 optimized)",
-            "kwargs": {"register_individual_tools": False}  # Disable individual GPU tools
+            "kwargs": {"register_individual_tools": False},  # Disable individual GPU tools
         },
-
         {
             "module": "moe_tools",
             "function": "register_moe_tools",
             "deps": ["torch"],
-            "description": "Mixture of Experts models"
+            "description": "Mixture of Experts models",
         },
-
         # UI and visualization tools
         {
             "module": "gradio_tools",
             "function": "register_gradio_tools",
             "deps": ["gradio"],
-            "description": "Gradio web interface tools"
+            "description": "Gradio web interface tools",
         },
-
         # Legacy fine-tuning tools (available via LLM_MCP_ENABLE_LEGACY_TOOLS=true)
         # These are now consolidated into portmanteau_finetuning but kept for migration
         {
             "module": "unsloth_tools",
             "function": "register_unsloth_tools",
             "deps": ["torch"],
-            "description": "Unsloth efficient fine-tuning (LEGACY - use portmanteau_finetuning)"
+            "description": "Unsloth efficient fine-tuning (LEGACY - use portmanteau_finetuning)",
         },
-
         {
             "module": "qloraevolved_tools",
             "function": "register_qloraevolved_tools",
             "deps": ["peft", "torch"],
-            "description": "QLoRA evolved training methods (LEGACY - use portmanteau_finetuning)"
+            "description": "QLoRA evolved training methods (LEGACY - use portmanteau_finetuning)",
         },
     ]
-    
+
     # Log advanced tool registration progress
     logger.info("Registering advanced tools...")
     for tool_config in advanced_tools:
@@ -301,15 +301,15 @@ def register_all_tools(mcp):
         func_name = tool_config["function"]
         required_deps = tool_config["deps"]
         description = tool_config["description"]
-        
+
         # Check if dependencies are available
         missing_deps = [dep for dep in required_deps if not dependency_status.get(dep, False)]
-        
+
         if missing_deps:
             registration_results[func_name] = f"Missing dependencies: {', '.join(missing_deps)}"
             logger.info(f"Skipping advanced tool {func_name} - missing dependencies: {', '.join(missing_deps)}")
             continue
-        
+
         # Try to register the tool with error isolation
         try:
             register_func = safe_import_tool_module(module_name, func_name)
@@ -317,7 +317,7 @@ def register_all_tools(mcp):
                 # Pass kwargs if specified in tool config
                 kwargs = tool_config.get("kwargs", {})
                 result = register_func(mcp, **kwargs)
-                
+
                 # Handle different return types from registration functions
                 if isinstance(result, dict):
                     if result.get("vllm_available", True):  # vLLM-specific check
@@ -330,105 +330,118 @@ def register_all_tools(mcp):
                     # Assume success if function returns mcp instance or None
                     registration_results[func_name] = True
                     logger.info(f"Advanced tool registered: {func_name}")
-                    
+
             else:
                 registration_results[func_name] = "Import failed"
-                
+
         except Exception as e:
-            logger.error("Failed to register advanced tool", 
-                        tool=func_name, 
-                        description=description,
-                        error=str(e))
+            logger.error("Failed to register advanced tool", tool=func_name, description=description, error=str(e))
             registration_results[func_name] = str(e)
-    
+
     # Log summary
-    successful_tools = [k for k, v in registration_results.items() if v is True]
+    [k for k, v in registration_results.items() if v is True]
     failed_tools = {k: v for k, v in registration_results.items() if v is not True}
-    
+
     logger.info("Tool registration complete")
-    
+
     if failed_tools:
         logger.warning(f"Some tools failed to register: {failed_tools}")
-    
+
     return mcp
+
 
 # Tool registration functions for backward compatibility
 def register_help_tools(mcp):
     """Stub for help tools registration - implemented in help_tools.py"""
     pass
 
+
 def register_model_tools(mcp):
     """Stub for model tools registration - implemented in model_tools.py"""
     pass
+
 
 def register_generation_tools(mcp):
     """Stub for generation tools registration - implemented in generation_tools.py"""
     pass
 
+
 def register_monitoring_tools(mcp):
     """Stub for monitoring tools registration - implemented in monitoring_tools.py"""
     pass
+
 
 def register_system_tools(mcp):
     """Stub for system tools registration - implemented in system_tools.py"""
     pass
 
+
 def register_model_management_tools(mcp):
     """Stub for model management tools registration - implemented in model_management_tools.py"""
     pass
+
 
 def register_vllm_tools(mcp):
     """Stub for vLLM tools registration - implemented in vllm_tools.py"""
     pass
 
+
 def register_multimodal_tools(mcp):
     """Stub for multimodal tools registration - implemented in multimodal_tools.py"""
     pass
+
 
 def register_lora_tools(mcp):
     """Stub for LoRA tools registration - implemented in lora_tools.py"""
     pass
 
+
 def register_gradio_tools(mcp):
     """Stub for Gradio tools registration - implemented in gradio_tools.py"""
     pass
+
 
 def register_unsloth_tools(mcp):
     """Stub for Unsloth tools registration - implemented in unsloth_tools.py"""
     pass
 
+
 def register_qloraevolved_tools(mcp):
     """Stub for QLoRA evolved tools registration - implemented in qloraevolved_tools.py"""
     pass
+
 
 def register_dora_tools(mcp):
     """Stub for DoRA tools registration - implemented in dora_tools.py"""
     pass
 
+
 def register_sparse_tools(mcp):
     """Stub for sparse tools registration - implemented in sparse_tools.py"""
     pass
+
 
 def register_moe_tools(mcp):
     """Stub for MoE tools registration - implemented in moe_tools.py"""
     pass
 
+
 __all__ = [
-    'register_help_tools',
-    'register_model_tools',
-    'register_generation_tools',
-    'register_monitoring_tools',
-    'register_system_tools',
-    'register_model_management_tools',
-    'register_vllm_tools',
-    'register_multimodal_tools',
-    'register_lora_tools',
-    'register_gradio_tools',
-    'register_unsloth_tools',
-    'register_qloraevolved_tools',
-    'register_dora_tools',
-    'register_sparse_tools',
-    'register_moe_tools',
-    'register_all_tools',
-    'check_dependencies',
+    "check_dependencies",
+    "register_all_tools",
+    "register_dora_tools",
+    "register_generation_tools",
+    "register_gradio_tools",
+    "register_help_tools",
+    "register_lora_tools",
+    "register_model_management_tools",
+    "register_model_tools",
+    "register_moe_tools",
+    "register_monitoring_tools",
+    "register_multimodal_tools",
+    "register_qloraevolved_tools",
+    "register_sparse_tools",
+    "register_system_tools",
+    "register_unsloth_tools",
+    "register_vllm_tools",
 ]

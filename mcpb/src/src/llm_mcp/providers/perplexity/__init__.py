@@ -1,9 +1,9 @@
 """Perplexity provider package."""
 
-from .provider import PerplexityProvider
 from .config import PerplexityConfig
+from .provider import PerplexityProvider
 
 __all__ = [
-    "PerplexityProvider",
-    "PerplexityConfig"
+    "PerplexityConfig",
+    "PerplexityProvider"
 ]

@@ -1,9 +1,9 @@
 """Test tool registration for the LLM MCP server."""
 import asyncio
+import importlib
 import logging
 import sys
 import traceback
-import importlib
 from pathlib import Path
 
 # Add the src directory to the path
@@ -56,7 +56,7 @@ try:
         print("Error: llm_mcp package not found in Python path")
     else:
         print(f"Found llm_mcp at: {llm_mcp_spec.origin}")
-        
+
         # Try to import from tools
         print("\nAttempting to import from llm_mcp.tools...")
         try:
@@ -65,7 +65,7 @@ try:
         except ImportError as e:
             print(f"Error importing from llm_mcp.tools: {e}")
             print(traceback.format_exc())
-            
+
             # Try to import tools directly
             print("\nTrying to import tools directly...")
             try:
@@ -78,58 +78,60 @@ try:
                 print(f"Failed to import tools directly: {e2}")
                 print(traceback.format_exc())
                 sys.exit(1)
-    
+
 except Exception as e:
     print(f"Error importing llm_mcp: {e}")
     print(traceback.format_exc())
     sys.exit(1)
 
+
 async def test_tool_registration():
     """Test that all tools are properly registered."""
     # Check dependencies first
     deps = check_dependencies()
-    missing_critical = [k for k, v in deps.items() 
+    missing_critical = [k for k, v in deps.items()
                        if not v and k in {'fastmcp', 'torch', 'transformers'}]
-    
+
     if missing_critical:
         logger.warning(f"Missing critical dependencies: {', '.join(missing_critical)}")
         logger.warning("Some features may not work as expected")
-    
+
     # Initialize MCP server
     mcp = FastMCP(
         name="LLM MCP Test",
         version="1.0.0",
         description="Test server for tool registration"
     )
-    
+
     # Register all tools
     logger.info("Registering all tools...")
     registration_results = register_all_tools(mcp)
-    
+
     # Print registration results
     print("\nTool Registration Results:")
     print("=" * 50)
-    
+
     success_count = 0
     for tool, status in registration_results.items():
         status_str = "✓" if status is True else f"✗ ({status})"
         print(f"{tool}: {status_str}")
         if status is True:
             success_count += 1
-    
+
     total_tools = len(registration_results)
     success_rate = (success_count / total_tools) * 100
-    
+
     print("=" * 50)
     print(f"Successfully registered {success_count}/{total_tools} tools ({success_rate:.1f}%)")
-    
+
     # List all registered tools
     print("\nRegistered Tools:")
     print("=" * 50)
     for tool_name in mcp.tools:
         print(f"- {tool_name}")
-    
+
     return registration_results
+
 
 if __name__ == "__main__":
     try:

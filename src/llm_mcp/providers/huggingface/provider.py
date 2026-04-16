@@ -2,16 +2,16 @@
 
 import asyncio
 import logging
-from typing import Dict, List, Any, Optional, AsyncGenerator, Union
+from collections.abc import AsyncGenerator
+from typing import Any
 
+import torch
 from transformers import (
     AutoModelForCausalLM,
     AutoModelForSeq2SeqLM,
     AutoTokenizer,
     pipeline,
-    set_seed,
 )
-import torch
 
 # Optional diffusion imports
 try:
@@ -38,7 +38,7 @@ class HuggingFaceProvider(BaseProvider):
     with optimizations for GPU inference and batching.
     """
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """Initialize the Hugging Face provider.
 
         Args:
@@ -58,9 +58,7 @@ class HuggingFaceProvider(BaseProvider):
         if self._is_initialized:
             return
 
-        logger.info(
-            f"Initializing Hugging Face provider with model: {self.config.model_name}"
-        )
+        logger.info(f"Initializing Hugging Face provider with model: {self.config.model_name}")
 
         # Load model and tokenizer in a separate thread to avoid blocking the event loop
         loop = asyncio.get_event_loop()
@@ -76,7 +74,6 @@ class HuggingFaceProvider(BaseProvider):
 
     def _load_model(self):
         """Load the model and tokenizer."""
-        from transformers import AutoModelForCausalLM, AutoTokenizer
 
         model_kwargs = {
             "revision": self.config.model_revision,
@@ -93,9 +90,7 @@ class HuggingFaceProvider(BaseProvider):
             model_class = AutoModelForCausalLM  # Default
 
         # Load model and tokenizer
-        self._model = model_class.from_pretrained(
-            self.config.model_name, **model_kwargs
-        ).to(self._device)
+        self._model = model_class.from_pretrained(self.config.model_name, **model_kwargs).to(self._device)
 
         self._tokenizer = AutoTokenizer.from_pretrained(
             self.config.model_name,
@@ -132,9 +127,7 @@ class HuggingFaceProvider(BaseProvider):
     def _load_diffusion_model(self):
         """Load a diffusion model."""
         if not DIFFUSERS_AVAILABLE:
-            raise ImportError(
-                "Diffusers not available. Install with: pip install diffusers"
-            )
+            raise ImportError("Diffusers not available. Install with: pip install diffusers")
 
         logger.info(f"Loading diffusion model: {self.config.model_name}")
 
@@ -167,7 +160,7 @@ class HuggingFaceProvider(BaseProvider):
             return "cuda" if torch.cuda.is_available() else "cpu"
         return self.config.device
 
-    async def list_models(self) -> List[Dict[str, Any]]:
+    async def list_models(self) -> list[dict[str, Any]]:
         """List available models from the Hugging Face Hub.
 
         Note: This is a placeholder implementation. In a real implementation,
@@ -182,9 +175,7 @@ class HuggingFaceProvider(BaseProvider):
             }
         ]
 
-    async def generate(
-        self, prompt: str, model: Optional[str] = None, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    async def generate(self, prompt: str, model: str | None = None, **kwargs) -> AsyncGenerator[str, None]:
         """Generate a response from the model.
 
         Args:
@@ -212,17 +203,13 @@ class HuggingFaceProvider(BaseProvider):
             "top_k": kwargs.get("top_k", 50),
             "do_sample": kwargs.get("do_sample", True),
             **{
-                k: v
-                for k, v in kwargs.items()
-                if k not in ["max_length", "temperature", "top_p", "top_k", "do_sample"]
+                k: v for k, v in kwargs.items() if k not in ["max_length", "temperature", "top_p", "top_k", "do_sample"]
             },
         }
 
         if self._pipeline:
             # Use pipeline for generation
-            result = await asyncio.get_event_loop().run_in_executor(
-                None, lambda: self._pipeline(prompt, **gen_kwargs)
-            )
+            result = await asyncio.get_event_loop().run_in_executor(None, lambda: self._pipeline(prompt, **gen_kwargs))
 
             if isinstance(result, list) and len(result) > 0:
                 if "generated_text" in result[0]:
@@ -242,12 +229,10 @@ class HuggingFaceProvider(BaseProvider):
                     pad_token_id=self._tokenizer.eos_token_id,
                 )
 
-                generated_text = self._tokenizer.decode(
-                    outputs[0], skip_special_tokens=True
-                )
+                generated_text = self._tokenizer.decode(outputs[0], skip_special_tokens=True)
                 yield generated_text
 
-    async def pull_model(self, model_name: str) -> Dict[str, Any]:
+    async def pull_model(self, model_name: str) -> dict[str, Any]:
         """Download a model from Hugging Face Hub.
 
         Args:
@@ -256,7 +241,7 @@ class HuggingFaceProvider(BaseProvider):
         Returns:
             Dictionary with download status and model info
         """
-        from huggingface_hub import snapshot_download, model_info
+        from huggingface_hub import model_info, snapshot_download
 
         try:
             # Get model info
@@ -287,10 +272,10 @@ class HuggingFaceProvider(BaseProvider):
             }
 
         except Exception as e:
-            logger.error(f"Failed to pull model {model_name}: {str(e)}")
+            logger.error(f"Failed to pull model {model_name}: {e!s}")
             return {"status": "error", "model_name": model_name, "error": str(e)}
 
-    async def get_model_info(self, model_name: Optional[str] = None) -> Dict[str, Any]:
+    async def get_model_info(self, model_name: str | None = None) -> dict[str, Any]:
         """Get information about a model.
 
         Args:
@@ -312,25 +297,15 @@ class HuggingFaceProvider(BaseProvider):
                 "pipeline_tag": info.pipeline_tag,
                 "tags": info.tags,
                 "downloads": info.downloads,
-                "last_modified": info.last_modified.isoformat()
-                if info.last_modified
-                else None,
-                "model_size": info.safetensors.get("total")
-                if info.safetensors
-                else None,
-                "license": info.cardData.get("license")
-                if hasattr(info, "cardData")
-                else None,
-                "model_type": info.config.get("model_type")
-                if hasattr(info, "config")
-                else None,
-                "architectures": info.config.get("architectures")
-                if hasattr(info, "config")
-                else None,
+                "last_modified": info.last_modified.isoformat() if info.last_modified else None,
+                "model_size": info.safetensors.get("total") if info.safetensors else None,
+                "license": info.cardData.get("license") if hasattr(info, "cardData") else None,
+                "model_type": info.config.get("model_type") if hasattr(info, "config") else None,
+                "architectures": info.config.get("architectures") if hasattr(info, "config") else None,
             }
 
         except Exception as e:
-            logger.error(f"Failed to get info for model {model_name}: {str(e)}")
+            logger.error(f"Failed to get info for model {model_name}: {e!s}")
             return {"status": "error", "model_name": model_name, "error": str(e)}
 
     async def generate_image(
@@ -342,7 +317,7 @@ class HuggingFaceProvider(BaseProvider):
         num_inference_steps: int = 20,
         guidance_scale: float = 7.5,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate image using diffusion model.
 
         Args:
@@ -358,14 +333,10 @@ class HuggingFaceProvider(BaseProvider):
             Generated image data
         """
         if not self._diffusion_pipeline:
-            return {
-                "error": "Diffusion model not loaded. Ensure model_name is a diffusion model."
-            }
+            return {"error": "Diffusion model not loaded. Ensure model_name is a diffusion model."}
 
         if not DIFFUSERS_AVAILABLE:
-            return {
-                "error": "Diffusers not available. Install with: pip install diffusers"
-            }
+            return {"error": "Diffusers not available. Install with: pip install diffusers"}
 
         try:
             # Generate image
@@ -382,8 +353,8 @@ class HuggingFaceProvider(BaseProvider):
             image = result.images[0]
 
             # Convert to base64
-            from io import BytesIO
             import base64
+            from io import BytesIO
 
             buffer = BytesIO()
             image.save(buffer, format="PNG")

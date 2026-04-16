@@ -5,7 +5,7 @@ from fastapi import APIRouter
 api_router = APIRouter()
 
 # Import and include all endpoint routers
-from .endpoints import models, mcp_servers
+from .endpoints import mcp_servers, models
 
 # Include all endpoint routers
 api_router.include_router(models.router, tags=["models"])

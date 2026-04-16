@@ -9,8 +9,7 @@ related operations into a single interface. Prevents tool explosion (3 tools →
 full functionality and improving discoverability. Follows FastMCP 2.13+ best practices.
 """
 
-import logging
-from typing import Dict, Any, Optional
+from typing import Any
 
 from llm_mcp.tools.model_management_tools import (
     _lmstudio_list_models_impl,
@@ -23,19 +22,21 @@ logger = get_logger(__name__)
 
 # Import FastMCP components
 try:
-    from fastmcp import FastMCP
-    from fastmcp.tools import Tool
+    from fastmcp import FastMCP  # noqa: F401
+    from fastmcp.tools import Tool  # noqa: F401
+
     FASTMCP_AVAILABLE = True
 except ImportError:
     logger.error("FastMCP not available - portmanteau tools require FastMCP >= 2.12.0")
     FASTMCP_AVAILABLE = False
 
+
 async def llm_lmstudio(
     operation: str,
     # Model operations
-    model_path: Optional[str] = None,
-    model_name: Optional[str] = None,
-) -> Dict[str, Any]:
+    model_path: str | None = None,
+    model_name: str | None = None,
+) -> dict[str, Any]:
     """Comprehensive LM Studio management tool for Local LLM MCP server.
 
     PORTMANTEAU PATTERN: Consolidates 3 LM Studio operations into one tool.
@@ -70,12 +71,13 @@ async def llm_lmstudio(
         else:
             return {
                 "error": f"Unknown operation: {operation}",
-                "available_operations": ["list_models", "load_model", "unload_model"]
+                "available_operations": ["list_models", "load_model", "unload_model"],
             }
 
     except Exception as e:
         logger.error(f"Error in llm_lmstudio operation {operation}: {e}", exc_info=True)
-        return {"error": f"Operation failed: {str(e)}", "operation": operation}
+        return {"error": f"Operation failed: {e!s}", "operation": operation}
+
 
 def register_llm_lmstudio_tools(mcp):
     """Register the LM Studio Portmanteau tool with the MCP server."""
@@ -86,9 +88,9 @@ def register_llm_lmstudio_tools(mcp):
     @mcp.tool()
     async def llm_lmstudio_tool(
         operation: str,
-        model_path: Optional[str] = None,
-        model_name: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        model_path: str | None = None,
+        model_name: str | None = None,
+    ) -> dict[str, Any]:
         """LM Studio Portmanteau Tool - Consolidated LM Studio operations.
 
         This tool consolidates all LM Studio operations into a single interface,

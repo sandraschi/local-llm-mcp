@@ -5,18 +5,18 @@ following the portmanteau pattern.
 
 PORTMANTEAU PATTERN RATIONALE:
 Instead of creating 5 separate Ollama tools (one per operation), this tool consolidates
-related operations into a single interface. Prevents tool explosion (5 tools → 1 tool) while maintaining
-full functionality and improving discoverability. Follows FastMCP 2.13+ best practices.
+related operations into a single interface. Prevents tool explosion (5 tools → 1 tool) while
+maintaining full functionality and improving discoverability. Follows FastMCP 2.13+ best
+practices.
 """
 
-import logging
-from typing import Dict, Any, Optional
+from typing import Any
 
 from llm_mcp.tools.model_management_tools import (
-    _ollama_list_models_impl,
-    _ollama_pull_model_impl,
     _ollama_delete_model_impl,
+    _ollama_list_models_impl,
     _ollama_load_model_impl,
+    _ollama_pull_model_impl,
     _ollama_unload_model_impl,
 )
 from llm_mcp.utils.logging import get_logger
@@ -25,19 +25,21 @@ logger = get_logger(__name__)
 
 # Import FastMCP components
 try:
-    from fastmcp import FastMCP
-    from fastmcp.tools import Tool
+    from fastmcp import FastMCP  # noqa: F401
+    from fastmcp.tools import Tool  # noqa: F401
+
     FASTMCP_AVAILABLE = True
 except ImportError:
     logger.error("FastMCP not available - portmanteau tools require FastMCP >= 2.12.0")
     FASTMCP_AVAILABLE = False
 
+
 async def llm_ollama(
     operation: str,
     # Model operations
-    model: Optional[str] = None,
-    model_path: Optional[str] = None,
-) -> Dict[str, Any]:
+    model: str | None = None,
+    model_path: str | None = None,
+) -> dict[str, Any]:
     """Comprehensive Ollama management tool for Local LLM MCP server.
 
     PORTMANTEAU PATTERN: Consolidates 5 Ollama operations into one tool.
@@ -84,12 +86,13 @@ async def llm_ollama(
         else:
             return {
                 "error": f"Unknown operation: {operation}",
-                "available_operations": ["list_models", "pull_model", "load_model", "unload_model", "delete_model"]
+                "available_operations": ["list_models", "pull_model", "load_model", "unload_model", "delete_model"],
             }
 
     except Exception as e:
         logger.error(f"Error in llm_ollama operation {operation}: {e}", exc_info=True)
-        return {"error": f"Operation failed: {str(e)}", "operation": operation}
+        return {"error": f"Operation failed: {e!s}", "operation": operation}
+
 
 def register_llm_ollama_tools(mcp):
     """Register the Ollama Portmanteau tool with the MCP server."""
@@ -100,9 +103,9 @@ def register_llm_ollama_tools(mcp):
     @mcp.tool()
     async def llm_ollama_tool(
         operation: str,
-        model: Optional[str] = None,
-        model_path: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        model: str | None = None,
+        model_path: str | None = None,
+    ) -> dict[str, Any]:
         """Ollama Portmanteau Tool - Consolidated Ollama operations.
 
         This tool consolidates all Ollama operations into a single interface,

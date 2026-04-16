@@ -1,15 +1,14 @@
-import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-from typing import Dict, Any
-import dataclasses
+from typing import Any
+from unittest.mock import patch
 
-from llm_mcp.tools.generation_tools import GenerationManager, GenerationConfig
-from llm_mcp.services.provider_factory import ProviderFactory, _provider_factory
+import pytest
+
 from llm_mcp.providers.base import BaseProvider
+from llm_mcp.tools.generation_tools import GenerationManager
 
 
 class MockProvider(BaseProvider):
-    def __init__(self, config: Dict[str, Any] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         super().__init__(config or {})
         self._name = "mock"
 

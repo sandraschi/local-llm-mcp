@@ -1,11 +1,11 @@
 """Model definitions for vLLM V1 provider."""
 
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Optional, Dict, Any
-from enum import Enum
+from enum import StrEnum
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class ModelType(str, Enum):
+class ModelType(StrEnum):
     """Supported model types."""
 
     TEXT = "text"
@@ -16,7 +16,7 @@ class ModelType(str, Enum):
     EMBEDDING = "embedding"
 
 
-class ModelCapability(str, Enum):
+class ModelCapability(StrEnum):
     """Model capabilities."""
 
     TEXT_GENERATION = "text-generation"
@@ -35,30 +35,20 @@ class VLLMModel(BaseModel):
     id: str = Field(..., description="Model identifier")
     name: str = Field(..., description="Human-readable model name")
     type: ModelType = Field(..., description="Model type")
-    capabilities: List[ModelCapability] = Field(default_factory=list)
+    capabilities: list[ModelCapability] = Field(default_factory=list)
 
     # Resource requirements
     vram_required: str = Field(..., description="VRAM requirement (e.g., '8GB')")
     context_length: int = Field(default=4096, description="Maximum context length")
 
     # Performance optimization
-    tensor_parallel_recommended: Optional[int] = Field(
-        None, description="Recommended tensor parallelism"
-    )
-    pipeline_parallel_recommended: Optional[int] = Field(
-        None, description="Recommended pipeline parallelism"
-    )
+    tensor_parallel_recommended: int | None = Field(None, description="Recommended tensor parallelism")
+    pipeline_parallel_recommended: int | None = Field(None, description="Recommended pipeline parallelism")
 
     # Configuration
-    supports_v1_engine: bool = Field(
-        default=True, description="Supports vLLM V1 engine"
-    )
-    supports_prefix_caching: bool = Field(
-        default=True, description="Supports prefix caching"
-    )
-    supports_flashattention: bool = Field(
-        default=True, description="Supports FlashAttention"
-    )
+    supports_v1_engine: bool = Field(default=True, description="Supports vLLM V1 engine")
+    supports_prefix_caching: bool = Field(default=True, description="Supports prefix caching")
+    supports_flashattention: bool = Field(default=True, description="Supports FlashAttention")
 
     model_config = ConfigDict(use_enum_values=True)
 
@@ -67,17 +57,13 @@ class VLLMMultimodalModel(VLLMModel):
     """Multimodal model with vision/audio capabilities."""
 
     # Multimodal specific
-    max_images: Optional[int] = Field(None, description="Maximum images per request")
-    max_video_frames: Optional[int] = Field(None, description="Maximum video frames")
-    max_audio_length: Optional[int] = Field(
-        None, description="Maximum audio length (seconds)"
-    )
+    max_images: int | None = Field(None, description="Maximum images per request")
+    max_video_frames: int | None = Field(None, description="Maximum video frames")
+    max_audio_length: int | None = Field(None, description="Maximum audio length (seconds)")
 
     # Vision settings
     max_image_size: int = Field(default=2048, description="Maximum image resolution")
-    vision_embedding_dim: Optional[int] = Field(
-        None, description="Vision embedding dimension"
-    )
+    vision_embedding_dim: int | None = Field(None, description="Vision embedding dimension")
 
 
 # Pre-defined model configurations for vLLM v0.10+
@@ -501,23 +487,19 @@ VLLM_MODELS = {
 }
 
 
-def get_model_by_id(model_id: str) -> Optional[VLLMModel]:
+def get_model_by_id(model_id: str) -> VLLMModel | None:
     """Get model configuration by ID."""
     return VLLM_MODELS.get(model_id)
 
 
-def get_models_by_type(model_type: ModelType) -> List[VLLMModel]:
+def get_models_by_type(model_type: ModelType) -> list[VLLMModel]:
     """Get all models of a specific type."""
     return [model for model in VLLM_MODELS.values() if model.type == model_type]
 
 
-def get_multimodal_models() -> List[VLLMMultimodalModel]:
+def get_multimodal_models() -> list[VLLMMultimodalModel]:
     """Get all multimodal models."""
-    return [
-        model
-        for model in VLLM_MODELS.values()
-        if isinstance(model, VLLMMultimodalModel)
-    ]
+    return [model for model in VLLM_MODELS.values() if isinstance(model, VLLMMultimodalModel)]
 
 
 def estimate_vram_usage(model_id: str, tensor_parallel: int = 1) -> str:
@@ -532,9 +514,7 @@ def estimate_vram_usage(model_id: str, tensor_parallel: int = 1) -> str:
     return f"{distributed_vram}GB per GPU"
 
 
-def get_recommended_parallelism(
-    model_id: str, available_gpus: int = 1
-) -> Dict[str, int]:
+def get_recommended_parallelism(model_id: str, available_gpus: int = 1) -> dict[str, int]:
     """Get recommended parallelism settings."""
     model = get_model_by_id(model_id)
     if not model:
@@ -543,8 +523,6 @@ def get_recommended_parallelism(
     # Use recommended settings if available, otherwise estimate
     tensor_parallel = min(model.tensor_parallel_recommended or 1, available_gpus)
 
-    pipeline_parallel = min(
-        model.pipeline_parallel_recommended or 1, available_gpus // tensor_parallel
-    )
+    pipeline_parallel = min(model.pipeline_parallel_recommended or 1, available_gpus // tensor_parallel)
 
     return {"tensor_parallel": tensor_parallel, "pipeline_parallel": pipeline_parallel}

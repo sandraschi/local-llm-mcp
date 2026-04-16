@@ -1,22 +1,24 @@
 """Utility functions for tool registration and management."""
 import inspect
 import logging
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 logger = logging.getLogger(__name__)
 
 T = TypeVar('T')
 
-def register_tool(
+
+def register_tool[T](
     mcp: Any,
     func: Callable[..., T],
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     stateful: bool = False,
-    ttl: Optional[int] = None
+    ttl: int | None = None
 ) -> Callable[..., T]:
     """Register a tool with the MCP server with standardized configuration.
-    
+
     Args:
         mcp: The MCP server instance
         func: The function to register as a tool
@@ -24,12 +26,12 @@ def register_tool(
         description: Optional description for the tool
         stateful: Whether the tool should maintain state between calls
         ttl: Time-to-live for cached results in seconds (if stateful)
-        
+
     Returns:
         The decorated function
     """
     tool_name = name or func.__name__
-    
+
     # Use provided description or extract from docstring
     if description is None:
         if func.__doc__:
@@ -38,7 +40,7 @@ def register_tool(
             description = doc_lines[0] if doc_lines else ""
         else:
             description = f"Tool: {tool_name}"
-    
+
     # Create the decorator with appropriate parameters
     decorator = mcp.tool(
         name=tool_name,
@@ -46,57 +48,59 @@ def register_tool(
         stateful=stateful,
         ttl=ttl
     )
-    
+
     # Apply the decorator to the function
     decorated_func = decorator(func)
-    
+
     # Log the registration
     logger.debug(
         f"Registered tool: {tool_name} "
         f"(stateful={stateful}, ttl={ttl or 'default'})"
     )
-    
+
     return decorated_func
+
 
 def register_tool_module(mcp: Any, module_name: str, register_func_name: str) -> Any:
     """Safely import and register a tool module.
-    
+
     Args:
         mcp: The MCP server instance
         module_name: Name of the module containing the registration function
         register_func_name: Name of the registration function in the module
-        
+
     Returns:
         The updated MCP server instance or None if registration failed
     """
     try:
         module = __import__(f"llm_mcp.tools.{module_name}", fromlist=[register_func_name])
         register_func = getattr(module, register_func_name)
-        
+
         logger.info(f"Registering tools from {module_name}.{register_func_name}")
         mcp = register_func(mcp)
         return mcp
-        
+
     except ImportError as e:
-        logger.warning(f"Failed to import tool module {module_name}: {str(e)}")
+        logger.warning(f"Failed to import tool module {module_name}: {e!s}")
     except AttributeError as e:
-        logger.warning(f"Registration function {register_func_name} not found in {module_name}: {str(e)}")
+        logger.warning(f"Registration function {register_func_name} not found in {module_name}: {e!s}")
     except Exception as e:
-        logger.error(f"Error registering tools from {module_name}.{register_func_name}: {str(e)}", exc_info=True)
-    
+        logger.error(f"Error registering tools from {module_name}.{register_func_name}: {e!s}", exc_info=True)
+
     return mcp
 
-def get_tool_metadata(func: Callable) -> Dict[str, Any]:
+
+def get_tool_metadata(func: Callable) -> dict[str, Any]:
     """Extract metadata from a tool function.
-    
+
     Args:
         func: The tool function to extract metadata from
-        
+
     Returns:
         Dictionary containing tool metadata
     """
     signature = inspect.signature(func)
-    
+
     # Extract parameter information
     parameters = {}
     for name, param in signature.parameters.items():
@@ -110,17 +114,17 @@ def get_tool_metadata(func: Callable) -> Dict[str, Any]:
             ]
         }
         parameters[name] = param_info
-    
+
     # Extract return type
     return_type = (
         str(signature.return_annotation)
         if signature.return_annotation != inspect.Signature.empty
         else "Any"
     )
-    
+
     # Extract docstring
     docstring = func.__doc__ or ""
-    
+
     return {
         "name": func.__name__,
         "docstring": docstring,

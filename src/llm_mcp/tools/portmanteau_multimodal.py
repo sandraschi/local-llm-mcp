@@ -4,8 +4,7 @@ This tool consolidates all image analysis, generation, and comparison operations
 into a single interface following the portmanteau pattern.
 """
 
-import logging
-from typing import Dict, Any, Optional
+from typing import Any
 
 from llm_mcp.tools.multimodal_tools import analyze_image_impl, generate_image_impl, image_similarity_impl
 from llm_mcp.utils.logging import get_logger
@@ -14,29 +13,31 @@ logger = get_logger(__name__)
 
 # Import FastMCP components
 try:
-    from fastmcp import FastMCP
-    from fastmcp.tools import Tool
+    from fastmcp import FastMCP  # noqa: F401
+    from fastmcp.tools import Tool  # noqa: F401
+
     FASTMCP_AVAILABLE = True
 except ImportError:
     logger.error("FastMCP not available - portmanteau tools require FastMCP >= 2.12.0")
     FASTMCP_AVAILABLE = False
 
+
 async def llm_multimodal(
     operation: str,
     # Image operations
-    image: Optional[str] = None,
-    image1: Optional[str] = None,
-    image2: Optional[str] = None,
+    image: str | None = None,
+    image1: str | None = None,
+    image2: str | None = None,
     # Analysis parameters
-    model_name: Optional[str] = None,
+    model_name: str | None = None,
     # Generation parameters
-    prompt: Optional[str] = None,
+    prompt: str | None = None,
     negative_prompt: str = "",
     width: int = 512,
     height: int = 512,
     num_inference_steps: int = 50,
     guidance_scale: float = 7.5,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Comprehensive multimodal (image) tool for Local LLM MCP server.
 
     PORTMANTEAU PATTERN RATIONALE:
@@ -82,10 +83,7 @@ async def llm_multimodal(
             model_key = model_name or "blip2"  # Default to BLIP-2 (most capable)
             hf_model_name = supported_models.get(model_key, model_key)
 
-            return await analyze_image_impl(
-                image=image,
-                model_name=hf_model_name
-            )
+            return await analyze_image_impl(image=image, model_name=hf_model_name)
 
         elif operation == "generate_image":
             if not prompt:
@@ -135,21 +133,18 @@ async def llm_multimodal(
         elif operation == "compare_images":
             if not image1 or not image2:
                 return {"error": "image1 and image2 required for compare_images operation"}
-            return await image_similarity_impl(
-                image1=image1,
-                image2=image2,
-                model_name=model_name or "clip-ViT-B-32"
-            )
+            return await image_similarity_impl(image1=image1, image2=image2, model_name=model_name or "clip-ViT-B-32")
 
         else:
             return {
                 "error": f"Unknown operation: {operation}",
-                "available_operations": ["analyze_image", "generate_image", "compare_images"]
+                "available_operations": ["analyze_image", "generate_image", "compare_images"],
             }
 
     except Exception as e:
         logger.error(f"Error in llm_multimodal operation {operation}: {e}", exc_info=True)
-        return {"error": f"Operation failed: {str(e)}", "operation": operation}
+        return {"error": f"Operation failed: {e!s}", "operation": operation}
+
 
 def register_llm_multimodal_tools(mcp):
     """Register the LLM Multimodal portmanteau tool with the MCP server."""
@@ -160,17 +155,17 @@ def register_llm_multimodal_tools(mcp):
     @mcp.tool()
     async def llm_multimodal_tool(
         operation: str,
-        image: Optional[str] = None,
-        image1: Optional[str] = None,
-        image2: Optional[str] = None,
-        model_name: Optional[str] = None,
-        prompt: Optional[str] = None,
+        image: str | None = None,
+        image1: str | None = None,
+        image2: str | None = None,
+        model_name: str | None = None,
+        prompt: str | None = None,
         negative_prompt: str = "",
         width: int = 512,
         height: int = 512,
         num_inference_steps: int = 50,
         guidance_scale: float = 7.5,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """LLM Multimodal Portmanteau Tool - Consolidated image operations.
 
         This tool consolidates all image analysis, generation, and comparison operations

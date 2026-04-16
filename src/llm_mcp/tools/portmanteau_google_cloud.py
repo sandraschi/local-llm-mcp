@@ -10,10 +10,10 @@ while maintaining full functionality and improving discoverability. Follows Fast
 best practices and integrates with Google Cloud's unified AI platform.
 """
 
-import logging
 import os
-from typing import Dict, Any, Optional, List, Union
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from llm_mcp.utils.logging import get_logger
 
@@ -23,30 +23,29 @@ logger = get_logger(__name__)
 try:
     from google import genai
     from google.auth import default
-    from google.cloud import aiplatform
-    from google.cloud import storage
+    from google.cloud import aiplatform, storage
     from vertexai.generative_models import GenerativeModel
+
     GOOGLE_CLOUD_AVAILABLE = True
 except ImportError:
     GOOGLE_CLOUD_AVAILABLE = False
-    logger.warning("Google Cloud AI not available. Install with: pip install google-cloud-aiplatform google-cloud-storage google-generativeai vertexai")
+    logger.warning(
+        "Google Cloud AI not available. Install with: pip install google-cloud-aiplatform google-cloud-storage google-generativeai vertexai"
+    )
+
 
 class GoogleCloudConfig(BaseModel):
     """Configuration for Google Cloud operations."""
 
-    api_key: Optional[str] = Field(None, description="Google AI API key", alias="token")
-    project_id: Optional[str] = Field(None, description="Google Cloud project ID")
+    api_key: str | None = Field(None, description="Google AI API key", alias="token")
+    project_id: str | None = Field(None, description="Google Cloud project ID")
     region: str = Field("us-central1", description="Google Cloud region")
-    bucket_name: Optional[str] = Field(None, description="Default Cloud Storage bucket")
+    bucket_name: str | None = Field(None, description="Default Cloud Storage bucket")
     use_vertex_ai: bool = Field(True, description="Use Vertex AI instead of Gemini API")
     timeout: int = Field(30, description="Request timeout in seconds")
     max_retries: int = Field(3, description="Maximum number of retries")
 
-    model_config = ConfigDict(
-        env_prefix="GOOGLE_CLOUD_",
-        populate_by_name=True,
-        extra="ignore"
-    )
+    model_config = ConfigDict(env_prefix="GOOGLE_CLOUD_", populate_by_name=True, extra="ignore")
 
     @classmethod
     def from_env(cls) -> "GoogleCloudConfig":
@@ -70,23 +69,23 @@ class GoogleCloudConfig(BaseModel):
 async def llm_google_cloud(
     operation: str,
     # Model operations
-    model_id: Optional[str] = None,
+    model_id: str | None = None,
     # Generation parameters
-    prompt: Optional[str] = None,
-    messages: Optional[List[Dict[str, str]]] = None,
+    prompt: str | None = None,
+    messages: list[dict[str, str]] | None = None,
     temperature: float = 0.7,
-    max_tokens: Optional[int] = None,
+    max_tokens: int | None = None,
     top_p: float = 1.0,
-    top_k: Optional[int] = None,
+    top_k: int | None = None,
     # Cloud Storage operations
-    bucket_name: Optional[str] = None,
-    file_path: Optional[str] = None,
-    destination_path: Optional[str] = None,
+    bucket_name: str | None = None,
+    file_path: str | None = None,
+    destination_path: str | None = None,
     # Authentication
-    api_key: Optional[str] = None,
-    project_id: Optional[str] = None,
-    region: Optional[str] = None,
-) -> Dict[str, Any]:
+    api_key: str | None = None,
+    project_id: str | None = None,
+    region: str | None = None,
+) -> dict[str, Any]:
     """Comprehensive Google Cloud AI management tool for Local LLM MCP server.
 
     PORTMANTEAU PATTERN: Consolidates 20+ Google Cloud AI operations into one tool.
@@ -136,7 +135,9 @@ async def llm_google_cloud(
         Operation-specific result dictionary
     """
     if not GOOGLE_CLOUD_AVAILABLE:
-        return {"error": "Google Cloud AI not available. Install with: pip install google-cloud-aiplatform google-cloud-storage google-generativeai vertexai"}
+        return {
+            "error": "Google Cloud AI not available. Install with: pip install google-cloud-aiplatform google-cloud-storage google-generativeai vertexai"
+        }
 
     try:
         # Load configuration
@@ -162,7 +163,9 @@ async def llm_google_cloud(
 
         if operation == "authenticate":
             if not config.api_key:
-                return {"error": "API key required. Set GOOGLE_CLOUD_TOKEN, GEMINI_API_KEY, or GOOGLE_AI_API_KEY environment variable"}
+                return {
+                    "error": "API key required. Set GOOGLE_CLOUD_TOKEN, GEMINI_API_KEY, or GOOGLE_AI_API_KEY environment variable"
+                }
             try:
                 # Test authentication
                 if config.use_vertex_ai:
@@ -177,10 +180,10 @@ async def llm_google_cloud(
                     "message": "Successfully authenticated with Google Cloud",
                     "method": "vertex_ai" if config.use_vertex_ai else "gemini_api",
                     "project": config.project_id,
-                    "region": config.region
+                    "region": config.region,
                 }
             except Exception as e:
-                return {"error": f"Authentication failed: {str(e)}"}
+                return {"error": f"Authentication failed: {e!s}"}
 
         elif operation == "list_models":
             try:
@@ -190,13 +193,15 @@ async def llm_google_cloud(
                     # Get Vertex AI models
                     vertex_models = aiplatform.Model.list()
                     for model in vertex_models[:20]:  # Limit results
-                        models.append({
-                            "id": model.resource_name.split('/')[-1],
-                            "name": model.display_name,
-                            "description": model.description or "Vertex AI model",
-                            "provider": "vertex_ai",
-                            "created_at": model.create_time.isoformat() if model.create_time else None
-                        })
+                        models.append(
+                            {
+                                "id": model.resource_name.split("/")[-1],
+                                "name": model.display_name,
+                                "description": model.description or "Vertex AI model",
+                                "provider": "vertex_ai",
+                                "created_at": model.create_time.isoformat() if model.create_time else None,
+                            }
+                        )
                 else:
                     # Gemini API models (hardcoded as API doesn't provide dynamic list)
                     gemini_models = [
@@ -206,7 +211,7 @@ async def llm_google_cloud(
                             "description": "Most capable Gemini model with large context",
                             "provider": "gemini",
                             "max_tokens": 8192,
-                            "context_length": 2000000
+                            "context_length": 2000000,
                         },
                         {
                             "id": "gemini-1.5-flash",
@@ -214,7 +219,7 @@ async def llm_google_cloud(
                             "description": "Fast and efficient Gemini model",
                             "provider": "gemini",
                             "max_tokens": 8192,
-                            "context_length": 1000000
+                            "context_length": 1000000,
                         },
                         {
                             "id": "gemini-1.5-flash-8b",
@@ -222,7 +227,7 @@ async def llm_google_cloud(
                             "description": "Lightweight Gemini model",
                             "provider": "gemini",
                             "max_tokens": 8192,
-                            "context_length": 1000000
+                            "context_length": 1000000,
                         },
                         {
                             "id": "gemini-3.0-flash-exp",
@@ -231,7 +236,7 @@ async def llm_google_cloud(
                             "provider": "gemini",
                             "max_tokens": 8192,
                             "context_length": 2000000,
-                            "experimental": True
+                            "experimental": True,
                         },
                         {
                             "id": "text-bison",
@@ -239,8 +244,8 @@ async def llm_google_cloud(
                             "description": "Legacy PaLM 2 text model",
                             "provider": "vertex_ai",
                             "max_tokens": 8192,
-                            "context_length": 8192
-                        }
+                            "context_length": 8192,
+                        },
                     ]
                     models.extend(gemini_models)
 
@@ -248,10 +253,10 @@ async def llm_google_cloud(
                     "success": True,
                     "models": models,
                     "count": len(models),
-                    "provider": "vertex_ai" if config.use_vertex_ai else "gemini"
+                    "provider": "vertex_ai" if config.use_vertex_ai else "gemini",
                 }
             except Exception as e:
-                return {"error": f"Failed to list models: {str(e)}"}
+                return {"error": f"Failed to list models: {e!s}"}
 
         elif operation == "get_model_info":
             if not model_id:
@@ -265,14 +270,14 @@ async def llm_google_cloud(
                         return {
                             "success": True,
                             "model": {
-                                "id": model.resource_name.split('/')[-1],
+                                "id": model.resource_name.split("/")[-1],
                                 "name": model.display_name,
                                 "description": model.description,
                                 "provider": "vertex_ai",
                                 "created_at": model.create_time.isoformat() if model.create_time else None,
                                 "version": model.version_id,
-                                "metadata": model.metadata_schema_uri
-                            }
+                                "metadata": model.metadata_schema_uri,
+                            },
                         }
                     except Exception:
                         # Fall back to Gemini models
@@ -288,7 +293,7 @@ async def llm_google_cloud(
                         "max_tokens": 8192,
                         "context_length": 2000000,
                         "capabilities": ["text-generation", "chat", "vision", "audio", "code"],
-                        "pricing": "~$0.00125 per 1K characters"
+                        "pricing": "~$0.00125 per 1K characters",
                     },
                     "gemini-1.5-flash": {
                         "id": "gemini-1.5-flash",
@@ -298,7 +303,7 @@ async def llm_google_cloud(
                         "max_tokens": 8192,
                         "context_length": 1000000,
                         "capabilities": ["text-generation", "chat", "vision", "audio", "code"],
-                        "pricing": "~$0.000075 per 1K characters"
+                        "pricing": "~$0.000075 per 1K characters",
                     },
                     "gemini-1.5-flash-8b": {
                         "id": "gemini-1.5-flash-8b",
@@ -308,7 +313,7 @@ async def llm_google_cloud(
                         "max_tokens": 8192,
                         "context_length": 1000000,
                         "capabilities": ["text-generation", "chat", "vision", "code"],
-                        "pricing": "~$0.0000375 per 1K characters"
+                        "pricing": "~$0.0000375 per 1K characters",
                     },
                     "gemini-3.0-flash-exp": {
                         "id": "gemini-3.0-flash-exp",
@@ -319,20 +324,17 @@ async def llm_google_cloud(
                         "context_length": 2000000,
                         "capabilities": ["text-generation", "chat", "vision", "audio", "code", "advanced-reasoning"],
                         "experimental": True,
-                        "pricing": "~$0.00015 per 1K characters"
-                    }
+                        "pricing": "~$0.00015 per 1K characters",
+                    },
                 }
 
                 if model_id in gemini_info:
-                    return {
-                        "success": True,
-                        "model": gemini_info[model_id]
-                    }
+                    return {"success": True, "model": gemini_info[model_id]}
                 else:
                     return {"error": f"Model {model_id} not found. Available: {list(gemini_info.keys())}"}
 
             except Exception as e:
-                return {"error": f"Failed to get model info: {str(e)}"}
+                return {"error": f"Failed to get model info: {e!s}"}
 
         elif operation == "generate_text":
             if not prompt:
@@ -350,8 +352,8 @@ async def llm_google_cloud(
                             "temperature": temperature,
                             "max_output_tokens": max_tokens or 2048,
                             "top_p": top_p,
-                            "top_k": top_k or 40
-                        }
+                            "top_k": top_k or 40,
+                        },
                     )
                     generated_text = response.text
                 else:
@@ -363,8 +365,8 @@ async def llm_google_cloud(
                             temperature=temperature,
                             max_output_tokens=max_tokens or 2048,
                             top_p=top_p,
-                            top_k=top_k or 40
-                        )
+                            top_k=top_k or 40,
+                        ),
                     )
                     generated_text = response.text
 
@@ -375,17 +377,17 @@ async def llm_google_cloud(
                     "usage": {
                         "prompt_tokens": len(prompt.split()),  # Approximate
                         "completion_tokens": len(generated_text.split()),  # Approximate
-                        "total_tokens": len(prompt.split()) + len(generated_text.split())
+                        "total_tokens": len(prompt.split()) + len(generated_text.split()),
                     },
                     "parameters": {
                         "temperature": temperature,
                         "max_tokens": max_tokens,
                         "top_p": top_p,
-                        "top_k": top_k
-                    }
+                        "top_k": top_k,
+                    },
                 }
             except Exception as e:
-                return {"error": f"Failed to generate text: {str(e)}"}
+                return {"error": f"Failed to generate text: {e!s}"}
 
         elif operation == "chat_completion":
             if not messages:
@@ -412,8 +414,8 @@ async def llm_google_cloud(
                                 "temperature": temperature,
                                 "max_output_tokens": max_tokens or 2048,
                                 "top_p": top_p,
-                                "top_k": top_k or 40
-                            }
+                                "top_k": top_k or 40,
+                            },
                         )
                         generated_text = response.text
                     else:
@@ -439,8 +441,8 @@ async def llm_google_cloud(
                             temperature=temperature,
                             max_output_tokens=max_tokens or 2048,
                             top_p=top_p,
-                            top_k=top_k or 40
-                        )
+                            top_k=top_k or 40,
+                        ),
                     )
                     generated_text = response.text
 
@@ -453,11 +455,11 @@ async def llm_google_cloud(
                         "temperature": temperature,
                         "max_tokens": max_tokens,
                         "top_p": top_p,
-                        "top_k": top_k
-                    }
+                        "top_k": top_k,
+                    },
                 }
             except Exception as e:
-                return {"error": f"Failed to generate chat completion: {str(e)}"}
+                return {"error": f"Failed to generate chat completion: {e!s}"}
 
         elif operation == "upload_to_gcs":
             if not file_path:
@@ -484,10 +486,10 @@ async def llm_google_cloud(
                     "file_path": file_path,
                     "destination_path": destination_path,
                     "gcs_url": f"gs://{bucket}/{destination_path}",
-                    "message": f"File uploaded to gs://{bucket}/{destination_path}"
+                    "message": f"File uploaded to gs://{bucket}/{destination_path}",
                 }
             except Exception as e:
-                return {"error": f"Failed to upload to GCS: {str(e)}"}
+                return {"error": f"Failed to upload to GCS: {e!s}"}
 
         elif operation == "download_from_gcs":
             if not file_path:
@@ -513,10 +515,10 @@ async def llm_google_cloud(
                     "bucket": bucket,
                     "file_path": file_path,
                     "destination_path": destination_path,
-                    "message": f"File downloaded from gs://{bucket}/{file_path} to {destination_path}"
+                    "message": f"File downloaded from gs://{bucket}/{file_path} to {destination_path}",
                 }
             except Exception as e:
-                return {"error": f"Failed to download from GCS: {str(e)}"}
+                return {"error": f"Failed to download from GCS: {e!s}"}
 
         elif operation == "list_gcs_bucket":
             bucket = bucket_name or config.bucket_name
@@ -532,21 +534,18 @@ async def llm_google_cloud(
 
                 files = []
                 for blob in blobs:
-                    files.append({
-                        "name": blob.name,
-                        "size": blob.size,
-                        "updated": blob.updated.isoformat() if blob.updated else None,
-                        "content_type": blob.content_type
-                    })
+                    files.append(
+                        {
+                            "name": blob.name,
+                            "size": blob.size,
+                            "updated": blob.updated.isoformat() if blob.updated else None,
+                            "content_type": blob.content_type,
+                        }
+                    )
 
-                return {
-                    "success": True,
-                    "bucket": bucket,
-                    "files": files,
-                    "count": len(files)
-                }
+                return {"success": True, "bucket": bucket, "files": files, "count": len(files)}
             except Exception as e:
-                return {"error": f"Failed to list GCS bucket: {str(e)}"}
+                return {"error": f"Failed to list GCS bucket: {e!s}"}
 
         elif operation == "create_gcs_bucket":
             bucket = bucket_name or config.bucket_name
@@ -560,13 +559,9 @@ async def llm_google_cloud(
                 bucket_obj = storage_client.bucket(bucket)
                 bucket_obj.create()
 
-                return {
-                    "success": True,
-                    "bucket": bucket,
-                    "message": f"Bucket gs://{bucket} created successfully"
-                }
+                return {"success": True, "bucket": bucket, "message": f"Bucket gs://{bucket} created successfully"}
             except Exception as e:
-                return {"error": f"Failed to create GCS bucket: {str(e)}"}
+                return {"error": f"Failed to create GCS bucket: {e!s}"}
 
         elif operation == "deploy_model":
             if not model_id:
@@ -580,17 +575,12 @@ async def llm_google_cloud(
 
                 # Create endpoint
                 endpoint = aiplatform.Endpoint.create(
-                    display_name=f"{model_id}-endpoint",
-                    project=config.project_id,
-                    location=config.region
+                    display_name=f"{model_id}-endpoint", project=config.project_id, location=config.region
                 )
 
                 # Deploy model to endpoint
                 deployed_model = model.deploy(
-                    endpoint=endpoint,
-                    machine_type="n1-standard-4",
-                    min_replica_count=1,
-                    max_replica_count=3
+                    endpoint=endpoint, machine_type="n1-standard-4", min_replica_count=1, max_replica_count=3
                 )
 
                 return {
@@ -598,10 +588,10 @@ async def llm_google_cloud(
                     "model_id": model_id,
                     "endpoint_id": endpoint.resource_name,
                     "deployment_id": deployed_model.resource_name,
-                    "message": f"Model {model_id} deployed to endpoint {endpoint.display_name}"
+                    "message": f"Model {model_id} deployed to endpoint {endpoint.display_name}",
                 }
             except Exception as e:
-                return {"error": f"Failed to deploy model: {str(e)}"}
+                return {"error": f"Failed to deploy model: {e!s}"}
 
         elif operation == "predict_online":
             if not model_id:
@@ -624,24 +614,32 @@ async def llm_google_cloud(
                     "success": True,
                     "endpoint": model_id,
                     "prediction": prediction.predictions[0] if prediction.predictions else None,
-                    "prompt": prompt
+                    "prompt": prompt,
                 }
             except Exception as e:
-                return {"error": f"Failed to make online prediction: {str(e)}"}
+                return {"error": f"Failed to make online prediction: {e!s}"}
 
         else:
             return {
                 "error": f"Unknown operation: {operation}",
                 "available_operations": [
-                    "authenticate", "list_models", "get_model_info", "generate_text", "chat_completion",
-                    "upload_to_gcs", "download_from_gcs", "list_gcs_bucket", "create_gcs_bucket",
-                    "deploy_model", "predict_online"
-                ]
+                    "authenticate",
+                    "list_models",
+                    "get_model_info",
+                    "generate_text",
+                    "chat_completion",
+                    "upload_to_gcs",
+                    "download_from_gcs",
+                    "list_gcs_bucket",
+                    "create_gcs_bucket",
+                    "deploy_model",
+                    "predict_online",
+                ],
             }
 
     except Exception as e:
         logger.error(f"Error in llm_google_cloud operation {operation}: {e}", exc_info=True)
-        return {"error": f"Operation failed: {str(e)}", "operation": operation}
+        return {"error": f"Operation failed: {e!s}", "operation": operation}
 
 
 def register_llm_google_cloud_tools(mcp):
@@ -653,20 +651,20 @@ def register_llm_google_cloud_tools(mcp):
     @mcp.tool()
     async def llm_google_cloud_tool(
         operation: str,
-        model_id: Optional[str] = None,
-        prompt: Optional[str] = None,
-        messages: Optional[List[Dict[str, str]]] = None,
+        model_id: str | None = None,
+        prompt: str | None = None,
+        messages: list[dict[str, str]] | None = None,
         temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
+        max_tokens: int | None = None,
         top_p: float = 1.0,
-        top_k: Optional[int] = None,
-        bucket_name: Optional[str] = None,
-        file_path: Optional[str] = None,
-        destination_path: Optional[str] = None,
-        api_key: Optional[str] = None,
-        project_id: Optional[str] = None,
-        region: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        top_k: int | None = None,
+        bucket_name: str | None = None,
+        file_path: str | None = None,
+        destination_path: str | None = None,
+        api_key: str | None = None,
+        project_id: str | None = None,
+        region: str | None = None,
+    ) -> dict[str, Any]:
         """Google Cloud Portmanteau Tool - Consolidated Google Cloud AI operations.
 
         This tool consolidates all Google Cloud AI operations into a single interface,

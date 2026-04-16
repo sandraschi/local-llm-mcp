@@ -1,14 +1,13 @@
 """Text generation tools for the LLM MCP server."""
 
-from typing import Any, Dict, List, Optional, Union, Literal
-import logging
-from dataclasses import dataclass, asdict
-import time
-import json
 import dataclasses
+import logging
+import time
+from dataclasses import dataclass
+from typing import Any, Literal
 
-from .model_tools import _model_manager as model_manager, ModelInfo
 from ..services.provider_factory import _provider_factory
+from .model_tools import _model_manager as model_manager
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +19,10 @@ class GenerationConfig:
     temperature: float = 0.7
     max_tokens: int = 1000
     top_p: float = 1.0
-    top_k: Optional[int] = None
+    top_k: int | None = None
     frequency_penalty: float = 0.0
     presence_penalty: float = 0.0
-    stop: Optional[Union[str, List[str]]] = None
+    stop: str | list[str] | None = None
     stream: bool = False
 
 
@@ -33,8 +32,8 @@ class ChatMessage:
 
     role: Literal["system", "user", "assistant", "function"]
     content: str
-    name: Optional[str] = None
-    function_call: Optional[Dict] = None
+    name: str | None = None
+    function_call: dict | None = None
 
 
 def _get_model_provider(model_id: str) -> str:
@@ -56,9 +55,9 @@ class GenerationManager:
         self,
         model_id: str,
         prompt: str,
-        config: Optional[GenerationConfig] = None,
+        config: GenerationConfig | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate text using the specified model.
 
         Args:
@@ -91,9 +90,7 @@ class GenerationManager:
         start_time = time.time()
 
         try:
-            generated_text = await provider.generate_text(
-                model_id, prompt, **config_dict
-            )
+            generated_text = await provider.generate_text(model_id, prompt, **config_dict)
         except Exception as e:
             logger.error(f"Generation failed: {e}")
             raise
@@ -103,9 +100,7 @@ class GenerationManager:
         return {
             "text": generated_text,
             "model": model_id,
-            "tokens_used": len(
-                generated_text.split()
-            ),  # Provider should arguably return usage info
+            "tokens_used": len(generated_text.split()),  # Provider should arguably return usage info
             "time_taken": end_time - start_time,
             "finish_reason": "stop",
         }
@@ -113,10 +108,10 @@ class GenerationManager:
     async def chat(
         self,
         model_id: str,
-        messages: List[Dict[str, str]],
-        config: Optional[GenerationConfig] = None,
+        messages: list[dict[str, str]],
+        config: GenerationConfig | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate a chat completion.
 
         Args:
@@ -174,7 +169,7 @@ async def generate_text_impl(
     top_p: float = 1.0,
     stream: bool = False,
     **kwargs,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Generate text using the specified model.
 
     Args:
@@ -189,22 +184,20 @@ async def generate_text_impl(
     Returns:
         Dictionary containing the generated text and metadata
     """
-    config = GenerationConfig(
-        temperature=temperature, max_tokens=max_tokens, top_p=top_p, stream=stream
-    )
+    config = GenerationConfig(temperature=temperature, max_tokens=max_tokens, top_p=top_p, stream=stream)
 
     return await generation_manager.generate(model, prompt, config, **kwargs)
 
 
 async def chat_completion_impl(
     model: str,
-    messages: List[Dict[str, str]],
+    messages: list[dict[str, str]],
     temperature: float = 0.7,
     max_tokens: int = 1000,
     top_p: float = 1.0,
     stream: bool = False,
     **kwargs,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Generate a chat completion.
 
     Args:
@@ -219,16 +212,12 @@ async def chat_completion_impl(
     Returns:
         Dictionary containing the generated response and metadata
     """
-    config = GenerationConfig(
-        temperature=temperature, max_tokens=max_tokens, top_p=top_p, stream=stream
-    )
+    config = GenerationConfig(temperature=temperature, max_tokens=max_tokens, top_p=top_p, stream=stream)
 
     return await generation_manager.chat(model, messages, config, **kwargs)
 
 
-async def embed_text_impl(
-    model: str, text: Union[str, List[str]], **kwargs
-) -> Dict[str, Any]:
+async def embed_text_impl(model: str, text: str | list[str], **kwargs) -> dict[str, Any]:
     """Generate embeddings for the input text.
 
     Args:
@@ -255,10 +244,7 @@ async def embed_text_impl(
 
     return {
         "model": model,
-        "data": [
-            {"embedding": emb, "index": i, "object": "embedding"}
-            for i, emb in enumerate(embeddings)
-        ],
+        "data": [{"embedding": emb, "index": i, "object": "embedding"} for i, emb in enumerate(embeddings)],
         "usage": {
             "prompt_tokens": sum(len(t.split()) for t in text),
             "total_tokens": sum(len(t.split()) for t in text),
@@ -284,7 +270,7 @@ def register_generation_tools(mcp):
         max_tokens: int = 1000,
         top_p: float = 1.0,
         stream: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate text using a local LLM.
 
         Args:
@@ -310,12 +296,12 @@ def register_generation_tools(mcp):
     @mcp.tool()  # Chat Completion
     async def chat_completion(
         model: str,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         temperature: float = 0.7,
         max_tokens: int = 1000,
         top_p: float = 1.0,
         stream: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate a chat completion with stateful conversation management.
 
         This tool maintains conversation state and caches recent completions.
@@ -343,7 +329,7 @@ def register_generation_tools(mcp):
         )
 
     @mcp.tool()  # Generate embeddings
-    async def embed_text(model: str, text: Union[str, List[str]]) -> Dict[str, Any]:
+    async def embed_text(model: str, text: str | list[str]) -> dict[str, Any]:
         """Generate and cache embeddings for the input text.
 
         This tool caches embeddings to avoid redundant computations.

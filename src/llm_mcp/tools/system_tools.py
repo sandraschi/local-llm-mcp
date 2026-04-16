@@ -1,19 +1,19 @@
 """System management and monitoring tools for the LLM MCP server."""
 
-import os
-import sys
-import platform
-import psutil
-import time
 import logging
-from typing import Dict, List, Any, Optional
+import os
+import platform
 from datetime import datetime
+from typing import Any
+
+import psutil
+
 from ..utils.gpu import get_gpu_info
 
 logger = logging.getLogger(__name__)
 
 
-def get_system_info() -> Dict[str, Any]:
+def get_system_info() -> dict[str, Any]:
     """Get detailed system information.
 
     Returns:
@@ -71,9 +71,7 @@ def get_system_info() -> Dict[str, Any]:
             "pid": os.getpid(),
             "name": psutil.Process().name(),
             "status": psutil.Process().status(),
-            "create_time": datetime.fromtimestamp(
-                psutil.Process().create_time()
-            ).strftime("%Y-%m-%d %H:%M:%S"),
+            "create_time": datetime.fromtimestamp(psutil.Process().create_time()).strftime("%Y-%m-%d %H:%M:%S"),
             "cpu_percent": psutil.Process().cpu_percent(interval=1),
             "memory_percent": psutil.Process().memory_percent(),
             "memory_info": {
@@ -84,7 +82,7 @@ def get_system_info() -> Dict[str, Any]:
     }
 
 
-def get_service_status() -> Dict[str, Any]:
+def get_service_status() -> dict[str, Any]:
     """Get the status of common services used by the MCP server.
 
     Returns:
@@ -101,7 +99,7 @@ def get_service_status() -> Dict[str, Any]:
         redis_status["status"] = "running" if r.ping() else "not responding"
         redis_status["version"] = r.info().get("redis_version", "unknown")
     except Exception as e:
-        redis_status["status"] = f"error: {str(e)}"
+        redis_status["status"] = f"error: {e!s}"
     services["redis"] = redis_status
 
     # Check database connections, etc.
@@ -126,7 +124,7 @@ def register_system_tools(mcp):
     """
 
     @mcp.tool
-    async def system_info() -> Dict[str, Any]:
+    async def system_info() -> dict[str, Any]:
         """Get detailed system information with stateful caching.
 
         This tool caches system information to improve performance while ensuring
@@ -138,7 +136,7 @@ def register_system_tools(mcp):
         return get_system_info()
 
     @mcp.tool
-    async def service_status() -> Dict[str, Any]:
+    async def service_status() -> dict[str, Any]:
         """Check the status of dependent services with stateful caching.
 
         This tool caches service status to improve performance.
@@ -150,7 +148,7 @@ def register_system_tools(mcp):
         return get_service_status()
 
     @mcp.tool
-    async def server_health() -> Dict[str, Any]:
+    async def server_health() -> dict[str, Any]:
         """Get the health status of the MCP server with stateful caching.
 
         This tool caches health status to improve performance while ensuring
@@ -195,7 +193,7 @@ def register_system_tools(mcp):
         return health
 
     @mcp.tool()  # Restart server
-    async def server_restart(delay: int = 0) -> Dict[str, Any]:
+    async def server_restart(delay: int = 0) -> dict[str, Any]:
         """Restart the MCP server.
 
         This tool does not use caching as it performs a critical system operation.
@@ -219,7 +217,7 @@ def register_system_tools(mcp):
         }
 
     @mcp.tool()  # Shutdown server
-    async def server_shutdown(delay: int = 0) -> Dict[str, Any]:
+    async def server_shutdown(delay: int = 0) -> dict[str, Any]:
         """Shut down the MCP server.
 
         This tool does not use caching as it performs a critical system operation.

@@ -2,6 +2,7 @@
 
 Serves the API used by the web_sota frontend (health, models, MCP servers).
 """
+
 import logging
 from contextlib import asynccontextmanager
 
@@ -46,6 +47,7 @@ async def health():
 
 try:
     from llm_mcp.api.v1.router import api_router
+
     app.include_router(api_router, prefix="/api/v1")
 except Exception as e:
     logger.warning("API router not loaded: %s. Dashboard will have limited functionality.", e)

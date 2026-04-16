@@ -1,7 +1,7 @@
 """Check FastMCP import and list its contents."""
-import sys
-import logging
 import inspect
+import logging
+import sys
 
 # Configure logging
 logging.basicConfig(
@@ -11,21 +11,22 @@ logging.basicConfig(
 )
 logger = logging.getLogger("check_fastmcp_import")
 
+
 def main():
     """Check FastMCP import and list its contents."""
     try:
         # Try to import FastMCP
         logger.info("Attempting to import fastmcp...")
         import fastmcp
-        
+
         # Print module info
         logger.info("Successfully imported fastmcp!")
         logger.info(f"Module location: {fastmcp.__file__}")
-        
+
         # List available attributes
         attrs = [attr for attr in dir(fastmcp) if not attr.startswith('_')]
         logger.info(f"Available attributes: {', '.join(attrs)}")
-        
+
         # Try to find FastMCP class
         fastmcp_class = None
         for attr in attrs:
@@ -36,17 +37,17 @@ def main():
                     break
             except:
                 continue
-        
+
         if fastmcp_class:
             logger.info("Found FastMCP class!")
             # List methods of FastMCP class
             methods = [m for m in dir(fastmcp_class) if not m.startswith('_')]
             logger.info(f"Available methods: {', '.join(methods)}")
-            
+
             # Try to create an instance
             try:
                 logger.info("Attempting to create FastMCP instance...")
-                mcp = fastmcp_class(
+                fastmcp_class(
                     name="Test Server",
                     version="0.1.0"
                 )
@@ -58,7 +59,7 @@ def main():
         else:
             logger.error("Could not find FastMCP class in the module!")
             return 1
-            
+
     except ImportError as e:
         logger.error(f"Failed to import fastmcp: {e}")
         logger.error("Please install it with: pip install fastmcp")
@@ -66,6 +67,7 @@ def main():
     except Exception as e:
         logger.error(f"Unexpected error: {e}", exc_info=True)
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

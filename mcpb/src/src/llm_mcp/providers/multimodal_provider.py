@@ -9,26 +9,36 @@ This provider integrates:
 
 import asyncio
 import logging
+from collections.abc import AsyncGenerator
+from typing import Any
+
 import torch
-from typing import Dict, Any, Optional, List, Union, AsyncGenerator
-from pathlib import Path
-import numpy as np
 
 try:
-    from transformers import (
-        AutoProcessor, AutoModelForVision2Seq, AutoModel,
-        CLIPProcessor, CLIPModel, CLIPTokenizer,
-        BlipProcessor, BlipForConditionalGeneration,
-        Blip2Processor, Blip2ForConditionalGeneration
-    )
+    from io import BytesIO
+
+    import requests
     from diffusers import (
-        DiffusionPipeline, StableDiffusionXLPipeline,
-        FluxPipeline, StableDiffusionPipeline,
-        AutoencoderKL, UNet2DConditionModel
+        AutoencoderKL,
+        DiffusionPipeline,
+        FluxPipeline,
+        StableDiffusionPipeline,
+        StableDiffusionXLPipeline,
+        UNet2DConditionModel,
     )
     from PIL import Image
-    import requests
-    from io import BytesIO
+    from transformers import (
+        AutoModel,
+        AutoModelForVision2Seq,
+        AutoProcessor,
+        Blip2ForConditionalGeneration,
+        Blip2Processor,
+        BlipForConditionalGeneration,
+        BlipProcessor,
+        CLIPModel,
+        CLIPProcessor,
+        CLIPTokenizer,
+    )
 
     MULTIMODAL_DEPS_AVAILABLE = True
 except ImportError:
@@ -37,6 +47,7 @@ except ImportError:
 from .base import BaseProvider
 
 logger = logging.getLogger(__name__)
+
 
 class MultimodalProvider(BaseProvider):
     """SOTA Multimodal Provider for vision-language and diffusion models.
@@ -65,7 +76,7 @@ class MultimodalProvider(BaseProvider):
         "svd": "stabilityai/stable-video-diffusion-img2vid-xt",
     }
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """Initialize multimodal provider.
 
         Args:
@@ -83,7 +94,7 @@ class MultimodalProvider(BaseProvider):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self._memory_manager = self._setup_memory_management()
 
-    def _setup_memory_management(self) -> Dict[str, Any]:
+    def _setup_memory_management(self) -> dict[str, Any]:
         """Setup GPU memory management for multimodal workloads."""
         if torch.cuda.is_available():
             # Enable memory efficient attention
@@ -217,10 +228,10 @@ class MultimodalProvider(BaseProvider):
 
     async def analyze_image(
         self,
-        image: Union[str, Image.Image],
+        image: str | Image.Image,
         task: str = "caption",
         model: str = "blip2"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Analyze image with SOTA vision-language models.
 
         Args:
@@ -289,7 +300,7 @@ class MultimodalProvider(BaseProvider):
         height: int = 1024,
         num_inference_steps: int = 20,
         guidance_scale: float = 7.5
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate image with SOTA diffusion models.
 
         Args:
@@ -344,8 +355,8 @@ class MultimodalProvider(BaseProvider):
             image = result.images[0]
 
             # Convert to base64 for API response
-            from io import BytesIO
             import base64
+            from io import BytesIO
 
             buffer = BytesIO()
             image.save(buffer, format="PNG")
@@ -366,10 +377,10 @@ class MultimodalProvider(BaseProvider):
 
     async def compare_images(
         self,
-        image1: Union[str, Image.Image],
-        image2: Union[str, Image.Image],
+        image1: str | Image.Image,
+        image2: str | Image.Image,
         model: str = "clip"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Compare two images using CLIP similarity.
 
         Args:
@@ -465,7 +476,7 @@ class MultimodalProvider(BaseProvider):
         """Generate text response (not used for multimodal)."""
         yield ""
 
-    async def list_models(self) -> List[Dict[str, Any]]:
+    async def list_models(self) -> list[dict[str, Any]]:
         """List available multimodal models."""
         return [
             {
@@ -479,20 +490,3 @@ class MultimodalProvider(BaseProvider):
                 **self.SUPPORTED_DIFFUSION_MODELS
             }.items()
         ]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

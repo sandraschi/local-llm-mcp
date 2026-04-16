@@ -16,10 +16,10 @@ Key Features:
 
 Usage:
     from llm_mcp.tools import register_qloraevolved_tools
-    
+
     # Register QLoRA Evolved tools with MCP
     register_qloraevolved_tools(mcp)
-    
+
     # Now you can use the tools:
     # - qloraevolved_load_model
     # - qloraevolved_prepare_for_training
@@ -36,21 +36,20 @@ This module provides tools for fine-tuning models using QLoRA Evolved, which ext
 standard LoRA with improved quantization techniques and optimization strategies.
 """
 
-import os
 import logging
-import torch
-from typing import Dict, Any, Optional, List, Union
-from dataclasses import dataclass, field
-from enum import Enum
+import os
 import time
+from dataclasses import dataclass, field
+from enum import Enum, StrEnum
+from typing import Any
 
-from fastmcp import FastMCP
+import torch
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
-    TrainingArguments,
-    Trainer,
     DataCollatorForLanguageModeling,
+    Trainer,
+    TrainingArguments,
 )
 
 # Try to import BitsAndBytesConfig (may not be available in all transformers versions)
@@ -67,25 +66,23 @@ except ImportError:
 from datasets import Dataset
 from peft import (
     LoraConfig,
+    TaskType,
     get_peft_model,
     prepare_model_for_kbit_training,
-    TaskType,
-    PeftModel,
-    PeftConfig,
 )
-import bitsandbytes as bnb
-from tqdm import tqdm
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
-class QuantizationType(str, Enum):
+
+class QuantizationType(StrEnum):
     """Supported quantization types for QLoRA Evolved."""
     FP4 = "nf4"          # 4-bit NormalFloat
     FP4_OPTIMIZED = "nf4_optimized"  # Optimized 4-bit
     INT4 = "int4"        # 4-bit integers
     FP8 = "fp8"          # 8-bit floating point (experimental)
     NONE = "none"        # No quantization (standard LoRA)
+
 
 @dataclass
 class QLoRAEvolvedConfig:
@@ -95,21 +92,21 @@ class QLoRAEvolvedConfig:
     max_length: int = 2048
     device_map: str = "auto"
     trust_remote_code: bool = False
-    
+
     # Quantization settings
     load_in_4bit: bool = True
     quant_type: QuantizationType = QuantizationType.FP4
     use_double_quant: bool = True
     bnb_4bit_compute_dtype: str = "bfloat16"
-    
+
     # LoRA configuration
     lora_rank: int = 64
     lora_alpha: int = 16
     lora_dropout: float = 0.1
-    target_modules: List[str] = field(
+    target_modules: list[str] = field(
         default_factory=lambda: ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
     )
-    
+
     # Training configuration
     learning_rate: float = 2e-4
     batch_size: int = 4
@@ -121,33 +118,34 @@ class QLoRAEvolvedConfig:
     optim: str = "paged_adamw_32bit"
     lr_scheduler_type: str = "cosine"
     max_grad_norm: float = 0.3
-    
+
     # Output and logging
     output_dir: str = "qlora_evolved_output"
     logging_steps: int = 10
     save_steps: int = 200
     save_total_limit: int = 3
     report_to: str = "tensorboard"
-    
+
     # Advanced options
     use_gradient_checkpointing: bool = True
     use_flash_attention_2: bool = True
     use_cpu_offload: bool = False
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert config to dictionary."""
-        return {k: v.value if isinstance(v, Enum) else v 
+        return {k: v.value if isinstance(v, Enum) else v
                 for k, v in self.__dict__.items()}
+
 
 class QLoRAEvolvedManager:
     """Manager for QLoRA Evolved fine-tuning."""
-    
+
     def __init__(self):
         """Initialize the QLoRA Evolved manager."""
-        self.models: Dict[str, Any] = {}
-        self.configs: Dict[str, QLoRAEvolvedConfig] = {}
-        self.tokenizers: Dict[str, Any] = {}
-        
+        self.models: dict[str, Any] = {}
+        self.configs: dict[str, QLoRAEvolvedConfig] = {}
+        self.tokenizers: dict[str, Any] = {}
+
     def _get_bnb_config(self, config: QLoRAEvolvedConfig):
         """Get BitsAndBytes configuration for quantization."""
         if config.quant_type == QuantizationType.NONE:
@@ -167,7 +165,7 @@ class QLoRAEvolvedManager:
                 "float32": torch.float32,
             }[config.bnb_4bit_compute_dtype],
         )
-    
+
     def _get_lora_config(self, config: QLoRAEvolvedConfig) -> LoraConfig:
         """Get LoRA configuration."""
         return LoraConfig(
@@ -178,31 +176,31 @@ class QLoRAEvolvedManager:
             bias="none",
             task_type=TaskType.CAUSAL_LM,
         )
-    
+
     def load_model(
         self,
         model_name: str,
-        model_id: Optional[str] = None,
-        config: Optional[QLoRAEvolvedConfig] = None,
-    ) -> Dict[str, Any]:
+        model_id: str | None = None,
+        config: QLoRAEvolvedConfig | None = None,
+    ) -> dict[str, Any]:
         """Load a model with QLoRA Evolved configuration.
-        
+
         Args:
             model_name: Name or path of the model to load
             model_id: Optional ID to assign to the model
             config: Optional QLoRAEvolvedConfig, will use defaults if None
-            
+
         Returns:
             Dictionary with model information
         """
         model_id = model_id or f"{model_name.split('/')[-1]}-qlora-evolved-{int(time.time())}"
         config = config or QLoRAEvolvedConfig(model_name=model_name)
-        
+
         logger.info(f"Loading model {model_name} with QLoRA Evolved configuration")
-        
+
         # Configure quantization
         bnb_config = self._get_bnb_config(config)
-        
+
         # Load model
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
@@ -211,20 +209,20 @@ class QLoRAEvolvedManager:
             trust_remote_code=config.trust_remote_code,
             use_flash_attention_2=config.use_flash_attention_2,
         )
-        
+
         # Prepare model for k-bit training if quantized
         if bnb_config is not None:
             model = prepare_model_for_kbit_training(
                 model,
                 use_gradient_checkpointing=config.use_gradient_checkpointing
             )
-        
+
         # Configure LoRA
         lora_config = self._get_lora_config(config)
-        
+
         # Apply LoRA
         model = get_peft_model(model, lora_config)
-        
+
         # Load tokenizer
         tokenizer = AutoTokenizer.from_pretrained(
             model_name,
@@ -232,19 +230,19 @@ class QLoRAEvolvedManager:
             padding_side="right",
             use_fast=True,
         )
-        
+
         # Set pad token if not set
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
-        
+
         # Save model and config
         self.models[model_id] = model
         self.configs[model_id] = config
         self.tokenizers[model_id] = tokenizer
-        
+
         # Print trainable parameters
         model.print_trainable_parameters()
-        
+
         return {
             "status": "success",
             "model_id": model_id,
@@ -253,72 +251,72 @@ class QLoRAEvolvedManager:
             "total_params": sum(p.numel() for p in model.parameters()),
             "config": config.to_dict(),
         }
-    
+
     def prepare_for_training(
         self,
         model_id: str,
-        training_config: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        training_config: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Prepare a loaded model for training.
-        
+
         Args:
             model_id: ID of the loaded model
             training_config: Optional dictionary with training configuration overrides
-            
+
         Returns:
             Dictionary with training preparation status
         """
         if model_id not in self.models:
             return {"status": "error", "message": f"Model {model_id} not found"}
-        
+
         # Update config with provided training config
         if training_config:
             for key, value in training_config.items():
                 if hasattr(self.configs[model_id], key):
                     setattr(self.configs[model_id], key, value)
-        
+
         config = self.configs[model_id]
-        
+
         # Create output directory if it doesn't exist
         os.makedirs(config.output_dir, exist_ok=True)
-        
+
         return {
             "status": "success",
             "message": f"Model {model_id} prepared for training",
             "config": config.to_dict(),
         }
-    
+
     def train(
         self,
         model_id: str,
         train_dataset: Dataset,
-        eval_dataset: Optional[Dataset] = None,
-        training_config: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        eval_dataset: Dataset | None = None,
+        training_config: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Train a model with the given dataset.
-        
+
         Args:
             model_id: ID of the loaded model
             train_dataset: Training dataset
             eval_dataset: Optional evaluation dataset
             training_config: Optional training configuration overrides
-            
+
         Returns:
             Dictionary with training results
         """
         if model_id not in self.models:
             return {"status": "error", "message": f"Model {model_id} not found"}
-        
+
         model = self.models[model_id]
         tokenizer = self.tokenizers[model_id]
         config = self.configs[model_id]
-        
+
         # Update config with provided training config
         if training_config:
             for key, value in training_config.items():
                 if hasattr(config, key):
                     setattr(config, key, value)
-        
+
         # Configure training arguments
         training_args = TrainingArguments(
             output_dir=config.output_dir,
@@ -343,13 +341,13 @@ class QLoRAEvolvedManager:
             dataloader_num_workers=4,
             dataloader_pin_memory=True,
         )
-        
+
         # Data collator
         data_collator = DataCollatorForLanguageModeling(
             tokenizer=tokenizer,
             mlm=False,
         )
-        
+
         # Initialize trainer
         trainer = Trainer(
             model=model,
@@ -358,29 +356,29 @@ class QLoRAEvolvedManager:
             eval_dataset=eval_dataset,
             data_collator=data_collator,
         )
-        
+
         # Train the model
         logger.info("Starting training...")
         train_result = trainer.train()
-        
+
         # Save the final model
         trainer.save_model()
-        
+
         # Save tokenizer
         tokenizer.save_pretrained(config.output_dir)
-        
+
         return {
             "status": "success",
             "metrics": train_result.metrics,
             "output_dir": config.output_dir,
         }
-    
-    def unload_model(self, model_id: str) -> Dict[str, Any]:
+
+    def unload_model(self, model_id: str) -> dict[str, Any]:
         """Unload a model and free resources.
-        
+
         Args:
             model_id: ID of the model to unload
-            
+
         Returns:
             Dictionary with unload status
         """
@@ -388,18 +386,18 @@ class QLoRAEvolvedManager:
             del self.models[model_id]
             del self.configs[model_id]
             del self.tokenizers[model_id]
-            
+
             # Clear CUDA cache if available
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
-            
+
             return {"status": "success", "message": f"Model {model_id} unloaded"}
-        
+
         return {"status": "error", "message": f"Model {model_id} not found"}
-    
-    def list_models(self) -> Dict[str, Any]:
+
+    def list_models(self) -> dict[str, Any]:
         """List all loaded models.
-        
+
         Returns:
             Dictionary with information about loaded models
         """
@@ -408,16 +406,18 @@ class QLoRAEvolvedManager:
                 "config": config.to_dict(),
                 "device": str(next(model.parameters()).device),
             }
-            for model_id, (model, config) in enumerate(zip(self.models.values(), self.configs.values()))
+            for model_id, (model, config) in enumerate(zip(self.models.values(), self.configs.values(), strict=False))
         }
+
 
 # Global instance
 qloraevolved_manager = QLoRAEvolvedManager()
 
+
 # MCP Tool Definitions
 async def qloraevolved_load_model(
     model_name: str,
-    model_id: Optional[str] = None,
+    model_id: str | None = None,
     max_length: int = 2048,
     load_in_4bit: bool = True,
     quant_type: str = "nf4",
@@ -427,9 +427,9 @@ async def qloraevolved_load_model(
     lora_alpha: int = 16,
     lora_dropout: float = 0.1,
     device_map: str = "auto",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Load a model with QLoRA Evolved configuration.
-    
+
     Args:
         model_name: Name or path of the model to load
         model_id: Optional ID to assign to the model
@@ -442,7 +442,7 @@ async def qloraevolved_load_model(
         lora_alpha: Alpha parameter for LoRA scaling
         lora_dropout: Dropout probability for LoRA layers
         device_map: Device placement strategy
-        
+
     Returns:
         Dictionary with model information
     """
@@ -459,37 +459,38 @@ async def qloraevolved_load_model(
             lora_dropout=lora_dropout,
             device_map=device_map,
         )
-        
+
         return qloraevolved_manager.load_model(
             model_name=model_name,
             model_id=model_id,
             config=config,
         )
     except Exception as e:
-        logger.error(f"Error loading model: {str(e)}", exc_info=True)
-        return {"status": "error", "message": f"Failed to load model: {str(e)}"}
+        logger.error(f"Error loading model: {e!s}", exc_info=True)
+        return {"status": "error", "message": f"Failed to load model: {e!s}"}
+
 
 async def qloraevolved_prepare_for_training(
     model_id: str,
-    output_dir: Optional[str] = None,
-    learning_rate: Optional[float] = None,
-    batch_size: Optional[int] = None,
-    gradient_accumulation_steps: Optional[int] = None,
-    num_train_epochs: Optional[int] = None,
+    output_dir: str | None = None,
+    learning_rate: float | None = None,
+    batch_size: int | None = None,
+    gradient_accumulation_steps: int | None = None,
+    num_train_epochs: int | None = None,
     max_steps: int = -1,
-    warmup_ratio: Optional[float] = None,
-    weight_decay: Optional[float] = None,
-    optim: Optional[str] = None,
-    lr_scheduler_type: Optional[str] = None,
-    max_grad_norm: Optional[float] = None,
-    logging_steps: Optional[int] = None,
-    save_steps: Optional[int] = None,
-    save_total_limit: Optional[int] = None,
-    report_to: Optional[str] = None,
-    use_gradient_checkpointing: Optional[bool] = None,
-) -> Dict[str, Any]:
+    warmup_ratio: float | None = None,
+    weight_decay: float | None = None,
+    optim: str | None = None,
+    lr_scheduler_type: str | None = None,
+    max_grad_norm: float | None = None,
+    logging_steps: int | None = None,
+    save_steps: int | None = None,
+    save_total_limit: int | None = None,
+    report_to: str | None = None,
+    use_gradient_checkpointing: bool | None = None,
+) -> dict[str, Any]:
     """Prepare a loaded model for training.
-    
+
     Args:
         model_id: ID of the loaded model
         output_dir: Directory to save the model
@@ -508,13 +509,13 @@ async def qloraevolved_prepare_for_training(
         save_total_limit: Maximum number of checkpoints to keep
         report_to: Comma-separated list of integrations to report to
         use_gradient_checkpointing: Whether to use gradient checkpointing
-        
+
     Returns:
         Dictionary with training preparation status
     """
     try:
         training_config = {}
-        
+
         # Only include provided parameters
         if output_dir is not None:
             training_config["output_dir"] = output_dir
@@ -548,29 +549,30 @@ async def qloraevolved_prepare_for_training(
             training_config["report_to"] = report_to
         if use_gradient_checkpointing is not None:
             training_config["use_gradient_checkpointing"] = use_gradient_checkpointing
-        
+
         return qloraevolved_manager.prepare_for_training(
             model_id=model_id,
             training_config=training_config,
         )
     except Exception as e:
-        logger.error(f"Error preparing for training: {str(e)}", exc_info=True)
-        return {"status": "error", "message": f"Failed to prepare for training: {str(e)}"}
+        logger.error(f"Error preparing for training: {e!s}", exc_info=True)
+        return {"status": "error", "message": f"Failed to prepare for training: {e!s}"}
+
 
 async def qloraevolved_train(
     model_id: str,
     train_dataset: Dataset,
-    eval_dataset: Optional[Dataset] = None,
+    eval_dataset: Dataset | None = None,
     **training_kwargs,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Train a model with the given dataset.
-    
+
     Args:
         model_id: ID of the loaded model
         train_dataset: Training dataset
         eval_dataset: Optional evaluation dataset
         **training_kwargs: Additional training configuration overrides
-        
+
     Returns:
         Dictionary with training results
     """
@@ -582,27 +584,29 @@ async def qloraevolved_train(
             training_config=training_kwargs,
         )
     except Exception as e:
-        logger.error(f"Error during training: {str(e)}", exc_info=True)
-        return {"status": "error", "message": f"Training failed: {str(e)}"}
+        logger.error(f"Error during training: {e!s}", exc_info=True)
+        return {"status": "error", "message": f"Training failed: {e!s}"}
 
-async def qloraevolved_unload_model(model_id: str) -> Dict[str, Any]:
+
+async def qloraevolved_unload_model(model_id: str) -> dict[str, Any]:
     """Unload a model and free resources.
-    
+
     Args:
         model_id: ID of the model to unload
-        
+
     Returns:
         Dictionary with unload status
     """
     try:
         return qloraevolved_manager.unload_model(model_id=model_id)
     except Exception as e:
-        logger.error(f"Error unloading model: {str(e)}", exc_info=True)
-        return {"status": "error", "message": f"Failed to unload model: {str(e)}"}
+        logger.error(f"Error unloading model: {e!s}", exc_info=True)
+        return {"status": "error", "message": f"Failed to unload model: {e!s}"}
 
-async def qloraevolved_list_models() -> Dict[str, Any]:
+
+async def qloraevolved_list_models() -> dict[str, Any]:
     """List all loaded models.
-    
+
     Returns:
         Dictionary with information about loaded models
     """
@@ -612,12 +616,13 @@ async def qloraevolved_list_models() -> Dict[str, Any]:
             "models": qloraevolved_manager.list_models(),
         }
     except Exception as e:
-        logger.error(f"Error listing models: {str(e)}", exc_info=True)
-        return {"status": "error", "message": f"Failed to list models: {str(e)}"}
+        logger.error(f"Error listing models: {e!s}", exc_info=True)
+        return {"status": "error", "message": f"Failed to list models: {e!s}"}
+
 
 def register_qloraevolved_tools(mcp_server):
     """Register all QLoRA Evolved tools with the MCP server.
-    
+
     Args:
         mcp_server: The MCP server instance
     """
@@ -625,29 +630,29 @@ def register_qloraevolved_tools(mcp_server):
     @mcp_server.tool()
     async def qloraevolved_load_model_wrapper(*args, **kwargs):
         return await qloraevolved_load_model(*args, **kwargs)
-        
+
     @mcp_server.tool()
     async def qloraevolved_prepare_for_training_wrapper(*args, **kwargs):
         return await qloraevolved_prepare_for_training(*args, **kwargs)
-        
+
     @mcp_server.tool()
     async def qloraevolved_train_wrapper(*args, **kwargs):
         return await qloraevolved_train(*args, **kwargs)
-        
+
     @mcp_server.tool()
     async def qloraevolved_unload_model_wrapper(*args, **kwargs):
         return await qloraevolved_unload_model(*args, **kwargs)
-        
+
     @mcp_server.tool()
     async def qloraevolved_list_models_wrapper():
         return await qloraevolved_list_models()
-    
+
     # Register the wrapped functions
     mcp_server.register_tool(qloraevolved_load_model_wrapper)
     mcp_server.register_tool(qloraevolved_prepare_for_training_wrapper)
     mcp_server.register_tool(qloraevolved_train_wrapper)
     mcp_server.register_tool(qloraevolved_unload_model_wrapper)
     mcp_server.register_tool(qloraevolved_list_models_wrapper)
-    
+
     logger.info("Registered QLoRA Evolved tools with MCP server")
     return mcp_server

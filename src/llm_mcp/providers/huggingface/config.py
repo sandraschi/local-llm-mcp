@@ -1,11 +1,11 @@
 """Configuration models for Hugging Face provider."""
 
-from pydantic import Field, HttpUrl, model_validator
-from typing import Optional, List, Dict, Any
+from typing import Any
+
 
 class HuggingFaceConfig:
     """Configuration for Hugging Face provider.
-    
+
     Attributes:
         api_key: Hugging Face API token (required for private/gated models)
         model_name: Name of the model to use (e.g., 'gpt2', 'bigscience/bloom')
@@ -17,18 +17,18 @@ class HuggingFaceConfig:
         model_kwargs: Additional keyword arguments to pass to from_pretrained()
         pipeline_kwargs: Additional keyword arguments to pass to pipeline()
     """
-    
+
     def __init__(
         self,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         model_name: str = "gpt2",
-        model_revision: Optional[str] = None,
+        model_revision: str | None = None,
         device: str = "auto",
         trust_remote_code: bool = False,
-        use_auth_token: Optional[str] = None,
-        task: Optional[str] = None,
-        model_kwargs: Optional[Dict[str, Any]] = None,
-        pipeline_kwargs: Optional[Dict[str, Any]] = None,
+        use_auth_token: str | None = None,
+        task: str | None = None,
+        model_kwargs: dict[str, Any] | None = None,
+        pipeline_kwargs: dict[str, Any] | None = None,
     ):
         """Initialize Hugging Face configuration."""
         self.api_key = api_key or use_auth_token
@@ -39,7 +39,7 @@ class HuggingFaceConfig:
         self.task = task or self._infer_task(model_name)
         self.model_kwargs = model_kwargs or {}
         self.pipeline_kwargs = pipeline_kwargs or {}
-    
+
     @staticmethod
     def _infer_task(model_name: str) -> str:
         """Infer the task from the model name if not specified."""
@@ -51,8 +51,8 @@ class HuggingFaceConfig:
         elif any(t in model_name_lower for t in ["bert", "roberta", "distilbert"]):
             return "fill-mask"
         return "text-generation"  # Default to text generation
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert the configuration to a dictionary."""
         return {
             "api_key": self.api_key,
@@ -64,4 +64,3 @@ class HuggingFaceConfig:
             "model_kwargs": self.model_kwargs,
             "pipeline_kwargs": self.pipeline_kwargs,
         }
-

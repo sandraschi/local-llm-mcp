@@ -1,16 +1,16 @@
 """vLLM V1 provider package."""
 
-from .provider import VLLMv1Provider
 from .config import VLLMv1Config
-from .models import VLLMModel, VLLMMultimodalModel, ModelType, ModelCapability
+from .models import ModelCapability, ModelType, VLLMModel, VLLMMultimodalModel
+from .provider import VLLMv1Provider
 
 __all__ = [
-    "VLLMv1Provider",
-    "VLLMv1Config", 
+    "ModelCapability",
+    "ModelType",
     "VLLMModel",
     "VLLMMultimodalModel",
-    "ModelType",
-    "ModelCapability"
+    "VLLMv1Config",
+    "VLLMv1Provider"
 ]
 
 # Current vLLM version we're targeting
@@ -20,7 +20,7 @@ VLLM_MINIMUM_VERSION = "0.8.1"  # Minimum for V1 engine support
 # Key features available in v0.10+
 FEATURES = {
     "v1_engine": True,
-    "flashattention_3": True, 
+    "flashattention_3": True,
     "prefix_caching": True,
     "multimodal_support": True,
     "distributed_inference": True,

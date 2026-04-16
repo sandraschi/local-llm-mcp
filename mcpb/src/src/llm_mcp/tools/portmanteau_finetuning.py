@@ -4,19 +4,27 @@ This tool consolidates all fine-tuning operations (LoRA, Sparse, DoRA) into a si
 following the portmanteau pattern.
 """
 
-import logging
-from typing import Dict, Any, Optional, List, Union
+from typing import Any
 
+from llm_mcp.tools.dora_tools import (
+    dora_list_models_impl,
+    dora_load_model_impl,
+    dora_prepare_for_training_impl,
+    dora_train_impl,
+    dora_unload_model_impl,
+)
 from llm_mcp.tools.lora_tools import (
-    _lora_list_adapters_impl, _lora_load_adapter_impl, _lora_unload_adapter_impl, _lora_list_loaded_impl
+    _lora_list_adapters_impl,
+    _lora_list_loaded_impl,
+    _lora_load_adapter_impl,
+    _lora_unload_adapter_impl,
 )
 from llm_mcp.tools.sparse_tools import (
-    sparse_load_model_impl, sparse_prepare_for_training_impl, sparse_train_impl,
-    sparse_unload_model_impl, sparse_list_models_impl
-)
-from llm_mcp.tools.dora_tools import (
-    dora_load_model_impl, dora_prepare_for_training_impl, dora_train_impl,
-    dora_unload_model_impl, dora_list_models_impl
+    sparse_list_models_impl,
+    sparse_load_model_impl,
+    sparse_prepare_for_training_impl,
+    sparse_train_impl,
+    sparse_unload_model_impl,
 )
 from llm_mcp.utils.logging import get_logger
 
@@ -31,18 +39,19 @@ except ImportError:
     logger.error("FastMCP not available - portmanteau tools require FastMCP >= 2.12.0")
     FASTMCP_AVAILABLE = False
 
+
 async def llm_finetuning(
     operation: str,
     # Model loading parameters
-    model_name: Optional[str] = None,
-    model_id: Optional[str] = None,
+    model_name: str | None = None,
+    model_id: str | None = None,
     # LoRA parameters
-    adapter_dir: Optional[str] = None,
-    adapter_name: Optional[str] = None,
+    adapter_dir: str | None = None,
+    adapter_name: str | None = None,
     lora_rank: int = 8,
     lora_alpha: int = 16,
     lora_dropout: float = 0.1,
-    target_modules: Optional[List[str]] = None,
+    target_modules: list[str] | None = None,
     # Sparse parameters
     sparsity_ratio: float = 0.5,
     sparsity_type: str = "unstructured",
@@ -53,7 +62,7 @@ async def llm_finetuning(
     compute_dtype: str = "bfloat16",
     device_map: str = "auto",
     # Training parameters
-    train_dataset: Optional[Any] = None,
+    train_dataset: Any | None = None,
     output_dir: str = "./output",
     learning_rate: float = 0.0002,
     batch_size: int = 4,
@@ -68,11 +77,11 @@ async def llm_finetuning(
     logging_steps: int = 10,
     save_steps: int = 200,
     save_total_limit: int = 3,
-    report_to: Optional[str] = None,
+    report_to: str | None = None,
     use_gradient_checkpointing: bool = True,
     use_flash_attention_2: bool = True,
     use_cpu_offload: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Comprehensive fine-tuning tool for Local LLM MCP server.
 
     PORTMANTEAU PATTERN: Consolidates 15+ fine-tuning operations into one tool.
@@ -330,7 +339,8 @@ async def llm_finetuning(
 
     except Exception as e:
         logger.error(f"Error in llm_finetuning operation {operation}: {e}", exc_info=True)
-        return {"error": f"Operation failed: {str(e)}", "operation": operation}
+        return {"error": f"Operation failed: {e!s}", "operation": operation}
+
 
 def register_llm_finetuning_tools(mcp):
     """Register the LLM Fine-tuning portmanteau tool with the MCP server."""
@@ -341,14 +351,14 @@ def register_llm_finetuning_tools(mcp):
     @mcp.tool()
     async def llm_finetuning_tool(
         operation: str,
-        model_name: Optional[str] = None,
-        model_id: Optional[str] = None,
-        adapter_dir: Optional[str] = None,
-        adapter_name: Optional[str] = None,
+        model_name: str | None = None,
+        model_id: str | None = None,
+        adapter_dir: str | None = None,
+        adapter_name: str | None = None,
         lora_rank: int = 8,
         lora_alpha: int = 16,
         lora_dropout: float = 0.1,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         sparsity_ratio: float = 0.5,
         sparsity_type: str = "unstructured",
         use_4bit: bool = True,
@@ -356,7 +366,7 @@ def register_llm_finetuning_tools(mcp):
         quant_type: str = "nf4",
         compute_dtype: str = "bfloat16",
         device_map: str = "auto",
-        train_dataset: Optional[Any] = None,
+        train_dataset: Any | None = None,
         output_dir: str = "./output",
         learning_rate: float = 0.0002,
         batch_size: int = 4,
@@ -371,11 +381,11 @@ def register_llm_finetuning_tools(mcp):
         logging_steps: int = 10,
         save_steps: int = 200,
         save_total_limit: int = 3,
-        report_to: Optional[str] = None,
+        report_to: str | None = None,
         use_gradient_checkpointing: bool = True,
         use_flash_attention_2: bool = True,
         use_cpu_offload: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """LLM Fine-tuning Portmanteau Tool - Consolidated fine-tuning operations.
 
         This tool consolidates all fine-tuning operations (LoRA, Sparse, DoRA) into a single interface,
@@ -443,20 +453,3 @@ def register_llm_finetuning_tools(mcp):
 
     logger.info("Registered LLM Fine-tuning portmanteau tool")
     return mcp
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

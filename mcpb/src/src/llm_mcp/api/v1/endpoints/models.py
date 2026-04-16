@@ -1,39 +1,34 @@
 """API endpoints for model management."""
-from typing import List, Optional, Dict, Any, AsyncGenerator
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
-from fastapi.responses import StreamingResponse, JSONResponse
 import json
 import logging
+from collections.abc import AsyncGenerator
+from typing import Any
 
-from ....services.model_service import model_service
+from fastapi import APIRouter, HTTPException, Query, Request, status
+from fastapi.responses import StreamingResponse
+
 from ....config import get_settings
-from ....providers.base import BaseProvider
-from ..models import (
-    ProviderInfo,
-    ModelInfo,
-    GenerateRequest,
-    GenerateResponse,
-    ModelOperationResponse,
-    ModelStatus
-)
+from ....services.model_service import model_service
+from ..models import GenerateRequest, GenerateResponse, ModelInfo, ModelOperationResponse, ProviderInfo
 
 logger = logging.getLogger(__name__)
 
 # Create router
 router = APIRouter()
 
+
 # API endpoints
-@router.get("/providers", response_model=List[ProviderInfo])
-async def list_providers() -> List[ProviderInfo]:
+@router.get("/providers", response_model=list[ProviderInfo])
+async def list_providers() -> list[ProviderInfo]:
     """List all available providers.
-    
+
     Returns:
         List of available providers with their capabilities
     """
     try:
         settings = get_settings()
         providers = []
-        
+
         # Add vLLM provider if available
         try:
             from ....providers.vllm_v1.provider import VLLMv1Provider
@@ -51,49 +46,50 @@ async def list_providers() -> List[ProviderInfo]:
             ))
         except ImportError:
             logger.warning("vLLM provider not available")
-        
+
         # Add other configured providers
         for provider_name, config in settings.providers.items():
             if not config.get("enabled", True) or provider_name in ("vllm", "vllm_v1"):
                 continue
-                
+
             providers.append(ProviderInfo(
                 name=provider_name,
                 description=f"{provider_name.capitalize()} provider",
                 capabilities=["generate", "stream"]
             ))
-            
+
         return providers
-        
+
     except Exception as e:
-        logger.error(f"Failed to list providers: {str(e)}", exc_info=True)
+        logger.error(f"Failed to list providers: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list providers: {str(e)}"
+            detail=f"Failed to list providers: {e!s}"
         )
 
-@router.get("/models", response_model=List[ModelInfo])
+
+@router.get("/models", response_model=list[ModelInfo])
 async def list_models(
-    provider: Optional[str] = None,
+    provider: str | None = None,
     include_vllm: bool = Query(True, description="Include vLLM models in the results")
-) -> List[ModelInfo]:
+) -> list[ModelInfo]:
     """List all available models, optionally filtered by provider.
-    
+
     Args:
         provider: Optional provider name to filter models by
         include_vllm: Whether to include vLLM models in the results
-        
+
     Returns:
         List of available models with their details
     """
     try:
         models = []
-        
+
         # Handle vLLM models separately if requested
         if (not provider or provider.lower() in ('vllm', 'vllm_v1')) and include_vllm:
             try:
                 from ....providers.vllm_v1.provider import VLLMv1Provider
-                
+
                 # Get vLLM provider instance or create a temporary one
                 vllm_provider = None
                 if 'vllm' in model_service.providers:
@@ -103,7 +99,7 @@ async def list_models(
                 else:
                     # Create a temporary vLLM provider to list models
                     vllm_provider = VLLMv1Provider({})
-                    
+
                 # Get vLLM models
                 vllm_models = await vllm_provider.list_models()
                 models.extend([
@@ -120,8 +116,8 @@ async def list_models(
             except ImportError:
                 logger.warning("vLLM provider not available")
             except Exception as e:
-                logger.error(f"Error listing vLLM models: {str(e)}", exc_info=True)
-        
+                logger.error(f"Error listing vLLM models: {e!s}", exc_info=True)
+
         # Get models from other providers
         if provider and provider.lower() not in ('vllm', 'vllm_v1'):
             # Specific provider requested (not vLLM)
@@ -139,14 +135,14 @@ async def list_models(
                     for model in provider_models
                 ])
             except Exception as e:
-                logger.error(f"Error listing models for provider {provider}: {str(e)}")
+                logger.error(f"Error listing models for provider {provider}: {e!s}")
         elif not provider:
             # No specific provider requested, get all providers
-            for provider_name, provider_instance in model_service.providers.items():
+            for provider_name, _provider_instance in model_service.providers.items():
                 try:
                     if provider_name.lower() in ('vllm', 'vllm_v1'):
                         continue  # Already handled above
-                        
+
                     provider_models = await model_service.list_models(provider_name)
                     models.extend([
                         ModelInfo(
@@ -160,30 +156,31 @@ async def list_models(
                         for model in provider_models
                     ])
                 except Exception as e:
-                    logger.error(f"Error listing models for provider {provider_name}: {str(e)}")
-        
+                    logger.error(f"Error listing models for provider {provider_name}: {e!s}")
+
         return models
-        
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to list models: {str(e)}", exc_info=True)
+        logger.error(f"Failed to list models: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list models: {str(e)}"
+            detail=f"Failed to list models: {e!s}"
         )
+
 
 @router.get("/models/{model_name}", response_model=ModelInfo)
 async def get_model(
     model_name: str,
-    provider: Optional[str] = None
+    provider: str | None = None
 ) -> ModelInfo:
     """Get detailed information about a specific model.
-    
+
     Args:
         model_name: Name of the model to get info for
         provider: Optional provider name if known
-        
+
     Returns:
         Detailed model information
     """
@@ -195,27 +192,28 @@ async def get_model(
             detail=str(e)
         )
     except Exception as e:
-        logger.error(f"Failed to get model info for {model_name}: {str(e)}", exc_info=True)
+        logger.error(f"Failed to get model info for {model_name}: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get model info: {str(e)}"
+            detail=f"Failed to get model info: {e!s}"
         )
+
 
 @router.post("/models/pull", response_model=ModelOperationResponse)
 async def pull_model(
     model_name: str,
-    provider: Optional[str] = None,
+    provider: str | None = None,
     force: bool = Query(False, description="Force download even if model exists"),
     **kwargs: Any
 ) -> ModelOperationResponse:
     """Download a model if it's not already available locally.
-    
+
     Args:
         model_name: Name of the model to download
         provider: Optional provider name if known
         force: Force download even if model exists
         **kwargs: Additional provider-specific parameters
-        
+
     Returns:
         Status of the download operation
     """
@@ -224,7 +222,7 @@ async def pull_model(
         if not provider or provider.lower() in ('vllm', 'vllm_v1'):
             try:
                 from ....providers.vllm_v1.provider import VLLMv1Provider
-                
+
                 # Get or create vLLM provider
                 vllm_provider = None
                 if 'vllm' in model_service.providers:
@@ -235,27 +233,27 @@ async def pull_model(
                     # Create a temporary vLLM provider with provided kwargs
                     vllm_config = {k: v for k, v in kwargs.items() if v is not None}
                     vllm_provider = VLLMv1Provider(vllm_config)
-                
+
                 # Check if model exists in vLLM
                 vllm_models = await vllm_provider.list_models()
                 model_exists = any(m.get('id') == model_name for m in vllm_models)
-                
+
                 if model_exists and not force:
                     return ModelOperationResponse(
                         success=True,
                         message=f"Model {model_name} already exists in vLLM",
                         details={"status": "already_exists"}
                     )
-                
+
                 # Pull the model
                 result = await vllm_provider.pull_model(model_name, **kwargs)
-                
+
                 return ModelOperationResponse(
                     success=True,
                     message=f"Successfully pulled model {model_name} using vLLM",
                     details=result
                 )
-                
+
             except ImportError:
                 if provider:  # Only raise if vLLM was explicitly requested
                     raise HTTPException(
@@ -263,13 +261,13 @@ async def pull_model(
                         detail="vLLM provider is not available"
                     )
             except Exception as e:
-                logger.error(f"Error pulling vLLM model {model_name}: {str(e)}", exc_info=True)
+                logger.error(f"Error pulling vLLM model {model_name}: {e!s}", exc_info=True)
                 if provider:  # Only raise if vLLM was explicitly requested
                     raise HTTPException(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail=f"Failed to pull vLLM model: {str(e)}"
+                        detail=f"Failed to pull vLLM model: {e!s}"
                     )
-        
+
         # If we get here, either vLLM is not the provider or the pull failed
         try:
             # Get the provider for this model
@@ -279,26 +277,27 @@ async def pull_model(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Model not found: {model_name}"
                 )
-            
+
             # Pull the model
             result = await provider_instance.pull_model(model_name, **kwargs)
-            
+
             return ModelOperationResponse(
                 success=True,
                 message=f"Successfully pulled model {model_name} from {provider_name}",
                 details=result
             )
-            
+
         except HTTPException:
             raise
-            
+
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to pull model: {str(e)}"
+            detail=f"Failed to pull model: {e!s}"
         )
+
 
 @router.post("/generate", response_model=GenerateResponse)
 async def generate_text(
@@ -306,10 +305,10 @@ async def generate_text(
     raw_request: Request
 ) -> GenerateResponse:
     """Generate text using the specified model.
-    
+
     Args:
         request: Generate text request
-        
+
     Returns:
         Generated text response
     """
@@ -319,7 +318,7 @@ async def generate_text(
             generate_stream(request, raw_request),
             media_type="text/event-stream"
         )
-    
+
     # Otherwise, generate the full response at once
     try:
         full_response = ""
@@ -335,7 +334,7 @@ async def generate_text(
             stop=request.stop
         ):
             full_response += chunk
-            
+
         return GenerateResponse(
             text=full_response,
             model=request.model,
@@ -346,7 +345,7 @@ async def generate_text(
                 "total_tokens": len(request.prompt.split()) + len(full_response.split())
             }
         )
-        
+
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -355,25 +354,26 @@ async def generate_text(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate text: {str(e)}"
+            detail=f"Failed to generate text: {e!s}"
         )
+
 
 async def generate_stream(
     request: GenerateRequest,
     raw_request: Request
 ) -> AsyncGenerator[bytes, None]:
     """Generate text in a streaming fashion.
-    
+
     Args:
         request: Generate text request
         raw_request: The raw request object for checking if the client disconnected
-        
+
     Yields:
         Chunks of the generated text as server-sent events
     """
     try:
         buffer = ""
-        
+
         async for chunk in model_service.generate(
             prompt=request.prompt,
             model=request.model,
@@ -388,7 +388,7 @@ async def generate_stream(
             # Check if client disconnected
             if await raw_request.is_disconnected():
                 break
-                
+
             # Add to buffer and yield if we have a complete line
             buffer += chunk
             if "\n" in buffer:
@@ -398,14 +398,14 @@ async def generate_stream(
                 buffer = lines[-1]
             else:
                 yield f"data: {json.dumps({'text': chunk})}\n\n".encode()
-                
+
         # Yield any remaining content in the buffer
         if buffer:
             yield f"data: {json.dumps({'text': buffer})}\n\n".encode()
-            
+
         # Send the [DONE] event
-        yield "data: [DONE]\n\n".encode()
-        
+        yield b"data: [DONE]\n\n"
+
     except Exception as e:
-        error_msg = f"Error during streaming: {str(e)}"
+        error_msg = f"Error during streaming: {e!s}"
         yield f"data: {json.dumps({'error': error_msg})}\n\n".encode()

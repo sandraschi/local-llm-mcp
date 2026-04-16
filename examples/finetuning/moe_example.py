@@ -5,7 +5,9 @@ This script demonstrates how to use the Mixture of Experts (MoE) implementation
 with the LLM MCP server.
 """
 import asyncio
-from llm_mcp.tools.moe_tools import moe_load_model, moe_train, moe_generate, MoEConfig
+
+from llm_mcp.tools.moe_tools import MoEConfig, moe_generate, moe_load_model, moe_train
+
 
 async def main():
     # Configure MoE
@@ -17,7 +19,7 @@ async def main():
         moe_layer_frequency=2,           # Apply MoE every N layers
         moe_layer_start=4,               # Start MoE layers at this depth
     )
-    
+
     # Load a model with MoE layers
     print("Loading model with MoE layers...")
     model_info = await moe_load_model(
@@ -25,10 +27,10 @@ async def main():
         moe_config=moe_config,
         load_in_4bit=True,
     )
-    
+
     print(f"Model loaded with ID: {model_info['model_id']}")
     print(f"Number of MoE layers: {model_info['num_moe_layers']}")
-    
+
     # Fine-tune the MoE model
     print("\nStarting MoE fine-tuning...")
     try:
@@ -47,9 +49,9 @@ async def main():
         )
         print(f"\nTraining completed! Model saved to: {training_result['output_dir']}")
     except Exception as e:
-        print(f"Training failed: {str(e)}")
+        print(f"Training failed: {e!s}")
         return
-    
+
     # Generate text with the MoE model
     print("\nGenerating text with the MoE model...")
     generation_result = await moe_generate(
@@ -60,20 +62,21 @@ async def main():
         top_k=50,
         top_p=0.9,
     )
-    
+
     print("\nGenerated text:")
     print(generation_result["generated_text"])
-    
+
     # Print expert utilization
     if "expert_utilization" in generation_result:
         print("\nExpert utilization:")
         for layer, utilization in generation_result["expert_utilization"].items():
-            print(f"{layer}: {utilization*100:.1f}%")
-    
+            print(f"{layer}: {utilization * 100:.1f}%")
+
     # Clean up
     print("\nCleaning up...")
     # Uncomment to delete the model when done
     # await moe_unload_model(model_info["model_id"])
+
 
 if __name__ == "__main__":
     asyncio.run(main())

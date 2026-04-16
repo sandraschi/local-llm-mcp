@@ -1,16 +1,18 @@
 """Configuration for vLLM V1 provider with v1.0.0+ support."""
 
-from pydantic import BaseModel, Field, field_validator, ConfigDict
-from typing import Optional, List, Literal, Dict, Any, Union
 from pathlib import Path
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
 
 class VLLMv1Config(BaseModel):
     """Configuration for vLLM V1 provider with v1.0.0+ support.
-    
+
     This configuration includes all major parameters from vLLM 1.0.0+ for optimal
     performance and flexibility.
     """
-    
+
     # ===== Server Configuration =====
     host: str = Field(
         "0.0.0.0",
@@ -26,13 +28,13 @@ class VLLMv1Config(BaseModel):
         "http://localhost:8001",
         description="Base URL for vLLM API endpoints"
     )
-    
+
     # ===== Model Loading =====
     model: str = Field(
         ...,
         description="Name or path of the model to load"
     )
-    tokenizer: Optional[str] = Field(
+    tokenizer: str | None = Field(
         None,
         description="Name or path of the tokenizer (defaults to model)"
     )
@@ -44,18 +46,18 @@ class VLLMv1Config(BaseModel):
         False,
         description="Trust remote code when loading the model"
     )
-    download_dir: Optional[Union[str, Path]] = Field(
+    download_dir: str | Path | None = Field(
         None,
         description="Directory to download and load the model"
     )
-    
+
     # ===== Engine Configuration =====
     tensor_parallel_size: int = Field(
         1,
         ge=1,
         description="Number of GPUs to use for distributed inference"
     )
-    max_parallel_loading_workers: Optional[int] = Field(
+    max_parallel_loading_workers: int | None = Field(
         None,
         description="Maximum number of workers to use for model loading"
     )
@@ -67,7 +69,7 @@ class VLLMv1Config(BaseModel):
         True,
         description="Use the v2 block manager for better memory management"
     )
-    
+
     # ===== KV Cache Configuration =====
     gpu_memory_utilization: float = Field(
         0.9,
@@ -80,14 +82,14 @@ class VLLMv1Config(BaseModel):
         ge=0,
         description="CPU swap space size (GiB per GPU) for KV cache"
     )
-    
+
     # ===== Attention Configuration =====
     max_seq_len: int = Field(
         8192,
         ge=1,
         description="Maximum sequence length"
     )
-    max_num_batched_tokens: Optional[int] = Field(
+    max_num_batched_tokens: int | None = Field(
         None,
         description="Maximum number of batched tokens per iteration"
     )
@@ -96,7 +98,7 @@ class VLLMv1Config(BaseModel):
         ge=1,
         description="Maximum number of sequences per batch"
     )
-    
+
     # ===== Performance Optimization =====
     enable_chunked_prefill: bool = Field(
         True,
@@ -106,13 +108,13 @@ class VLLMv1Config(BaseModel):
         "recompute",
         description="Preemption mode for long sequences"
     )
-    
+
     # ===== Quantization =====
-    quantization: Optional[Literal["awq", "gptq", "squeezellm"]] = Field(
+    quantization: Literal["awq", "gptq", "squeezellm"] | None = Field(
         None,
         description="Quantization method to use"
     )
-    
+
     # ===== Logging and Monitoring =====
     log_requests: bool = Field(
         False,
@@ -122,9 +124,9 @@ class VLLMv1Config(BaseModel):
         False,
         description="Log performance statistics"
     )
-    
+
     # ===== Advanced Settings =====
-    max_model_len: Optional[int] = Field(
+    max_model_len: int | None = Field(
         None,
         description="Maximum model length (overrides model config)"
     )
@@ -132,7 +134,7 @@ class VLLMv1Config(BaseModel):
         42,
         description="Random seed for reproducibility"
     )
-    
+
     @field_validator('base_url', mode='before')
     @classmethod
     def set_base_url(cls, v, info):
@@ -144,19 +146,19 @@ class VLLMv1Config(BaseModel):
     # Distributed inference
     tensor_parallel_size: int = 1
     pipeline_parallel_size: int = 1
-    
+
     # Auto-optimization (V1 features)
     enable_chunked_prefill: bool = True
     num_scheduler_steps: int = 1  # Auto-tuned in V1
-    
+
     # Model loading
-    model_download_dir: Optional[str] = None
+    model_download_dir: str | None = None
     trust_remote_code: bool = False
-    
+
     # Logging
     log_level: str = "INFO"
     disable_log_requests: bool = False
-    
+
     model_config = ConfigDict(
         env_prefix="VLLM_"
     )

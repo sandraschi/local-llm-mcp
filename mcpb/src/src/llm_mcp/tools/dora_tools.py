@@ -13,20 +13,15 @@ Key Features:
 - Seamless integration with existing training pipelines
 """
 
-import os
 import logging
+import os
+from dataclasses import dataclass, field
+from typing import Any
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Union, Any, Tuple
-from peft import LoraConfig, get_peft_model, TaskType
-from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    TrainingArguments,
-    Trainer
-)
+from transformers import AutoModelForCausalLM, Trainer, TrainingArguments
 
 # Try to import BitsAndBytesConfig (may not be available in all transformers versions)
 try:
@@ -39,14 +34,14 @@ except ImportError:
     except ImportError:
         BNB_AVAILABLE = False
         BitsAndBytesConfig = None
-from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import is_torch_bf16_gpu_available, is_torch_tf32_available
 
 # Get logger instance (configured in main.py)
 logger = logging.getLogger(__name__)
 
 # Global state for tracking loaded models
-_dora_models: Dict[str, Any] = {}
+_dora_models: dict[str, Any] = {}
+
 
 # Background task for system metrics
 async def collect_system_metrics():
@@ -59,21 +54,22 @@ async def collect_system_metrics():
             logger.error(f"Error collecting system metrics: {e}")
             await asyncio.sleep(60)  # Wait before retrying
 
+
 # Implementation functions (without @tool decorator)
 async def dora_load_model_impl(
     model_name: str,
-    model_id: Optional[str] = None,
+    model_id: str | None = None,
     lora_rank: int = 8,
     lora_alpha: int = 16,
     lora_dropout: float = 0.1,
-    target_modules: Optional[List[str]] = None,
+    target_modules: list[str] | None = None,
     use_double_quant: bool = True,
     quant_type: str = "nf4",
     compute_dtype: str = "bfloat16",
     device_map: str = "auto"
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Load a model with DoRA (Dropout LoRA) for fine-tuning.
-    
+
     Args:
         model_name: Name or path of the pre-trained model
         model_id: Optional ID for the model (auto-generated if not provided)
@@ -85,14 +81,14 @@ async def dora_load_model_impl(
         quant_type: Type of quantization to use ("nf4", "fp4", "int8", "none")
         compute_dtype: Compute dtype for training ("float16", "bfloat16", "float32")
         device_map: Device placement strategy ("auto", "cuda", "cpu", etc.)
-        
+
     Returns:
         Dictionary containing model information
     """
     try:
         if model_id is None:
             model_id = f"dora-{os.path.basename(model_name).lower().replace('.', '-')}-{os.urandom(4).hex()}"
-        
+
         # Set up quantization config if needed
         if quant_type != "none" and BNB_AVAILABLE:
             bnb_config = BitsAndBytesConfig(
@@ -111,7 +107,7 @@ async def dora_load_model_impl(
             bnb_config = None
         else:
             bnb_config = None
-        
+
         # Load the base model
         logger.info(f"Loading base model: {model_name}")
         model = AutoModelForCausalLM.from_pretrained(
@@ -120,7 +116,7 @@ async def dora_load_model_impl(
             device_map=device_map,
             trust_remote_code=True
         )
-        
+
         # Set up DoRA config
         config = DoraConfig(
             model_name=model_name,
@@ -133,18 +129,18 @@ async def dora_load_model_impl(
             compute_dtype=compute_dtype,
             device_map=device_map
         )
-        
+
         # Apply DoRA
         logger.info("Applying DoRA to the model")
         model = DoraLoraModel(model, config)
-        
+
         # Store the model
         _dora_models[model_id] = {
             "model": model,
             "config": config,
             "device": device_map if device_map != "auto" else "cuda" if torch.cuda.is_available() else "cpu"
         }
-        
+
         # Count trainable parameters
         trainable_params = sum(
             p.numel() for p in model.parameters() if p.requires_grad
@@ -152,11 +148,11 @@ async def dora_load_model_impl(
         total_params = sum(
             p.numel() for p in model.parameters()
         )
-        
+
         logger.info(f"Model loaded with ID: {model_id}")
         logger.info(f"Trainable parameters: {trainable_params:,}")
         logger.info(f"Total parameters: {total_params:,}")
-        
+
         return {
             "status": "success",
             "model_id": model_id,
@@ -175,13 +171,14 @@ async def dora_load_model_impl(
                 "device_map": device_map
             }
         }
-        
+
     except Exception as e:
-        logger.error(f"Error loading model: {str(e)}", exc_info=True)
+        logger.error(f"Error loading model: {e!s}", exc_info=True)
         return {
             "status": "error",
-            "message": f"Failed to load model: {str(e)}"
+            "message": f"Failed to load model: {e!s}"
         }
+
 
 async def dora_prepare_for_training_impl(
     model_id: str,
@@ -203,9 +200,9 @@ async def dora_prepare_for_training_impl(
     use_gradient_checkpointing: bool = True,
     use_flash_attention_2: bool = True,
     use_cpu_offload: bool = False
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Prepare a DoRA model for training.
-    
+
     Args:
         model_id: ID of the loaded model
         output_dir: Directory to save the model (default: "./dora_output")
@@ -226,7 +223,7 @@ async def dora_prepare_for_training_impl(
         use_gradient_checkpointing: Whether to use gradient checkpointing (default: True)
         use_flash_attention_2: Whether to use Flash Attention 2.0 (default: True)
         use_cpu_offload: Whether to offload some operations to CPU (default: False)
-        
+
     Returns:
         Dictionary with status and configuration
     """
@@ -236,9 +233,9 @@ async def dora_prepare_for_training_impl(
                 "status": "error",
                 "message": f"Model with ID {model_id} not found"
             }
-        
+
         model_info = _dora_models[model_id]
-        
+
         # Set up training arguments
         training_args = {
             "output_dir": output_dir,
@@ -269,44 +266,45 @@ async def dora_prepare_for_training_impl(
             "metric_for_best_model": "eval_loss" if model_info.get("eval_dataset") else None,
             "greater_is_better": False if model_info.get("eval_dataset") else None,
         }
-        
+
         # Update model info with training configuration
         model_info["training_args"] = training_args
         model_info["output_dir"] = output_dir
-        
+
         # Create output directory if it doesn't exist
         os.makedirs(output_dir, exist_ok=True)
-        
+
         logger.info(f"Model {model_id} prepared for training")
         logger.info(f"Training configuration: {training_args}")
-        
+
         return {
             "status": "success",
             "message": f"Model {model_id} prepared for training",
             "config": training_args
         }
-        
+
     except Exception as e:
-        logger.error(f"Error preparing model for training: {str(e)}", exc_info=True)
+        logger.error(f"Error preparing model for training: {e!s}", exc_info=True)
         return {
             "status": "error",
-            "message": f"Failed to prepare model for training: {str(e)}"
+            "message": f"Failed to prepare model for training: {e!s}"
         }
+
 
 async def dora_train_impl(
     model_id: str,
     train_dataset: Any,
-    eval_dataset: Optional[Any] = None,
+    eval_dataset: Any | None = None,
     **training_kwargs
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Train a DoRA model.
-    
+
     Args:
         model_id: ID of the loaded model
         train_dataset: Training dataset
         eval_dataset: Optional evaluation dataset
         **training_kwargs: Additional training arguments
-        
+
     Returns:
         Dictionary with training results
     """
@@ -316,22 +314,22 @@ async def dora_train_impl(
                 "status": "error",
                 "message": f"Model with ID {model_id} not found"
             }
-        
+
         model_info = _dora_models[model_id]
         model = model_info["model"]
-        
+
         # Update training arguments with any overrides
         training_args = model_info.get("training_args", {})
         training_args.update(training_kwargs)
-        
+
         # Store datasets
         model_info["train_dataset"] = train_dataset
         if eval_dataset is not None:
             model_info["eval_dataset"] = eval_dataset
-        
+
         # Set up training arguments
         training_args = TrainingArguments(**training_args)
-        
+
         # Set up trainer
         trainer = Trainer(
             model=model,
@@ -339,48 +337,49 @@ async def dora_train_impl(
             train_dataset=train_dataset,
             eval_dataset=eval_dataset if eval_dataset is not None else None,
         )
-        
+
         # Train the model
         logger.info(f"Starting training for model {model_id}")
         train_result = trainer.train()
-        
+
         # Save the final model
         trainer.save_model(model_info["output_dir"])
         trainer.save_state()
-        
+
         # Log training metrics
         metrics = train_result.metrics
         metrics["train_samples"] = len(train_dataset)
-        
+
         if eval_dataset is not None:
             eval_metrics = trainer.evaluate()
             metrics.update(eval_metrics)
-        
+
         # Save metrics
         trainer.log_metrics("train", metrics)
         trainer.save_metrics("train", metrics)
-        
+
         logger.info(f"Training completed for model {model_id}")
-        
+
         return {
             "status": "success",
             "metrics": metrics,
             "output_dir": model_info["output_dir"]
         }
-        
+
     except Exception as e:
-        logger.error(f"Error during training: {str(e)}", exc_info=True)
+        logger.error(f"Error during training: {e!s}", exc_info=True)
         return {
             "status": "error",
-            "message": f"Training failed: {str(e)}"
+            "message": f"Training failed: {e!s}"
         }
 
-async def dora_unload_model_impl(model_id: str) -> Dict[str, Any]:
+
+async def dora_unload_model_impl(model_id: str) -> dict[str, Any]:
     """Unload a DoRA model.
-    
+
     Args:
         model_id: ID of the model to unload
-        
+
     Returns:
         Dictionary with status message
     """
@@ -390,29 +389,30 @@ async def dora_unload_model_impl(model_id: str) -> Dict[str, Any]:
                 "status": "error",
                 "message": f"Model with ID {model_id} not found"
             }
-        
+
         # Clean up model resources
-        model_info = _dora_models.pop(model_id)
+        _dora_models.pop(model_id)
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-        
+
         logger.info(f"Model {model_id} unloaded")
-        
+
         return {
             "status": "success",
             "message": f"Model {model_id} unloaded"
         }
-        
+
     except Exception as e:
-        logger.error(f"Error unloading model: {str(e)}", exc_info=True)
+        logger.error(f"Error unloading model: {e!s}", exc_info=True)
         return {
             "status": "error",
-            "message": f"Failed to unload model: {str(e)}"
+            "message": f"Failed to unload model: {e!s}"
         }
 
-async def dora_list_models_impl() -> Dict[str, Any]:
+
+async def dora_list_models_impl() -> dict[str, Any]:
     """List all loaded DoRA models.
-    
+
     Returns:
         Dictionary with loaded model information
     """
@@ -426,23 +426,24 @@ async def dora_list_models_impl() -> Dict[str, Any]:
                 "has_eval_dataset": "eval_dataset" in model_info,
                 "training_args": model_info.get("training_args")
             }
-        
+
         return {
             "status": "success",
             "models": models_info
         }
-        
+
     except Exception as e:
-        logger.error(f"Error listing models: {str(e)}", exc_info=True)
+        logger.error(f"Error listing models: {e!s}", exc_info=True)
         return {
             "status": "error",
-            "message": f"Failed to list models: {str(e)}"
+            "message": f"Failed to list models: {e!s}"
         }
+
 
 @dataclass
 class DoraConfig:
     """Configuration for DoRA (Dropout LoRA) fine-tuning.
-    
+
     Attributes:
         model_name: Name or path of the pre-trained model
         lora_rank: Rank of the low-rank matrices
@@ -458,7 +459,7 @@ class DoraConfig:
     lora_rank: int = 8
     lora_alpha: int = 16
     lora_dropout: float = 0.1
-    target_modules: List[str] = field(
+    target_modules: list[str] = field(
         default_factory=lambda: ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
     )
     use_double_quant: bool = True
@@ -466,16 +467,17 @@ class DoraConfig:
     compute_dtype: str = "bfloat16"  # "float16", "bfloat16", "float32"
     device_map: str = "auto"
 
+
 class DoraLoraModel(nn.Module):
     """A custom LoRA implementation with dropout for better robustness.
-    
+
     This class extends the standard LoRA implementation by adding dropout to the
     low-rank adaptation matrices, which can help prevent overfitting.
     """
-    
+
     def __init__(self, base_model: nn.Module, config: DoraConfig):
         """Initialize the DoRA model.
-        
+
         Args:
             base_model: The base model to apply LoRA to
             config: Configuration for the DoRA model
@@ -484,13 +486,13 @@ class DoraLoraModel(nn.Module):
         self.base_model = base_model
         self.config = config
         self._setup_lora_layers()
-    
+
     def _setup_lora_layers(self):
         """Set up LoRA layers with dropout."""
         for name, module in self.base_model.named_modules():
             if not any(target in name for target in self.config.target_modules):
                 continue
-                
+
             if isinstance(module, nn.Linear):
                 # Replace the linear layer with our custom implementation
                 new_module = DoraLinear(
@@ -502,23 +504,23 @@ class DoraLoraModel(nn.Module):
                     lora_dropout=self.config.lora_dropout,
                     device=next(self.base_model.parameters()).device
                 )
-                
+
                 # Copy the original weights
                 new_module.linear.weight = module.weight
                 if module.bias is not None:
                     new_module.linear.bias = module.bias
-                
+
                 # Replace the module
                 parent = self._get_parent_module(name)
                 child_name = name.split('.')[-1]
                 setattr(parent, child_name, new_module)
-    
+
     def _get_parent_module(self, name: str) -> nn.Module:
         """Get the parent module of a given module.
-        
+
         Args:
             name: Full name of the target module
-            
+
         Returns:
             The parent module
         """
@@ -527,14 +529,15 @@ class DoraLoraModel(nn.Module):
         for part in parts[:-1]:
             module = getattr(module, part)
         return module
-    
+
     def forward(self, *args, **kwargs):
         """Forward pass through the model."""
         return self.base_model(*args, **kwargs)
 
+
 class DoraLinear(nn.Module):
     """A linear layer with LoRA and dropout."""
-    
+
     def __init__(
         self,
         in_features: int,
@@ -543,10 +546,10 @@ class DoraLinear(nn.Module):
         lora_rank: int = 8,
         lora_alpha: int = 16,
         lora_dropout: float = 0.1,
-        device: Optional[torch.device] = None
+        device: torch.device | None = None
     ):
         """Initialize the DoRA linear layer.
-        
+
         Args:
             in_features: Size of each input sample
             out_features: Size of each output sample
@@ -561,75 +564,76 @@ class DoraLinear(nn.Module):
         self.out_features = out_features
         self.lora_rank = lora_rank
         self.lora_alpha = lora_alpha
-        
+
         # Base linear layer
         self.linear = nn.Linear(in_features, out_features, bias=bias, device=device)
-        
+
         # LoRA A and B matrices with dropout
         self.lora_A = nn.Linear(in_features, lora_rank, bias=False, device=device)
         self.lora_B = nn.Linear(lora_rank, out_features, bias=False, device=device)
-        
+
         # Dropout for LoRA
         self.lora_dropout = nn.Dropout(p=lora_dropout)
-        
+
         # Scaling factor
         self.scaling = lora_alpha / lora_rank
-        
+
         # Initialize LoRA weights
         self._init_lora_weights()
-    
+
     def _init_lora_weights(self):
         """Initialize LoRA weights."""
         nn.init.kaiming_uniform_(self.lora_A.weight, a=5**0.5)
         nn.init.zeros_(self.lora_B.weight)
-    
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass.
-        
+
         Args:
             x: Input tensor of shape (batch_size, seq_len, in_features)
-            
+
         Returns:
             Output tensor of shape (batch_size, seq_len, out_features)
         """
         # Base model output
         output = self.linear(x)
-        
+
         # Apply LoRA with dropout
         lora_output = self.lora_B(self.lora_dropout(F.gelu(self.lora_A(x))))
-        
+
         # Scale and add to base output
         output = output + lora_output * self.scaling
-        
+
         return output
+
 
 def register_dora_tools(mcp):
     """Register DoRA tools with the MCP server.
-    
+
     Args:
         mcp: The MCP server instance with tool decorator
-        
+
     Returns:
         The MCP server instance with DoRA tools registered
     """
     # Get the tool decorator from the mcp instance
     tool = mcp.tool
-    
+
     @tool()
     async def dora_load_model(
         model_name: str,
-        model_id: Optional[str] = None,
+        model_id: str | None = None,
         lora_rank: int = 8,
         lora_alpha: int = 16,
         lora_dropout: float = 0.1,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         use_double_quant: bool = True,
         quant_type: str = "nf4",
         compute_dtype: str = "bfloat16",
         device_map: str = "auto"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Load a model with DoRA (Dropout LoRA) for fine-tuning.
-        
+
         Args:
             model_name: Name or path of the pre-trained model
             model_id: Optional ID for the model (auto-generated if not provided)
@@ -641,14 +645,14 @@ def register_dora_tools(mcp):
             quant_type: Type of quantization to use ("nf4", "fp4", "int8", "none")
             compute_dtype: Compute dtype for training ("float16", "bfloat16", "float32")
             device_map: Device placement strategy ("auto", "cuda", "cpu", etc.)
-            
+
         Returns:
             Dictionary containing model information
         """
         try:
             if model_id is None:
                 model_id = f"dora-{os.path.basename(model_name).lower().replace('.', '-')}-{os.urandom(4).hex()}"
-            
+
             # Set up quantization config if needed
             if quant_type != "none" and BNB_AVAILABLE:
                 bnb_config = BitsAndBytesConfig(
@@ -667,7 +671,7 @@ def register_dora_tools(mcp):
                 bnb_config = None
             else:
                 bnb_config = None
-            
+
             # Load the base model
             logger.info(f"Loading base model: {model_name}")
             model = AutoModelForCausalLM.from_pretrained(
@@ -676,7 +680,7 @@ def register_dora_tools(mcp):
                 device_map=device_map,
                 trust_remote_code=True
             )
-            
+
             # Set up DoRA config
             config = DoraConfig(
                 model_name=model_name,
@@ -689,18 +693,18 @@ def register_dora_tools(mcp):
                 compute_dtype=compute_dtype,
                 device_map=device_map
             )
-            
+
             # Apply DoRA
             logger.info("Applying DoRA to the model")
             model = DoraLoraModel(model, config)
-            
+
             # Store the model
             _dora_models[model_id] = {
                 "model": model,
                 "config": config,
                 "device": device_map if device_map != "auto" else "cuda" if torch.cuda.is_available() else "cpu"
             }
-            
+
             # Count trainable parameters
             trainable_params = sum(
                 p.numel() for p in model.parameters() if p.requires_grad
@@ -708,11 +712,11 @@ def register_dora_tools(mcp):
             total_params = sum(
                 p.numel() for p in model.parameters()
             )
-            
+
             logger.info(f"Model loaded with ID: {model_id}")
             logger.info(f"Trainable parameters: {trainable_params:,}")
             logger.info(f"Total parameters: {total_params:,}")
-            
+
             return {
                 "status": "success",
                 "model_id": model_id,
@@ -731,14 +735,14 @@ def register_dora_tools(mcp):
                     "device_map": device_map
                 }
             }
-            
+
         except Exception as e:
-            logger.error(f"Error loading model: {str(e)}", exc_info=True)
+            logger.error(f"Error loading model: {e!s}", exc_info=True)
             return {
                 "status": "error",
-                "message": f"Failed to load model: {str(e)}"
+                "message": f"Failed to load model: {e!s}"
             }
-    
+
     @mcp.tool()
     async def dora_prepare_for_training(
         model_id: str,
@@ -760,9 +764,9 @@ def register_dora_tools(mcp):
         use_gradient_checkpointing: bool = True,
         use_flash_attention_2: bool = True,
         use_cpu_offload: bool = False
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Prepare a DoRA model for training.
-        
+
         Args:
             model_id: ID of the loaded model
             output_dir: Directory to save the model (default: "./dora_output")
@@ -783,7 +787,7 @@ def register_dora_tools(mcp):
             use_gradient_checkpointing: Whether to use gradient checkpointing (default: True)
             use_flash_attention_2: Whether to use Flash Attention 2.0 (default: True)
             use_cpu_offload: Whether to offload some operations to CPU (default: False)
-            
+
         Returns:
             Dictionary with status and configuration
         """
@@ -793,10 +797,10 @@ def register_dora_tools(mcp):
                     "status": "error",
                     "message": f"Model with ID {model_id} not found"
                 }
-            
+
             model_info = _dora_models[model_id]
-            model = model_info["model"]
-            
+            model_info["model"]
+
             # Set up training arguments
             training_args = {
                 "output_dir": output_dir,
@@ -827,45 +831,45 @@ def register_dora_tools(mcp):
                 "metric_for_best_model": "eval_loss" if model_info.get("eval_dataset") else None,
                 "greater_is_better": False if model_info.get("eval_dataset") else None,
             }
-            
+
             # Update model info with training configuration
             model_info["training_args"] = training_args
             model_info["output_dir"] = output_dir
-            
+
             # Create output directory if it doesn't exist
             os.makedirs(output_dir, exist_ok=True)
-            
+
             logger.info(f"Model {model_id} prepared for training")
             logger.info(f"Training configuration: {training_args}")
-            
+
             return {
                 "status": "success",
                 "message": f"Model {model_id} prepared for training",
                 "config": training_args
             }
-            
+
         except Exception as e:
-            logger.error(f"Error preparing model for training: {str(e)}", exc_info=True)
+            logger.error(f"Error preparing model for training: {e!s}", exc_info=True)
             return {
                 "status": "error",
-                "message": f"Failed to prepare model for training: {str(e)}"
+                "message": f"Failed to prepare model for training: {e!s}"
             }
-    
+
     @mcp.tool()
     async def dora_train(
         model_id: str,
         train_dataset: Any,
-        eval_dataset: Optional[Any] = None,
+        eval_dataset: Any | None = None,
         **training_kwargs
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Train a DoRA model.
-        
+
         Args:
             model_id: ID of the loaded model
             train_dataset: Training dataset
             eval_dataset: Optional evaluation dataset
             **training_kwargs: Additional training arguments
-            
+
         Returns:
             Dictionary with training results
         """
@@ -875,22 +879,22 @@ def register_dora_tools(mcp):
                     "status": "error",
                     "message": f"Model with ID {model_id} not found"
                 }
-            
+
             model_info = _dora_models[model_id]
             model = model_info["model"]
-            
+
             # Update training arguments with any overrides
             training_args = model_info.get("training_args", {})
             training_args.update(training_kwargs)
-            
+
             # Store datasets
             model_info["train_dataset"] = train_dataset
             if eval_dataset is not None:
                 model_info["eval_dataset"] = eval_dataset
-            
+
             # Set up training arguments
             training_args = TrainingArguments(**training_args)
-            
+
             # Set up trainer
             trainer = Trainer(
                 model=model,
@@ -898,49 +902,49 @@ def register_dora_tools(mcp):
                 train_dataset=train_dataset,
                 eval_dataset=eval_dataset if eval_dataset is not None else None,
             )
-            
+
             # Train the model
             logger.info(f"Starting training for model {model_id}")
             train_result = trainer.train()
-            
+
             # Save the final model
             trainer.save_model(model_info["output_dir"])
             trainer.save_state()
-            
+
             # Log training metrics
             metrics = train_result.metrics
             metrics["train_samples"] = len(train_dataset)
-            
+
             if eval_dataset is not None:
                 eval_metrics = trainer.evaluate()
                 metrics.update(eval_metrics)
-            
+
             # Save metrics
             trainer.log_metrics("train", metrics)
             trainer.save_metrics("train", metrics)
-            
+
             logger.info(f"Training completed for model {model_id}")
-            
+
             return {
                 "status": "success",
                 "metrics": metrics,
                 "output_dir": model_info["output_dir"]
             }
-            
+
         except Exception as e:
-            logger.error(f"Error during training: {str(e)}", exc_info=True)
+            logger.error(f"Error during training: {e!s}", exc_info=True)
             return {
                 "status": "error",
-                "message": f"Training failed: {str(e)}"
+                "message": f"Training failed: {e!s}"
             }
-    
+
     @mcp.tool()
-    async def dora_unload_model(model_id: str) -> Dict[str, Any]:
+    async def dora_unload_model(model_id: str) -> dict[str, Any]:
         """Unload a DoRA model.
-        
+
         Args:
             model_id: ID of the model to unload
-            
+
         Returns:
             Dictionary with status message
         """
@@ -950,30 +954,30 @@ def register_dora_tools(mcp):
                     "status": "error",
                     "message": f"Model with ID {model_id} not found"
                 }
-            
+
             # Clean up model resources
-            model_info = _dora_models.pop(model_id)
+            _dora_models.pop(model_id)
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
-            
+
             logger.info(f"Model {model_id} unloaded")
-            
+
             return {
                 "status": "success",
                 "message": f"Model {model_id} unloaded"
             }
-            
+
         except Exception as e:
-            logger.error(f"Error unloading model: {str(e)}", exc_info=True)
+            logger.error(f"Error unloading model: {e!s}", exc_info=True)
             return {
                 "status": "error",
-                "message": f"Failed to unload model: {str(e)}"
+                "message": f"Failed to unload model: {e!s}"
             }
-    
+
     @mcp.tool()
-    async def dora_list_models() -> Dict[str, Any]:
+    async def dora_list_models() -> dict[str, Any]:
         """List all loaded DoRA models.
-        
+
         Returns:
             Dictionary with loaded model information
         """
@@ -987,21 +991,21 @@ def register_dora_tools(mcp):
                     "has_eval_dataset": "eval_dataset" in model_info,
                     "training_args": model_info.get("training_args")
                 }
-            
+
             return {
                 "status": "success",
                 "models": models_info
             }
-            
+
         except Exception as e:
-            logger.error(f"Error listing models: {str(e)}", exc_info=True)
+            logger.error(f"Error listing models: {e!s}", exc_info=True)
             return {
                 "status": "error",
-                "message": f"Failed to list models: {str(e)}"
+                "message": f"Failed to list models: {e!s}"
             }
-    
+
     # Start the background task for system metrics
     asyncio.create_task(collect_system_metrics())
-    
+
     logger.info("DoRA tools registered")
     return mcp

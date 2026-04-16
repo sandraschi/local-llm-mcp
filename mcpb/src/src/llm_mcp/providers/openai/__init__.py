@@ -1,9 +1,9 @@
 """OpenAI provider package."""
 
-from .provider import OpenAIProvider
 from .config import OpenAIConfig
+from .provider import OpenAIProvider
 
 __all__ = [
-    "OpenAIProvider",
-    "OpenAIConfig"
+    "OpenAIConfig",
+    "OpenAIProvider"
 ]

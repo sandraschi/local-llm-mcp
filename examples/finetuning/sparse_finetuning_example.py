@@ -5,12 +5,9 @@ This script demonstrates how to use the Sparse Fine-Tuning method
 with the LLM MCP server.
 """
 import asyncio
-from llm_mcp.tools.sparse_tools import (
-    sparse_load_model,
-    sparse_train,
-    sparse_generate,
-    SparsityConfig
-)
+
+from llm_mcp.tools.sparse_tools import SparsityConfig, sparse_generate, sparse_load_model, sparse_train
+
 
 async def main():
     # Configure sparsity
@@ -20,7 +17,7 @@ async def main():
         sparsity_type="structured",  # or "unstructured"
         sparsity_scheduler="linear",  # or "cosine", "constant"
     )
-    
+
     # Load a model with sparse fine-tuning
     print("Loading model with sparse fine-tuning...")
     model_info = await sparse_load_model(
@@ -28,9 +25,9 @@ async def main():
         sparsity_config=sparsity_config,
         load_in_4bit=True,
     )
-    
+
     print(f"Model loaded with ID: {model_info['model_id']}")
-    
+
     # Fine-tune the model with sparsity
     print("\nStarting sparse fine-tuning...")
     try:
@@ -47,9 +44,9 @@ async def main():
         )
         print(f"\nTraining completed! Model saved to: {training_result['output_dir']}")
     except Exception as e:
-        print(f"Training failed: {str(e)}")
+        print(f"Training failed: {e!s}")
         return
-    
+
     # Generate text with the fine-tuned model
     print("\nGenerating text with the sparse model...")
     generation_result = await sparse_generate(
@@ -60,16 +57,17 @@ async def main():
     )
     print("\nGenerated text:")
     print(generation_result["generated_text"])
-    
+
     # Get sparsity statistics
     print("\nSparsity statistics:")
     for layer, stats in generation_result.get("sparsity_stats", {}).items():
-        print(f"{layer}: {stats['sparsity']*100:.1f}% sparsity")
-    
+        print(f"{layer}: {stats['sparsity'] * 100:.1f}% sparsity")
+
     # Clean up
     print("\nCleaning up...")
     # Uncomment to delete the model when done
     # await sparse_unload_model(model_info["model_id"])
+
 
 if __name__ == "__main__":
     asyncio.run(main())

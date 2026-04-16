@@ -9,14 +9,15 @@ related operations into a single interface. Prevents tool explosion (10+ tools â
 full functionality and improving discoverability. Follows FastMCP 2.13+ best practices.
 """
 
-import logging
 import os
-from typing import Dict, Any, Optional, List, Union
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from llm_mcp.utils.logging import get_logger
 
 logger = get_logger(__name__)
+
 
 class HuggingFaceConfig(BaseModel):
     """Configuration for Hugging Face operations.
@@ -24,19 +25,15 @@ class HuggingFaceConfig(BaseModel):
     Supports both HF_TOKEN and HUGGINGFACE_TOKEN environment variables for maximum compatibility.
     """
 
-    api_token: Optional[str] = Field(None, description="Hugging Face API token", alias="token")
+    api_token: str | None = Field(None, description="Hugging Face API token", alias="token")
     timeout: int = Field(30, description="Request timeout in seconds")
     max_retries: int = Field(3, description="Maximum number of retries")
-    default_author: Optional[str] = Field(None, description="Default author for filtering")
+    default_author: str | None = Field(None, description="Default author for filtering")
 
     # Download settings
     use_auth_token: bool = Field(True, description="Whether to use auth token for downloads")
 
-    model_config = ConfigDict(
-        env_prefix="HUGGINGFACE_",
-        populate_by_name=True,
-        extra="ignore"
-    )
+    model_config = ConfigDict(env_prefix="HUGGINGFACE_", populate_by_name=True, extra="ignore")
 
     @classmethod
     def from_env(cls) -> "HuggingFaceConfig":
@@ -48,10 +45,12 @@ class HuggingFaceConfig(BaseModel):
         # Load other config from environment
         return cls(**config_data)
 
+
 # Import FastMCP components
 try:
     from fastmcp import FastMCP
     from fastmcp.tools import Tool
+
     FASTMCP_AVAILABLE = True
 except ImportError:
     logger.error("FastMCP not available - portmanteau tools require FastMCP >= 2.12.0")
@@ -59,35 +58,37 @@ except ImportError:
 
 # Hugging Face dependencies
 try:
-    from huggingface_hub import HfApi, HfFolder, login, logout, whoami
-    from huggingface_hub.utils import HfHubHTTPError
-    import huggingface_hub
+    import huggingface_hub  # noqa: F401
+    from huggingface_hub import HfApi, HfFolder, login, logout, whoami  # noqa: F401
+    from huggingface_hub.utils import HfHubHTTPError  # noqa: F401
+
     HF_AVAILABLE = True
 except ImportError:
     HF_AVAILABLE = False
     logger.warning("Hugging Face Hub not available. Install with: pip install huggingface-hub")
 
+
 async def llm_huggingface(
     operation: str,
     # Model operations
-    model_id: Optional[str] = None,
+    model_id: str | None = None,
     # Dataset operations
-    dataset_id: Optional[str] = None,
+    dataset_id: str | None = None,
     # Repository operations
-    repo_id: Optional[str] = None,
+    repo_id: str | None = None,
     repo_type: str = "model",
     # File operations
-    local_path: Optional[str] = None,
-    filename: Optional[str] = None,
+    local_path: str | None = None,
+    filename: str | None = None,
     # Search and discovery
-    query: Optional[str] = None,
-    author: Optional[str] = None,
+    query: str | None = None,
+    author: str | None = None,
     # Upload operations
-    path_in_repo: Optional[str] = None,
+    path_in_repo: str | None = None,
     commit_message: str = "Upload via Local LLM MCP",
     # Token operations
-    token: Optional[str] = None,
-) -> Dict[str, Any]:
+    token: str | None = None,
+) -> dict[str, Any]:
     """Comprehensive Hugging Face management tool for Local LLM MCP server.
 
     PORTMANTEAU PATTERN: Consolidates 15+ Hugging Face operations into one tool.
@@ -142,7 +143,9 @@ async def llm_huggingface(
             # Use provided token or config token
             auth_token = token or config.api_token
             if not auth_token:
-                return {"error": "token required for login operation. Set HUGGINGFACE_TOKEN or HF_TOKEN environment variable, or pass token parameter"}
+                return {
+                    "error": "token required for login operation. Set HUGGINGFACE_TOKEN or HF_TOKEN environment variable, or pass token parameter"
+                }
             try:
                 login(token=auth_token)
                 user_info = whoami()
@@ -150,27 +153,26 @@ async def llm_huggingface(
                     "success": True,
                     "message": "Successfully logged in to Hugging Face",
                     "user": user_info.get("name"),
-                    "token_source": "parameter" if token else "environment"
+                    "token_source": "parameter" if token else "environment",
                 }
             except Exception as e:
-                return {"error": f"Login failed: {str(e)}"}
+                return {"error": f"Login failed: {e!s}"}
 
         elif operation == "logout":
             try:
                 logout()
-                return {
-                    "success": True,
-                    "message": "Successfully logged out from Hugging Face"
-                }
+                return {"success": True, "message": "Successfully logged out from Hugging Face"}
             except Exception as e:
-                return {"error": f"Logout failed: {str(e)}"}
+                return {"error": f"Logout failed: {e!s}"}
 
         elif operation == "whoami":
             try:
                 # Check if we have a token available
                 auth_token = config.api_token
                 if not auth_token:
-                    return {"error": "No authentication token available. Set HUGGINGFACE_TOKEN or HF_TOKEN environment variable, or use login operation first"}
+                    return {
+                        "error": "No authentication token available. Set HUGGINGFACE_TOKEN or HF_TOKEN environment variable, or use login operation first"
+                    }
 
                 user_info = whoami(token=auth_token)
                 return {
@@ -180,12 +182,12 @@ async def llm_huggingface(
                         "fullname": user_info.get("fullname"),
                         "email": user_info.get("email"),
                         "organization": user_info.get("orgs", []),
-                        "is_pro": user_info.get("isPro", False)
+                        "is_pro": user_info.get("isPro", False),
                     },
-                    "token_source": "environment"
+                    "token_source": "environment",
                 }
             except Exception as e:
-                return {"error": f"Authentication check failed: {str(e)}. Make sure you're logged in with a valid token."}
+                return {"error": f"Authentication check failed: {e!s}. Make sure you're logged in with a valid token."}
 
         elif operation == "list_models":
             try:
@@ -200,14 +202,14 @@ async def llm_huggingface(
                             "likes": model.likes,
                             "tags": model.tags,
                             "pipeline_tag": model.pipeline_tag,
-                            "created_at": model.created_at.isoformat() if model.created_at else None
+                            "created_at": model.created_at.isoformat() if model.created_at else None,
                         }
                         for model in models
                     ],
-                    "count": len(list(models))
+                    "count": len(list(models)),
                 }
             except Exception as e:
-                return {"error": f"Failed to list models: {str(e)}"}
+                return {"error": f"Failed to list models: {e!s}"}
 
         elif operation == "list_datasets":
             try:
@@ -222,14 +224,14 @@ async def llm_huggingface(
                             "likes": dataset.likes,
                             "tags": dataset.tags,
                             "description": dataset.description,
-                            "created_at": dataset.created_at.isoformat() if dataset.created_at else None
+                            "created_at": dataset.created_at.isoformat() if dataset.created_at else None,
                         }
                         for dataset in datasets
                     ],
-                    "count": len(list(datasets))
+                    "count": len(list(datasets)),
                 }
             except Exception as e:
-                return {"error": f"Failed to list datasets: {str(e)}"}
+                return {"error": f"Failed to list datasets: {e!s}"}
 
         elif operation == "get_model_info":
             if not model_id:
@@ -251,17 +253,13 @@ async def llm_huggingface(
                         "created_at": model_info.created_at.isoformat() if model_info.created_at else None,
                         "last_modified": model_info.last_modified.isoformat() if model_info.last_modified else None,
                         "siblings": [
-                            {
-                                "rfilename": sibling.rfilename,
-                                "size": sibling.size,
-                                "blob_id": sibling.blob_id
-                            }
+                            {"rfilename": sibling.rfilename, "size": sibling.size, "blob_id": sibling.blob_id}
                             for sibling in model_info.siblings
-                        ]
-                    }
+                        ],
+                    },
                 }
             except Exception as e:
-                return {"error": f"Failed to get model info: {str(e)}"}
+                return {"error": f"Failed to get model info: {e!s}"}
 
         elif operation == "download_model":
             if not model_id:
@@ -270,21 +268,22 @@ async def llm_huggingface(
                 return {"error": "local_path required for download_model operation"}
             try:
                 from huggingface_hub import snapshot_download
+
                 download_path = snapshot_download(
                     repo_id=model_id,
                     local_dir=local_path,
                     repo_type="model",
-                    token=config.api_token if config.use_auth_token else None
+                    token=config.api_token if config.use_auth_token else None,
                 )
                 return {
                     "success": True,
                     "model_id": model_id,
                     "local_path": download_path,
                     "message": f"Model downloaded to {download_path}",
-                    "auth_used": config.api_token is not None and config.use_auth_token
+                    "auth_used": config.api_token is not None and config.use_auth_token,
                 }
             except Exception as e:
-                error_msg = f"Failed to download model: {str(e)}"
+                error_msg = f"Failed to download model: {e!s}"
                 if "gated" in str(e).lower() or "private" in str(e).lower():
                     error_msg += ". This may be a gated model requiring authentication. Ensure HUGGINGFACE_TOKEN or HF_TOKEN is set."
                 return {"error": error_msg}
@@ -296,21 +295,22 @@ async def llm_huggingface(
                 return {"error": "local_path required for download_dataset operation"}
             try:
                 from huggingface_hub import snapshot_download
+
                 download_path = snapshot_download(
                     repo_id=dataset_id,
                     local_dir=local_path,
                     repo_type="dataset",
-                    token=config.api_token if config.use_auth_token else None
+                    token=config.api_token if config.use_auth_token else None,
                 )
                 return {
                     "success": True,
                     "dataset_id": dataset_id,
                     "local_path": download_path,
                     "message": f"Dataset downloaded to {download_path}",
-                    "auth_used": config.api_token is not None and config.use_auth_token
+                    "auth_used": config.api_token is not None and config.use_auth_token,
                 }
             except Exception as e:
-                error_msg = f"Failed to download dataset: {str(e)}"
+                error_msg = f"Failed to download dataset: {e!s}"
                 if "gated" in str(e).lower() or "private" in str(e).lower():
                     error_msg += ". This may be a gated dataset requiring authentication. Ensure HUGGINGFACE_TOKEN or HF_TOKEN is set."
                 return {"error": error_msg}
@@ -328,53 +328,46 @@ async def llm_huggingface(
                     path_in_repo=path_in_repo,
                     repo_id=repo_id,
                     repo_type=repo_type,
-                    commit_message=commit_message
+                    commit_message=commit_message,
                 )
                 return {
                     "success": True,
                     "repo_id": repo_id,
                     "uploaded_file": path_in_repo,
                     "commit_message": commit_message,
-                    "message": f"File uploaded to {repo_id}/{path_in_repo}"
+                    "message": f"File uploaded to {repo_id}/{path_in_repo}",
                 }
             except Exception as e:
-                return {"error": f"Failed to upload file: {str(e)}"}
+                return {"error": f"Failed to upload file: {e!s}"}
 
         elif operation == "create_repo":
             if not repo_id:
                 return {"error": "repo_id required for create_repo operation"}
             try:
-                api.create_repo(
-                    repo_id=repo_id,
-                    repo_type=repo_type,
-                    private=False
-                )
+                api.create_repo(repo_id=repo_id, repo_type=repo_type, private=False)
                 return {
                     "success": True,
                     "repo_id": repo_id,
                     "repo_type": repo_type,
                     "url": f"https://huggingface.co/{repo_id}",
-                    "message": f"Repository created: https://huggingface.co/{repo_id}"
+                    "message": f"Repository created: https://huggingface.co/{repo_id}",
                 }
             except Exception as e:
-                return {"error": f"Failed to create repository: {str(e)}"}
+                return {"error": f"Failed to create repository: {e!s}"}
 
         elif operation == "delete_repo":
             if not repo_id:
                 return {"error": "repo_id required for delete_repo operation"}
             try:
-                api.delete_repo(
-                    repo_id=repo_id,
-                    repo_type=repo_type
-                )
+                api.delete_repo(repo_id=repo_id, repo_type=repo_type)
                 return {
                     "success": True,
                     "repo_id": repo_id,
                     "repo_type": repo_type,
-                    "message": f"Repository deleted: {repo_id}"
+                    "message": f"Repository deleted: {repo_id}",
                 }
             except Exception as e:
-                return {"error": f"Failed to delete repository: {str(e)}"}
+                return {"error": f"Failed to delete repository: {e!s}"}
 
         elif operation == "list_user_repos":
             try:
@@ -388,14 +381,14 @@ async def llm_huggingface(
                             "private": repo.private,
                             "downloads": repo.downloads,
                             "likes": repo.likes,
-                            "created_at": repo.created_at.isoformat() if repo.created_at else None
+                            "created_at": repo.created_at.isoformat() if repo.created_at else None,
                         }
                         for repo in repos
                     ],
-                    "count": len(list(repos))
+                    "count": len(list(repos)),
                 }
             except Exception as e:
-                return {"error": f"Failed to list user repositories: {str(e)}"}
+                return {"error": f"Failed to list user repositories: {e!s}"}
 
         elif operation == "search_models":
             if not query:
@@ -412,14 +405,14 @@ async def llm_huggingface(
                             "downloads": model.downloads,
                             "likes": model.likes,
                             "tags": model.tags[:5] if model.tags else [],  # Limit tags
-                            "pipeline_tag": model.pipeline_tag
+                            "pipeline_tag": model.pipeline_tag,
                         }
                         for model in models
                     ],
-                    "count": len(list(models))
+                    "count": len(list(models)),
                 }
             except Exception as e:
-                return {"error": f"Failed to search models: {str(e)}"}
+                return {"error": f"Failed to search models: {e!s}"}
 
         elif operation == "search_datasets":
             if not query:
@@ -436,29 +429,40 @@ async def llm_huggingface(
                             "downloads": dataset.downloads,
                             "likes": dataset.likes,
                             "tags": dataset.tags[:5] if dataset.tags else [],
-                            "description": dataset.description[:200] if dataset.description else None
+                            "description": dataset.description[:200] if dataset.description else None,
                         }
                         for dataset in datasets
                     ],
-                    "count": len(list(datasets))
+                    "count": len(list(datasets)),
                 }
             except Exception as e:
-                return {"error": f"Failed to search datasets: {str(e)}"}
+                return {"error": f"Failed to search datasets: {e!s}"}
 
         else:
             return {
                 "error": f"Unknown operation: {operation}",
                 "available_operations": [
-                    "login", "logout", "whoami", "list_models", "list_datasets",
-                    "get_model_info", "download_model", "download_dataset",
-                    "upload_file", "create_repo", "delete_repo", "list_user_repos",
-                    "search_models", "search_datasets"
-                ]
+                    "login",
+                    "logout",
+                    "whoami",
+                    "list_models",
+                    "list_datasets",
+                    "get_model_info",
+                    "download_model",
+                    "download_dataset",
+                    "upload_file",
+                    "create_repo",
+                    "delete_repo",
+                    "list_user_repos",
+                    "search_models",
+                    "search_datasets",
+                ],
             }
 
     except Exception as e:
         logger.error(f"Error in llm_huggingface operation {operation}: {e}", exc_info=True)
-        return {"error": f"Operation failed: {str(e)}", "operation": operation}
+        return {"error": f"Operation failed: {e!s}", "operation": operation}
+
 
 def register_llm_huggingface_tools(mcp):
     """Register the Hugging Face Portmanteau tool with the MCP server."""
@@ -469,18 +473,18 @@ def register_llm_huggingface_tools(mcp):
     @mcp.tool()
     async def llm_huggingface_tool(
         operation: str,
-        model_id: Optional[str] = None,
-        dataset_id: Optional[str] = None,
-        repo_id: Optional[str] = None,
+        model_id: str | None = None,
+        dataset_id: str | None = None,
+        repo_id: str | None = None,
         repo_type: str = "model",
-        local_path: Optional[str] = None,
-        filename: Optional[str] = None,
-        query: Optional[str] = None,
-        author: Optional[str] = None,
-        path_in_repo: Optional[str] = None,
+        local_path: str | None = None,
+        filename: str | None = None,
+        query: str | None = None,
+        author: str | None = None,
+        path_in_repo: str | None = None,
         commit_message: str = "Upload via Local LLM MCP",
-        token: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        token: str | None = None,
+    ) -> dict[str, Any]:
         """Hugging Face Portmanteau Tool - Consolidated Hugging Face operations.
 
         This tool consolidates all Hugging Face operations into a single interface,

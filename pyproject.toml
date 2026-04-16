@@ -62,6 +62,7 @@ dependencies = [
     "ruff>=0.5.0",
     "mypy>=1.10.0",
     "prometheus-client>=0.20.0",
+    "prefab-ui>=0.14.0",
 ]
 
 # REMOVED TRAINING DEPENDENCIES (~1.5GB saved):

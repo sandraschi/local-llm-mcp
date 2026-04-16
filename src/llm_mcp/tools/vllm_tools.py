@@ -11,8 +11,9 @@ Key Features:
 """
 
 import json
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
+from typing import Any
+
 import structlog
 
 # vLLM imports
@@ -39,12 +40,12 @@ class VLLMModelConfig:
 
     model_name: str
     trust_remote_code: bool = False
-    max_model_len: Optional[int] = None
+    max_model_len: int | None = None
     gpu_memory_utilization: float = 0.9
     swap_space: int = 4  # GB
     tensor_parallel_size: int = 1
     dtype: str = "auto"
-    quantization: Optional[str] = None
+    quantization: str | None = None
     enable_prefix_caching: bool = True
 
 
@@ -52,9 +53,9 @@ class VLLMManager:
     """Manager for vLLM 0.9.5 models."""
 
     def __init__(self):
-        self.llm: Optional[LLM] = None
-        self.current_model: Optional[str] = None
-        self.model_config: Optional[VLLMModelConfig] = None
+        self.llm: LLM | None = None
+        self.current_model: str | None = None
+        self.model_config: VLLMModelConfig | None = None
         self.sampling_params = SamplingParams() if VLLM_AVAILABLE else None
 
         # Performance tracking
@@ -64,9 +65,7 @@ class VLLMManager:
     def initialize_engine(self, model_config: VLLMModelConfig):
         """Initialize the vLLM 0.9.5 engine."""
         if not VLLM_AVAILABLE:
-            raise ImportError(
-                "vLLM is not installed. Please install it with: pip install vllm"
-            )
+            raise ImportError("vLLM is not installed. Please install it with: pip install vllm")
 
         self.model_config = model_config
 
@@ -87,7 +86,7 @@ class VLLMManager:
             logger.info(f"Initialized vLLM engine with model: {self.current_model}")
 
         except Exception as e:
-            logger.error(f"Failed to initialize vLLM engine: {str(e)}")
+            logger.error(f"Failed to initialize vLLM engine: {e!s}")
             raise
 
     def generate_text(
@@ -96,14 +95,12 @@ class VLLMManager:
         temperature: float = 0.7,
         top_p: float = 1.0,
         max_tokens: int = 100,
-        stop: Optional[List[str]] = None,
+        stop: list[str] | None = None,
         **kwargs,
     ) -> str:
         """Generate text using the current vLLM 0.9.5 model."""
         if not self.llm or not self.current_model:
-            raise ValueError(
-                "vLLM engine not initialized. Call initialize_engine() first."
-            )
+            raise ValueError("vLLM engine not initialized. Call initialize_engine() first.")
 
         self.sampling_params = SamplingParams(
             temperature=temperature,
@@ -121,17 +118,13 @@ class VLLMManager:
             return generated_text
 
         except Exception as e:
-            logger.error(f"Error generating text: {str(e)}")
+            logger.error(f"Error generating text: {e!s}")
             raise
 
-    def generate_structured(
-        self, prompt: str, schema: Dict[str, Any], **generation_kwargs
-    ) -> Dict[str, Any]:
+    def generate_structured(self, prompt: str, schema: dict[str, Any], **generation_kwargs) -> dict[str, Any]:
         """Generate structured output (JSON) using vLLM 0.9.5."""
         if not self.llm or not self.current_model:
-            raise ValueError(
-                "vLLM engine not initialized. Call initialize_engine() first."
-            )
+            raise ValueError("vLLM engine not initialized. Call initialize_engine() first.")
 
         # Add schema to the prompt for better guidance
         schema_prompt = f"""Generate a JSON output following this schema:
@@ -163,19 +156,17 @@ Output (JSON only, no markdown code blocks):"""
             return result
 
         except Exception as e:
-            logger.error(f"Error generating structured output: {str(e)}")
+            logger.error(f"Error generating structured output: {e!s}")
             return {"error": str(e)}
 
-    def get_performance_stats(self) -> Dict[str, Any]:
+    def get_performance_stats(self) -> dict[str, Any]:
         """Get performance statistics for the current model."""
         stats = {
             "model": self.current_model or "No model loaded",
             "total_requests": self.total_requests,
             "total_tokens_generated": self.total_tokens_generated,
             "avg_tokens_per_request": (
-                self.total_tokens_generated / self.total_requests
-                if self.total_requests > 0
-                else 0
+                self.total_tokens_generated / self.total_requests if self.total_requests > 0 else 0
             ),
         }
 
@@ -218,17 +209,15 @@ def get_vllm_manager() -> VLLMManager:
     return _vllm_manager
 
 
-async def _vllm_list_models_impl() -> Dict[str, Any]:
+async def _vllm_list_models_impl() -> dict[str, Any]:
     """Implementation of vllm_list_models."""
     manager = get_vllm_manager()
     if manager.current_model:
-        return {
-            "models": [{"id": manager.current_model, "name": manager.current_model}]
-        }
+        return {"models": [{"id": manager.current_model, "name": manager.current_model}]}
     return {"models": []}
 
 
-async def _vllm_initialize_impl(model_name: str, **kwargs) -> Dict[str, Any]:
+async def _vllm_initialize_impl(model_name: str, **kwargs) -> dict[str, Any]:
     """Implementation of vllm_initialize."""
     manager = get_vllm_manager()
     try:
@@ -239,7 +228,7 @@ async def _vllm_initialize_impl(model_name: str, **kwargs) -> Dict[str, Any]:
         return {"status": "error", "error": str(e)}
 
 
-async def _vllm_unload_impl() -> Dict[str, Any]:
+async def _vllm_unload_impl() -> dict[str, Any]:
     """Implementation of vllm_unload."""
     manager = get_vllm_manager()
     manager.unload_model()
@@ -251,17 +240,17 @@ def register_vllm_tools(mcp):
     manager = get_vllm_manager()
 
     @mcp.tool("vllm_initialize")
-    async def initialize_vllm_engine(
+    def initialize_vllm_engine(
         model_name: str,
         trust_remote_code: bool = False,
-        max_model_len: Optional[int] = None,
+        max_model_len: int | None = None,
         gpu_memory_utilization: float = 0.9,
         swap_space: int = 4,
         tensor_parallel_size: int = 1,
         dtype: str = "auto",
-        quantization: Optional[str] = None,
+        quantization: str | None = None,
         enable_prefix_caching: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Initialize the vLLM 0.9.5 engine with the specified configuration.
 
         Args:
@@ -309,14 +298,14 @@ def register_vllm_tools(mcp):
             return {"status": "error", "error": str(e)}
 
     @mcp.tool("vllm_generate")
-    async def generate_text(
+    def generate_text(
         prompt: str,
         temperature: float = 0.7,
         top_p: float = 1.0,
         max_tokens: int = 100,
-        stop: Optional[List[str]] = None,
+        stop: list[str] | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate text using the loaded vLLM 0.9.5 model."""
         try:
             result = manager.generate_text(
@@ -333,12 +322,12 @@ def register_vllm_tools(mcp):
             return {"status": "error", "error": str(e)}
 
     @mcp.tool("vllm_generate_structured")
-    async def generate_structured(
+    def generate_structured(
         prompt: str,
-        schema: Dict[str, Any],
+        schema: dict[str, Any],
         temperature: float = 0.7,
         max_tokens: int = 500,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate structured JSON output using vLLM 0.9.5."""
         try:
             result = manager.generate_structured(
@@ -353,7 +342,7 @@ def register_vllm_tools(mcp):
             return {"status": "error", "error": str(e)}
 
     @mcp.tool("vllm_stats")
-    async def get_stats() -> Dict[str, Any]:
+    def get_stats() -> dict[str, Any]:
         """Get statistics for the vLLM 0.9.5 engine."""
         try:
             return {"status": "success", "stats": manager.get_performance_stats()}
@@ -361,7 +350,7 @@ def register_vllm_tools(mcp):
             return {"status": "error", "error": str(e)}
 
     @mcp.tool("vllm_unload")
-    async def unload_model() -> Dict[str, str]:
+    def unload_model() -> dict[str, str]:
         """Unload the current vLLM 0.9.5 model from memory."""
         try:
             manager.unload_model()
@@ -371,7 +360,7 @@ def register_vllm_tools(mcp):
 
     # Cleanup on server shutdown
     @mcp.on_shutdown
-    async def cleanup():
+    def cleanup():
         if hasattr(manager, "llm") and manager.llm is not None:
             manager.unload_model()
 

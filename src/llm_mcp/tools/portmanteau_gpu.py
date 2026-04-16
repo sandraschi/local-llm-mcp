@@ -10,18 +10,18 @@ while maintaining full functionality and improving discoverability. Follows Fast
 best practices and provides comprehensive GPU management for NVIDIA GPUs.
 """
 
-import logging
-from typing import Dict, Any, Optional
+from typing import Any
 
 from llm_mcp.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
+
 def llm_gpu_tool(
     operation: str,
     # GPU identification
     gpu_id: int = 0,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Comprehensive GPU management tool for Local LLM MCP server.
 
     PORTMANTEAU PATTERN: Consolidates 4+ GPU operations into one tool.
@@ -41,9 +41,7 @@ def llm_gpu_tool(
     """
     try:
         # Import GPU management functions
-        from llm_mcp.tools.gpu_manager import (
-            get_gpu_status, clear_gpu_memory, optimize_gpu_memory, monitor_gpu_health
-        )
+        from llm_mcp.tools.gpu_manager import clear_gpu_memory, get_gpu_status, monitor_gpu_health, optimize_gpu_memory
 
         if operation == "get_status":
             return get_gpu_status(gpu_id)
@@ -60,23 +58,22 @@ def llm_gpu_tool(
         else:
             return {
                 "error": f"Unknown operation: {operation}",
-                "available_operations": [
-                    "get_status", "clear_memory", "optimize", "get_health"
-                ]
+                "available_operations": ["get_status", "clear_memory", "optimize", "get_health"],
             }
 
     except Exception as e:
         logger.error(f"Error in llm_gpu_tool operation {operation}: {e}", exc_info=True)
-        return {"error": f"Operation failed: {str(e)}", "operation": operation}
+        return {"error": f"Operation failed: {e!s}", "operation": operation}
 
 
 def register_llm_gpu_tools(mcp):
     """Register the GPU Portmanteau tool with the MCP server."""
+
     @mcp.tool()
     async def llm_gpu_tool_portmanteau(
         operation: str,
         gpu_id: int = 0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """GPU Portmanteau Tool - Consolidated GPU management operations.
 
         This tool consolidates all GPU management operations into a single interface,

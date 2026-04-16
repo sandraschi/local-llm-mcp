@@ -4,8 +4,9 @@ This module provides tools for working with Mixture of Experts (MoE) models,
 including loading, training, and inference with sparse MoE layers.
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Union
+import time
+from dataclasses import dataclass
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -14,16 +15,11 @@ from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
     AutoTokenizer,
-    Trainer,
-    TrainingArguments,
 )
-
-from llm_mcp.tools.common import ModelConfig
-import time
-from typing import Any, Dict, List, Optional, Union
 
 # Global registry for loaded MoE models
 MOE_MODELS = {}
+
 
 # Implementation functions (without @tool decorator)
 async def moe_load_model_impl(
@@ -32,32 +28,32 @@ async def moe_load_model_impl(
     expert_capacity: int = 4,
     moe_layer_frequency: int = 2,
     **kwargs,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Load a model and convert it to use MoE layers.
-    
+
     Args:
         model_name: Name or path of the model to load
         num_experts: Number of expert networks
         expert_capacity: Maximum number of tokens each expert can process
         moe_layer_frequency: How often to place MoE layers (e.g., every N layers)
         **kwargs: Additional arguments to pass to AutoModelForCausalLM
-        
+
     Returns:
         Dictionary with model information
     """
     global MOE_MODELS
-    
+
     try:
         # Generate a unique model ID if not provided
         model_id = kwargs.pop("model_id", f"moe_{len(MOE_MODELS) + 1}")
-        
+
         # Load the base model
         config = AutoConfig.from_pretrained(model_name, **kwargs)
         model = AutoModelForCausalLM.from_pretrained(model_name, config=config, **kwargs)
-        
+
         # Convert model to use MoE layers (implementation would go here)
         # This is a placeholder - actual implementation would modify the model architecture
-        
+
         # Store model info
         MOE_MODELS[model_id] = {
             "model": model,
@@ -66,16 +62,16 @@ async def moe_load_model_impl(
             "expert_capacity": expert_capacity,
             "moe_layer_frequency": moe_layer_frequency,
         }
-        
+
         return {
             "status": "success",
             "message": f"Loaded MoE model {model_id}",
             "model_id": model_id,
             "timestamp": time.time()
         }
-        
+
     except Exception as e:
-        logger.error(f"Error loading MoE model: {str(e)}")
+        logger.error(f"Error loading MoE model: {e!s}")
         return {"status": "error", "message": str(e)}
 
 
@@ -102,7 +98,7 @@ class MoEConfig:
     router_ignore_padding_tokens: bool = True
     moe_layer_frequency: int = 2
     moe_layer_start: int = 0
-    moe_layer_end: Optional[int] = None
+    moe_layer_end: int | None = None
 
 
 def convert_to_moe(
@@ -249,22 +245,23 @@ class MoEMLP(nn.Module):
         output = output.view(batch_size, seq_len, -1)
         return output
 
+
 # Tool registration function
 def register_moe_tools(mcp):
     """Register all MoE-related tools with the MCP server.
-    
+
     Args:
         mcp: The MCP server instance with tool decorator
-        
+
     Returns:
         The MCP server instance with MoE tools registered
-        
+
     Notes:
         - Tools are registered with stateful=True where appropriate
         - State TTL is set based on the expected cache duration for each tool
     """
     tool = mcp.tool
-    
+
     @tool(stateful=True, state_ttl=300)  # 5-minute cache for model loading
     async def moe_load_model(
         model_name: str,
@@ -272,18 +269,18 @@ def register_moe_tools(mcp):
         expert_capacity: int = 4,
         moe_layer_frequency: int = 2,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Load a model and convert it to use MoE layers with stateful caching.
-        
+
         This tool caches loaded models to improve performance.
-        
+
         Args:
             model_name: Name or path of the model to load
             num_experts: Number of expert networks
             expert_capacity: Maximum number of tokens each expert can process
             moe_layer_frequency: How often to place MoE layers (e.g., every N layers)
             **kwargs: Additional arguments to pass to AutoModelForCausalLM
-            
+
         Returns:
             Dictionary with model information and status
         """
@@ -294,32 +291,32 @@ def register_moe_tools(mcp):
             moe_layer_frequency=moe_layer_frequency,
             **kwargs
         )
-    
+
     @tool(stateful=True, state_ttl=60)  # 1-minute cache for model info
-    async def moe_model_info(model_id: str) -> Dict[str, Any]:
+    async def moe_model_info(model_id: str) -> dict[str, Any]:
         """Get information about a loaded MoE model with stateful caching.
-        
+
         Args:
             model_id: ID of the loaded MoE model
-            
+
         Returns:
             Dictionary with model information
         """
         if model_id not in MOE_MODELS:
             return {"status": "error", "message": f"Model {model_id} not found"}
-            
+
         model_info = MOE_MODELS[model_id].copy()
         # Don't return the actual model in the info
         if "model" in model_info:
             del model_info["model"]
-            
+
         return {
             "status": "success",
             "model_id": model_id,
             **model_info,
             "timestamp": time.time()
         }
-    
+
     @tool(stateful=False)  # No caching for training operations
     async def moe_train(
         model_id: str,
@@ -329,11 +326,11 @@ def register_moe_tools(mcp):
         batch_size: int = 8,
         num_epochs: int = 3,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fine-tune a MoE model on a dataset.
-        
+
         This tool does not use caching as it performs model training.
-        
+
         Args:
             model_id: ID of the loaded MoE model
             dataset: Path to dataset or dataset name
@@ -342,20 +339,20 @@ def register_moe_tools(mcp):
             batch_size: Batch size for training
             num_epochs: Number of training epochs
             **kwargs: Additional training arguments
-            
+
         Returns:
             Dictionary with training results
         """
         if model_id not in MOE_MODELS:
             return {"status": "error", "message": f"Model {model_id} not found"}
-            
+
         model = MOE_MODELS[model_id]["model"]
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model = model.to(device)
-        
+
         # Training implementation would go here
         # This is a placeholder implementation
-        
+
         return {
             "status": "success",
             "model_id": model_id,
@@ -364,7 +361,7 @@ def register_moe_tools(mcp):
             "final_loss": 0.0,  # Placeholder
             "timestamp": time.time()
         }
-    
+
     @tool(stateful=True, state_ttl=30)  # Short cache for generation
     async def moe_generate(
         model_id: str,
@@ -373,9 +370,9 @@ def register_moe_tools(mcp):
         temperature: float = 0.7,
         top_p: float = 0.9,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate text using a MoE model with stateful caching.
-        
+
         Args:
             model_id: ID of the loaded MoE model
             prompt: Input prompt
@@ -383,21 +380,21 @@ def register_moe_tools(mcp):
             temperature: Sampling temperature
             top_p: Nucleus sampling parameter
             **kwargs: Additional generation parameters
-            
+
         Returns:
             Dictionary with generated text and metadata
         """
         if model_id not in MOE_MODELS:
             return {"status": "error", "message": f"Model {model_id} not found"}
-            
+
         model_info = MOE_MODELS[model_id]
         model = model_info["model"]
         device = next(model.parameters()).device
-        
+
         # Tokenize input
         tokenizer = AutoTokenizer.from_pretrained(model_info["config"]._name_or_path)
         inputs = tokenizer(prompt, return_tensors="pt").to(device)
-        
+
         # Generate text
         with torch.no_grad():
             outputs = model.generate(
@@ -407,10 +404,10 @@ def register_moe_tools(mcp):
                 top_p=top_p,
                 **kwargs
             )
-        
+
         # Decode and return
         generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        
+
         return {
             "status": "success",
             "model_id": model_id,

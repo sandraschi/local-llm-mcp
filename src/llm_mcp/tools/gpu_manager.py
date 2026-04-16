@@ -5,9 +5,8 @@ particularly optimized for RTX 4090 to prevent memory issues and "gumming up".
 """
 
 import asyncio
-import logging
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
+from typing import Any
 
 from llm_mcp.utils.logging import get_logger
 
@@ -17,6 +16,7 @@ logger = get_logger(__name__)
 try:
     from fastmcp import FastMCP
     from fastmcp.tools import Tool
+
     FASTMCP_AVAILABLE = True
 except ImportError:
     logger.error("FastMCP not available - GPU manager requires FastMCP >= 2.12.0")
@@ -25,16 +25,19 @@ except ImportError:
 # GPU monitoring dependencies
 try:
     import GPUtil
-    import torch
     import psutil
+    import torch
+
     GPU_DEPS_AVAILABLE = True
 except ImportError:
     GPU_DEPS_AVAILABLE = False
     logger.warning("GPU monitoring dependencies not available. Install with: pip install gputil torch psutil")
 
+
 @dataclass
 class GPUStatus:
     """GPU status information."""
+
     id: int
     name: str
     memory_used: float
@@ -43,11 +46,12 @@ class GPUStatus:
     memory_utilization: float
     gpu_utilization: float
     temperature: float
-    fan_speed: Optional[float] = None
-    power_usage: Optional[float] = None
-    power_limit: Optional[float] = None
+    fan_speed: float | None = None
+    power_usage: float | None = None
+    power_limit: float | None = None
 
-async def get_gpu_status() -> List[GPUStatus]:
+
+async def get_gpu_status() -> list[GPUStatus]:
     """Get comprehensive GPU status information."""
     if not GPU_DEPS_AVAILABLE:
         return []
@@ -87,9 +91,9 @@ async def get_gpu_status() -> List[GPUStatus]:
                 memory_utilization=memory_utilization,
                 gpu_utilization=gpu.load * 100,
                 temperature=gpu.temperature,
-                fan_speed=getattr(gpu, 'fan_speed', None),
-                power_usage=getattr(gpu, 'power_usage', None),
-                power_limit=getattr(gpu, 'power_limit', None),
+                fan_speed=getattr(gpu, "fan_speed", None),
+                power_usage=getattr(gpu, "power_usage", None),
+                power_limit=getattr(gpu, "power_limit", None),
             )
             gpu_statuses.append(gpu_status)
 
@@ -99,7 +103,8 @@ async def get_gpu_status() -> List[GPUStatus]:
         logger.error(f"Failed to get GPU status: {e}")
         return []
 
-async def clear_gpu_memory(gpu_id: int = 0, force: bool = False) -> Dict[str, Any]:
+
+async def clear_gpu_memory(gpu_id: int = 0, force: bool = False) -> dict[str, Any]:
     """Clear GPU memory by running garbage collection and cache clearing."""
     if not GPU_DEPS_AVAILABLE:
         return {"error": "GPU dependencies not available"}
@@ -119,6 +124,7 @@ async def clear_gpu_memory(gpu_id: int = 0, force: bool = False) -> Dict[str, An
 
         # Force garbage collection
         import gc
+
         gc.collect()
 
         # Clear CUDA cache
@@ -133,24 +139,19 @@ async def clear_gpu_memory(gpu_id: int = 0, force: bool = False) -> Dict[str, An
         return {
             "success": True,
             "gpu_id": gpu_id,
-            "memory_before": {
-                "free": memory_before[0],
-                "total": memory_before[1]
-            },
-            "memory_after": {
-                "free": memory_after[0],
-                "total": memory_after[1]
-            },
+            "memory_before": {"free": memory_before[0], "total": memory_before[1]},
+            "memory_after": {"free": memory_after[0], "total": memory_after[1]},
             "memory_freed": memory_freed,
             "memory_freed_mb": memory_freed / (1024 * 1024),
-            "summary": f"Freed {memory_freed / (1024 * 1024):.1f}MB on GPU {gpu_id}"
+            "summary": f"Freed {memory_freed / (1024 * 1024):.1f}MB on GPU {gpu_id}",
         }
 
     except Exception as e:
         logger.error(f"Failed to clear GPU memory: {e}")
-        return {"error": f"Failed to clear GPU memory: {str(e)}"}
+        return {"error": f"Failed to clear GPU memory: {e!s}"}
 
-async def optimize_gpu_memory(gpu_id: int = 0) -> Dict[str, Any]:
+
+async def optimize_gpu_memory(gpu_id: int = 0) -> dict[str, Any]:
     """Optimize GPU memory usage with advanced techniques."""
     if not GPU_DEPS_AVAILABLE:
         return {"error": "GPU dependencies not available"}
@@ -169,6 +170,7 @@ async def optimize_gpu_memory(gpu_id: int = 0) -> Dict[str, Any]:
 
         # Multiple cleanup passes
         import gc
+
         for _ in range(3):
             gc.collect()
             torch.cuda.empty_cache()
@@ -191,14 +193,15 @@ async def optimize_gpu_memory(gpu_id: int = 0) -> Dict[str, Any]:
             "current_memory_utilization": current_status.memory_utilization if current_status else None,
             "current_gpu_utilization": current_status.gpu_utilization if current_status else None,
             "temperature": current_status.temperature if current_status else None,
-            "recommendations": _generate_gpu_recommendations(current_status) if current_status else []
+            "recommendations": _generate_gpu_recommendations(current_status) if current_status else [],
         }
 
     except Exception as e:
         logger.error(f"Failed to optimize GPU memory: {e}")
-        return {"error": f"Failed to optimize GPU memory: {str(e)}"}
+        return {"error": f"Failed to optimize GPU memory: {e!s}"}
 
-def _generate_gpu_recommendations(status: GPUStatus) -> List[str]:
+
+def _generate_gpu_recommendations(status: GPUStatus) -> list[str]:
     """Generate GPU optimization recommendations based on current status."""
     recommendations = []
 
@@ -220,7 +223,8 @@ def _generate_gpu_recommendations(status: GPUStatus) -> List[str]:
 
     return recommendations
 
-async def monitor_gpu_health(gpu_id: int = 0) -> Dict[str, Any]:
+
+async def monitor_gpu_health(gpu_id: int = 0) -> dict[str, Any]:
     """Monitor GPU health and provide detailed diagnostics."""
     if not GPU_DEPS_AVAILABLE:
         return {"error": "GPU dependencies not available"}
@@ -275,30 +279,35 @@ async def monitor_gpu_health(gpu_id: int = 0) -> Dict[str, Any]:
                 "gpu_utilization": status.gpu_utilization,
                 "temperature": status.temperature,
                 "memory_used_gb": status.memory_used / (1024**3),
-                "memory_total_gb": status.memory_total / (1024**3)
+                "memory_total_gb": status.memory_total / (1024**3),
             },
             "system_status": {
                 "cpu_percent": cpu_percent,
                 "system_memory_percent": system_memory.percent,
                 "system_memory_used_gb": system_memory.used / (1024**3),
-                "system_memory_total_gb": system_memory.total / (1024**3)
+                "system_memory_total_gb": system_memory.total / (1024**3),
             },
             "recommendations": _generate_gpu_recommendations(status),
             "alerts": [
                 f"High memory usage ({status.memory_utilization:.1f}%)" if status.memory_utilization > 85 else None,
                 f"High temperature ({status.temperature}°C)" if status.temperature > 85 else None,
-                f"High system memory ({system_memory.percent}%)" if system_memory.percent > 90 else None
+                f"High system memory ({system_memory.percent}%)" if system_memory.percent > 90 else None,
             ],
-            "alerts": [alert for alert in [
-                f"High memory usage ({status.memory_utilization:.1f}%)" if status.memory_utilization > 85 else None,
-                f"High temperature ({status.temperature}°C)" if status.temperature > 85 else None,
-                f"High system memory ({system_memory.percent}%)" if system_memory.percent > 90 else None
-            ] if alert is not None]
+            "alerts": [
+                alert
+                for alert in [
+                    f"High memory usage ({status.memory_utilization:.1f}%)" if status.memory_utilization > 85 else None,
+                    f"High temperature ({status.temperature}°C)" if status.temperature > 85 else None,
+                    f"High system memory ({system_memory.percent}%)" if system_memory.percent > 90 else None,
+                ]
+                if alert is not None
+            ],
         }
 
     except Exception as e:
         logger.error(f"Failed to monitor GPU health: {e}")
-        return {"error": f"Failed to monitor GPU health: {str(e)}"}
+        return {"error": f"Failed to monitor GPU health: {e!s}"}
+
 
 # Register tools with MCP
 def register_gpu_manager_tools(mcp, register_individual_tools: bool = True):
@@ -314,13 +323,15 @@ def register_gpu_manager_tools(mcp, register_individual_tools: bool = True):
 
     # Register gpu_status conditionally
     if register_individual_tools:
-        @mcp.tool()
-        async def gpu_status() -> Dict[str, Any]:
-        """Get comprehensive status of all NVIDIA GPUs.
 
-        Returns detailed information about GPU memory, utilization, temperature,
-        and other vital statistics for monitoring and optimization.
-        """
+        @mcp.tool()
+        async def gpu_status() -> dict[str, Any]:
+            """Get comprehensive status of all NVIDIA GPUs.
+
+            Returns detailed information about GPU memory, utilization, temperature,
+            and other vital statistics for monitoring and optimization.
+            """
+
         try:
             gpu_statuses = await get_gpu_status()
 
@@ -331,8 +342,8 @@ def register_gpu_manager_tools(mcp, register_individual_tools: bool = True):
                     "troubleshooting": [
                         "Ensure NVIDIA drivers are installed",
                         "Install GPU monitoring dependencies: pip install gputil torch",
-                        "Check GPU is properly connected and powered"
-                    ]
+                        "Check GPU is properly connected and powered",
+                    ],
                 }
 
             return {
@@ -346,15 +357,14 @@ def register_gpu_manager_tools(mcp, register_individual_tools: bool = True):
                             "used_gb": round(gpu.memory_used / (1024**3), 2),
                             "total_gb": round(gpu.memory_total / (1024**3), 2),
                             "free_gb": round(gpu.memory_free / (1024**3), 2),
-                            "utilization_percent": round(gpu.memory_utilization, 1)
+                            "utilization_percent": round(gpu.memory_utilization, 1),
                         },
                         "utilization_percent": round(gpu.gpu_utilization, 1),
                         "temperature_celsius": gpu.temperature,
                         "fan_speed_percent": gpu.fan_speed,
-                        "power": {
-                            "usage_watts": gpu.power_usage,
-                            "limit_watts": gpu.power_limit
-                        } if gpu.power_usage and gpu.power_limit else None
+                        "power": {"usage_watts": gpu.power_usage, "limit_watts": gpu.power_limit}
+                        if gpu.power_usage and gpu.power_limit
+                        else None,
                     }
                     for gpu in gpu_statuses
                 ],
@@ -362,18 +372,19 @@ def register_gpu_manager_tools(mcp, register_individual_tools: bool = True):
                     "total_memory_gb": sum(gpu.memory_total / (1024**3) for gpu in gpu_statuses),
                     "used_memory_gb": sum(gpu.memory_used / (1024**3) for gpu in gpu_statuses),
                     "average_utilization": sum(gpu.gpu_utilization for gpu in gpu_statuses) / len(gpu_statuses),
-                    "hottest_gpu_temp": max(gpu.temperature for gpu in gpu_statuses)
-                }
+                    "hottest_gpu_temp": max(gpu.temperature for gpu in gpu_statuses),
+                },
             }
 
         except Exception as e:
             logger.error(f"Failed to get GPU status: {e}")
-            return {"error": f"Failed to get GPU status: {str(e)}"}
+            return {"error": f"Failed to get GPU status: {e!s}"}
 
     # Register individual GPU tools conditionally
     if register_individual_tools:
+
         @mcp.tool()
-        async def gpu_clear_memory(gpu_id: int = 0) -> Dict[str, Any]:
+        async def gpu_clear_memory(gpu_id: int = 0) -> dict[str, Any]:
             """Clear GPU memory to prevent memory fragmentation and "gumming up".
 
             This tool performs comprehensive memory cleanup including:
@@ -387,7 +398,7 @@ def register_gpu_manager_tools(mcp, register_individual_tools: bool = True):
             return await clear_gpu_memory(gpu_id)
 
         @mcp.tool()
-        async def gpu_optimize(gpu_id: int = 0) -> Dict[str, Any]:
+        async def gpu_optimize(gpu_id: int = 0) -> dict[str, Any]:
             """Perform advanced GPU memory optimization.
 
             Runs multiple optimization passes and provides detailed before/after metrics
@@ -397,7 +408,7 @@ def register_gpu_manager_tools(mcp, register_individual_tools: bool = True):
             return await optimize_gpu_memory(gpu_id)
 
         @mcp.tool()
-        async def gpu_health_check(gpu_id: int = 0) -> Dict[str, Any]:
+        async def gpu_health_check(gpu_id: int = 0) -> dict[str, Any]:
             """Comprehensive GPU health monitoring and diagnostics.
 
             Provides detailed health assessment with recommendations for maintaining

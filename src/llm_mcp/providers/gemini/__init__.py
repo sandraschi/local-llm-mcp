@@ -1,9 +1,6 @@
 """Gemini provider package."""
 
-from .provider import GeminiProvider
 from .config import GeminiConfig
+from .provider import GeminiProvider
 
-__all__ = [
-    "GeminiProvider",
-    "GeminiConfig"
-]
+__all__ = ["GeminiConfig", "GeminiProvider"]

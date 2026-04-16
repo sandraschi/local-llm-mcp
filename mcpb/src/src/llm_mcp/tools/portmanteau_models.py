@@ -5,26 +5,26 @@ into a single interface following the portmanteau pattern.
 """
 
 import importlib.util
-from typing import Dict, Any, Optional
+from typing import Any
 
-from llm_mcp.tools.model_tools import (
-    _list_models_impl,
-    _get_model_info_impl,
-    _register_model_impl,
-)
 from llm_mcp.tools.model_management_tools import (
-    _ollama_list_models_impl,
-    _ollama_pull_model_impl,
-    _ollama_delete_model_impl,
-    _ollama_load_model_impl,
-    _ollama_unload_model_impl,
     _lmstudio_list_models_impl,
     _lmstudio_load_model_impl,
     _lmstudio_unload_model_impl,
+    _ollama_delete_model_impl,
+    _ollama_list_models_impl,
+    _ollama_load_model_impl,
+    _ollama_pull_model_impl,
+    _ollama_unload_model_impl,
+)
+from llm_mcp.tools.model_tools import (
+    _get_model_info_impl,
+    _list_models_impl,
+    _register_model_impl,
 )
 from llm_mcp.tools.vllm_tools import (
-    _vllm_list_models_impl,
     _vllm_initialize_impl,
+    _vllm_list_models_impl,
     _vllm_unload_impl,
 )
 from llm_mcp.utils.logging import get_logger
@@ -42,15 +42,15 @@ if not FASTMCP_AVAILABLE:
 async def llm_models(
     operation: str,
     # Model operations
-    model_id: Optional[str] = None,
-    provider: Optional[str] = None,
+    model_id: str | None = None,
+    provider: str | None = None,
     # Registration operations
-    name: Optional[str] = None,
-    context_length: Optional[int] = None,
-    max_tokens: Optional[int] = None,
-    description: Optional[str] = None,
-    parameters: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    name: str | None = None,
+    context_length: int | None = None,
+    max_tokens: int | None = None,
+    description: str | None = None,
+    parameters: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Comprehensive model management tool for Local LLM MCP server.
 
     PORTMANTEAU PATTERN: Consolidates 8+ model operations into one tool.
@@ -186,7 +186,7 @@ async def llm_models(
 
     except Exception as e:
         logger.error(f"Error in llm_models operation {operation}: {e}", exc_info=True)
-        return {"error": f"Operation failed: {str(e)}", "operation": operation}
+        return {"error": f"Operation failed: {e!s}", "operation": operation}
 
 
 def register_llm_models_tools(mcp):
@@ -198,14 +198,14 @@ def register_llm_models_tools(mcp):
     @mcp.tool()
     async def llm_models_tool(
         operation: str,
-        model_id: Optional[str] = None,
-        provider: Optional[str] = None,
-        name: Optional[str] = None,
-        context_length: Optional[int] = None,
-        max_tokens: Optional[int] = None,
-        description: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        model_id: str | None = None,
+        provider: str | None = None,
+        name: str | None = None,
+        context_length: int | None = None,
+        max_tokens: int | None = None,
+        description: str | None = None,
+        parameters: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """LLM Models Portmanteau Tool - Consolidated model management operations.
 
         This tool consolidates all model management, registration, and basic provider operations

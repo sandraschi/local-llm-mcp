@@ -16,13 +16,13 @@ A **production-ready** FastMCP 2.12+ compliant server for comprehensive LLM mana
 
 ##  **Key Features**
 
-- ** Multi-Provider Support**: Ollama, Anthropic, OpenAI, Gemini, Perplexity, LMStudio
-- ** High-Performance Inference**: Optimized with vLLM 0.8.3 (Python 3.13 compatible)
-- ** SOTA Portmanteau Architecture**: 5 consolidated tools following Advanced Memory MCP patterns
-- ** Robust Error Handling**: Server continues running despite individual tool failures
-- ** Modern Architecture**: FastMCP 2.12+ with MCP SDK 1.13.1
-- ** Local-First Design**: Excellent support for local LLM inference
-- ** Cloud Integration**: Seamless integration with major cloud providers
+- **SOTA Orchestration Dashboard**: Premium Vite/React interface for centralized model control
+- **Live Configuration Engine**: Browser-based management for `.env` settings and API keys
+- **Multi-Provider Support**: Ollama, Anthropic, OpenAI, Gemini, Perplexity, LMStudio
+- **High-Performance Inference**: Optimized with vLLM 0.8.3 (Python 3.13 compatible)
+- **Fleet Hub Integration**: Unified navigation for the entire local MCP ecosystem
+- **Robust Error Handling**: Server continues running despite individual tool failures
+- **Modern Architecture**: FastMCP 3.1+ compliance with industrial portmanteau patterns
 
 ##  **SOTA Portmanteau Architecture**
 
@@ -323,13 +323,35 @@ MIT License - see [LICENSE](LICENSE) file.
 > This is a FIXED version (September 2025) that resolves all critical startup issues and modernizes the codebase for production use.
 
 
-##  Webapp Dashboard
+## 🖥️ SOTA Orchestration Dashboard
 
-This MCP server includes a free, premium web interface for monitoring and control.
-By default, the web dashboard runs on port **10832**.
-*(Assigned ports: **10832** (Web dashboard frontend), **10833** (Web dashboard backend (API)))*
+The Local LLM MCP Server includes an industrial-grade web dashboard designed for fleet orchestration and live model management.
 
-To start the webapp:
-1. Navigate to the `webapp` (or `web`, `frontend`) directory.
-2. Run `start.bat` (Windows) or `./start.ps1` (PowerShell).
-3. Open `http://localhost:10832` in your browser.
+### **Core Modules**
+1.  **Overview Dashboard**: Real-time engine health and connectivity monitoring.
+2.  **SOTA Fleet Hub**: A central launcher to jump between other fleet services (Blender, Plex, Robotics, etc.).
+3.  **Live Settings Engine**: Update provider URLs and API keys without editing files manually.
+4.  **Engine Analytics**: Detailed telemetry for GPU VRAM, System RAM, and processing latency.
+
+### **Dashboard Setup**
+The dashboard operates on dedicated ports to avoid interference with the MCP JSON-RPC bridge:
+- **Frontend**: `10832` (Interactive UI)
+- **Backend (API)**: `10833` (Config Engine)
+
+To launch the full stack (MCP + Dashboard):
+```powershell
+powershell -ExecutionPolicy Bypass -File web_sota/start.ps1
+```
+
+Access the UI at: `http://localhost:10832`
+
+---
+
+![Dashboard Overview](C:\Users\sandr\.gemini\antigravity\brain\fc898764-4a67-452a-a886-3539e8411615\dashboard_overview_1776279397740.png)
+*System telemetry and engine health monitoring.*
+
+![Fleet Launcher](C:\Users\sandr\.gemini\antigravity\brain\fc898764-4a67-452a-a886-3539e8411615\fleet_page_1776279404383.png)
+*Unified navigation for the local MCP ecosystem.*
+
+![Live Configuration](C:\Users\sandr\.gemini\antigravity\brain\fc898764-4a67-452a-a886-3539e8411615\settings_tabs_1776279410836.png)
+*Persistent configuration management via the browser.*

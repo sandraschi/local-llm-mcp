@@ -1,20 +1,20 @@
 """Factory for creating and managing LLM providers."""
 
 import logging
-from typing import Dict, Optional, Type, Any
+from typing import Any
 
 from ..models.base import BaseProvider, ModelProvider
-from ..providers.ollama import OllamaProvider
-from ..providers.lmstudio import LMStudioProvider
-from ..providers.vllm_v1 import VLLMv1Provider as VLLMProvider
 from ..providers.anthropic import AnthropicProvider
-from ..providers.openai import OpenAIProvider
 from ..providers.gemini import GeminiProvider
-from ..providers.perplexity import PerplexityProvider
 from ..providers.huggingface import HuggingFaceProvider
+from ..providers.lmstudio import LMStudioProvider
+from ..providers.ollama import OllamaProvider
+from ..providers.openai import OpenAIProvider
+from ..providers.perplexity import PerplexityProvider
+from ..providers.vllm_v1 import VLLMv1Provider as VLLMProvider
 
 # Map provider types to their implementation classes
-PROVIDER_CLASSES: Dict[ModelProvider, Type[BaseProvider]] = {
+PROVIDER_CLASSES: dict[ModelProvider, type[BaseProvider]] = {
     ModelProvider.OLLAMA: OllamaProvider,
     ModelProvider.LMSTUDIO: LMStudioProvider,
     ModelProvider.VLLM: VLLMProvider,
@@ -31,14 +31,14 @@ logger = logging.getLogger(__name__)
 class ProviderFactory:
     """Factory for creating and managing LLM providers."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """Initialize the provider factory.
 
         Args:
             config: Configuration dictionary with provider-specific settings
         """
         self.config = config
-        self._providers: Dict[ModelProvider, BaseProvider] = {}
+        self._providers: dict[ModelProvider, BaseProvider] = {}
 
     def get_provider(self, provider_type: ModelProvider) -> BaseProvider:
         """Get or create a provider instance.
@@ -65,7 +65,7 @@ class ProviderFactory:
 
         return self._providers[provider_type]
 
-    async def get_provider_for_model(self, model_id: str) -> Optional[BaseProvider]:
+    async def get_provider_for_model(self, model_id: str) -> BaseProvider | None:
         """Get the appropriate provider for a given model ID.
 
         This method tries to determine the provider based on the model ID format
@@ -89,9 +89,7 @@ class ProviderFactory:
                 # Check if the model exists with this provider
                 # This is a simple check and might be optimized
                 models = await provider.list_models()
-                if any(
-                    model.id == model_id or model.name == model_id for model in models
-                ):
+                if any(model.id == model_id or model.name == model_id for model in models):
                     return provider
             except Exception:
                 # Skip this provider and try the next one
@@ -99,7 +97,7 @@ class ProviderFactory:
 
         return None
 
-    async def get_all_models(self) -> Dict[ModelProvider, list]:
+    async def get_all_models(self) -> dict[ModelProvider, list]:
         """Get all models from all available providers.
 
         Returns:
@@ -113,7 +111,7 @@ class ProviderFactory:
                 models = await provider.list_models()
                 all_models[provider_type] = models
             except Exception as e:
-                logger.error(f"Error getting models from {provider_type}: {str(e)}")
+                logger.error(f"Error getting models from {provider_type}: {e!s}")
                 all_models[provider_type] = []
 
         return all_models

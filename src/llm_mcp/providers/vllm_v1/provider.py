@@ -1,19 +1,16 @@
 """vLLM V1 Provider with v1.0.0+ support and enhanced performance."""
 
-import os
-import asyncio
 import logging
-import json
 import time
-from typing import Dict, List, Any, Optional, Union, AsyncGenerator
-from pathlib import Path
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
-import aiohttp
 import torch
-from pydantic import BaseModel, Field
 
 from llm_mcp.models.base import BaseProvider
+
 from .config import VLLMv1Config
 
 logger = logging.getLogger(__name__)
@@ -53,7 +50,7 @@ class VLLMGenerationResult:
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
-    metrics: Dict[str, Any] = None
+    metrics: dict[str, Any] = None
 
 
 class VLLMv1Provider(BaseProvider):
@@ -69,19 +66,17 @@ class VLLMv1Provider(BaseProvider):
     - Quantization support (AWQ, GPTQ, SqueezeLLM)
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """Initialize the vLLM provider.
 
         Args:
             config: Configuration dictionary for the vLLM provider
         """
         if not VLLM_AVAILABLE:
-            raise ImportError(
-                "vLLM is not installed. Please install it with: pip install vllm"
-            )
+            raise ImportError("vLLM is not installed. Please install it with: pip install vllm")
 
         self.config = VLLMv1Config(**(config or {}))
-        self.llm: Optional[LLM] = None
+        self.llm: LLM | None = None
         self.sampling_params = SamplingParams()
         self._is_initialized = False
         self._model_loaded = False
@@ -143,7 +138,7 @@ class VLLMv1Provider(BaseProvider):
             logger.info(f"Successfully loaded model: {self.config.model}")
 
         except Exception as e:
-            error_msg = f"Failed to initialize vLLM provider: {str(e)}"
+            error_msg = f"Failed to initialize vLLM provider: {e!s}"
             logger.error(error_msg, exc_info=True)
             self.metrics["last_error"] = error_msg
             raise RuntimeError(error_msg) from e
@@ -161,7 +156,7 @@ class VLLMv1Provider(BaseProvider):
         self._model_loaded = False
         logger.info("vLLM provider cleaned up")
 
-    async def list_models(self) -> List[Dict[str, Any]]:
+    async def list_models(self) -> list[dict[str, Any]]:
         """List available models from the vLLM provider.
 
         Returns:
@@ -192,9 +187,7 @@ class VLLMv1Provider(BaseProvider):
 
         return [model_info]
 
-    async def generate(
-        self, prompt: str, model: Optional[str] = None, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    async def generate(self, prompt: str, model: str | None = None, **kwargs) -> AsyncGenerator[str, None]:
         """Generate text from the model.
 
         Args:
@@ -209,9 +202,7 @@ class VLLMv1Provider(BaseProvider):
             await self.initialize()
 
         if model and model != self.config.model:
-            logger.warning(
-                f"Requested model {model} doesn't match loaded model {self.config.model}"
-            )
+            logger.warning(f"Requested model {model} doesn't match loaded model {self.config.model}")
 
         start_time = time.time()
         self.metrics["total_requests"] += 1
@@ -238,19 +229,17 @@ class VLLMv1Provider(BaseProvider):
             # Update metrics
             duration = time.time() - start_time
             self.metrics["successful_requests"] += 1
-            self.metrics["total_tokens_generated"] += len(
-                full_text.split()
-            )  # Approximate
+            self.metrics["total_tokens_generated"] += len(full_text.split())  # Approximate
             self.metrics["total_time_seconds"] += duration
 
         except Exception as e:
-            error_msg = f"Error in text generation: {str(e)}"
+            error_msg = f"Error in text generation: {e!s}"
             logger.error(error_msg, exc_info=True)
             self.metrics["failed_requests"] += 1
             self.metrics["last_error"] = error_msg
             raise RuntimeError(error_msg) from e
 
-    async def pull_model(self, model_name: str) -> Dict[str, Any]:
+    async def pull_model(self, model_name: str) -> dict[str, Any]:
         """Pull a model from the model hub.
 
         Args:
@@ -283,7 +272,7 @@ class VLLMv1Provider(BaseProvider):
             return model_info[0] if model_info else {}
 
         except Exception as e:
-            error_msg = f"Failed to pull model {model_name}: {str(e)}"
+            error_msg = f"Failed to pull model {model_name}: {e!s}"
             logger.error(error_msg, exc_info=True)
             self.metrics["last_error"] = error_msg
             raise RuntimeError(error_msg) from e
@@ -302,13 +291,11 @@ class VLLMv1Provider(BaseProvider):
         }
 
         # Update with any provided kwargs
-        params.update(
-            {k: v for k, v in kwargs.items() if k in SamplingParams.__annotations__}
-        )
+        params.update({k: v for k, v in kwargs.items() if k in SamplingParams.__annotations__})
 
         return SamplingParams(**params)
 
-    async def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get provider metrics.
 
         Returns:
@@ -341,7 +328,7 @@ class VLLMv1Provider(BaseProvider):
 
         return metrics
 
-    async def health_check(self) -> Dict[str, Any]:
+    def health_check(self) -> dict[str, Any]:
         """Perform a health check of the provider.
 
         Returns:
@@ -350,9 +337,7 @@ class VLLMv1Provider(BaseProvider):
         status = {
             "status": "healthy" if self.is_ready else "unhealthy",
             "model_loaded": self._model_loaded,
-            "device_available": torch.cuda.is_available()
-            if self._device == "cuda"
-            else True,
+            "device_available": torch.cuda.is_available() if self._device == "cuda" else True,
             "last_error": self.metrics.get("last_error"),
             "total_requests": self.metrics["total_requests"],
             "successful_requests": self.metrics["successful_requests"],
@@ -369,14 +354,13 @@ class VLLMv1Provider(BaseProvider):
                     "device_name": torch.cuda.get_device_name(),
                     "memory_allocated": torch.cuda.memory_allocated() / (1024**3),  # GB
                     "memory_reserved": torch.cuda.memory_reserved() / (1024**3),  # GB
-                    "memory_free": torch.cuda.memory_reserved()
-                    - torch.cuda.memory_allocated() / (1024**3),  # GB
+                    "memory_free": torch.cuda.memory_reserved() - torch.cuda.memory_allocated() / (1024**3),  # GB
                 }
             )
 
         return status
 
-    async def _load_supported_models(self) -> None:
+    def _load_supported_models(self) -> None:
         """Load the list of supported models."""
         # This would typically be loaded from a configuration file or API
         self._supported_models = {

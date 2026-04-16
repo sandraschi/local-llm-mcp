@@ -4,6 +4,7 @@ This package contains all the API v1 endpoints and related functionality for the
 """
 
 from fastapi import APIRouter
+
 from .endpoints import mcp_servers_router, models_router
 
 # Create the main API v1 router

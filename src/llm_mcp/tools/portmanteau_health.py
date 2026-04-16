@@ -4,15 +4,16 @@ This tool consolidates all health, monitoring, system, and server management ope
 into a single interface following the portmanteau pattern from Advanced Memory MCP.
 """
 
-import asyncio
-import logging
-from typing import Dict, Any, Optional, List
+from typing import Any
 
-from llm_mcp.services.provider_factory import ProviderFactory
-from llm_mcp.services.model_manager import ModelManager
-from llm_mcp.tools.help_tools import _list_tools_impl, _get_tool_help_impl, _search_tools_impl, _get_tool_signature_impl
-from llm_mcp.tools.system_tools import get_system_info, get_service_status
-from llm_mcp.tools.monitoring_tools import get_metrics_impl, get_metric_stats_impl, set_log_level_impl, collect_system_metrics
+from llm_mcp.tools.help_tools import _get_tool_help_impl, _get_tool_signature_impl, _list_tools_impl, _search_tools_impl
+from llm_mcp.tools.monitoring_tools import (
+    collect_system_metrics,
+    get_metric_stats_impl,
+    get_metrics_impl,
+    set_log_level_impl,
+)
+from llm_mcp.tools.system_tools import get_service_status, get_system_info
 from llm_mcp.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -21,6 +22,7 @@ logger = get_logger(__name__)
 try:
     from fastmcp import FastMCP
     from fastmcp.tools import Tool
+
     FASTMCP_AVAILABLE = True
 except ImportError:
     logger.error("FastMCP not available - portmanteau tools require FastMCP >= 2.12.0")
@@ -29,20 +31,21 @@ except ImportError:
 # Global MCP instance (set during registration)
 _mcp = None
 
+
 async def llm_health(
     operation: str,
     # Help operations
     detail: int = 1,
-    tool_name: Optional[str] = None,
-    query: Optional[str] = None,
+    tool_name: str | None = None,
+    query: str | None = None,
     # Metrics operations
-    name: Optional[str] = None,
+    name: str | None = None,
     since_minutes: float = 60.0,
-    tags: Optional[Dict[str, str]] = None,
+    tags: dict[str, str] | None = None,
     # Log operations
     logger_name: str = "",
     level: str = "INFO",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Comprehensive health and system management tool for Local LLM MCP server.
 
     PORTMANTEAU PATTERN RATIONALE:
@@ -126,7 +129,7 @@ async def llm_health(
                 "timestamp": system_info.get("timestamp"),
                 "issues": issues,
                 "system": system_info,
-                "services": service_status
+                "services": service_status,
             }
 
         elif operation == "list_tools":
@@ -164,14 +167,14 @@ async def llm_health(
                     "recommended_system_memory": "64GB+",
                     "supported_gpus": ["NVIDIA RTX 30xx+", "RTX 40xx+", "A-series", "H-series"],
                     "cpu_cores": "8+ recommended",
-                    "storage": "100GB+ for models and datasets"
+                    "storage": "100GB+ for models and datasets",
                 },
                 "inference_requirements": {
                     "min_gpu_memory": "4GB",
                     "recommended_gpu_memory": "8GB+",
                     "min_system_memory": "8GB",
-                    "cpu_cores": "4+ recommended"
-                }
+                    "cpu_cores": "4+ recommended",
+                },
             }
 
         elif operation == "system_info":
@@ -203,15 +206,26 @@ async def llm_health(
             return {
                 "error": f"Unknown operation: {operation}",
                 "available_operations": [
-                    "health_check", "list_tools", "tool_help", "search_tools", "tool_signature",
-                    "hardware_requirements", "system_info", "service_status", "server_health",
-                    "get_metrics", "get_metric_stats", "set_log_level", "collect_metrics"
-                ]
+                    "health_check",
+                    "list_tools",
+                    "tool_help",
+                    "search_tools",
+                    "tool_signature",
+                    "hardware_requirements",
+                    "system_info",
+                    "service_status",
+                    "server_health",
+                    "get_metrics",
+                    "get_metric_stats",
+                    "set_log_level",
+                    "collect_metrics",
+                ],
             }
 
     except Exception as e:
         logger.error(f"Error in llm_health operation {operation}: {e}", exc_info=True)
-        return {"error": f"Operation failed: {str(e)}", "operation": operation}
+        return {"error": f"Operation failed: {e!s}", "operation": operation}
+
 
 def register_llm_health_tools(mcp):
     """Register the LLM Health portmanteau tool with the MCP server."""
@@ -226,14 +240,14 @@ def register_llm_health_tools(mcp):
     async def llm_health_tool(
         operation: str,
         detail: int = 1,
-        tool_name: Optional[str] = None,
-        query: Optional[str] = None,
-        name: Optional[str] = None,
+        tool_name: str | None = None,
+        query: str | None = None,
+        name: str | None = None,
         since_minutes: float = 60.0,
-        tags: Optional[Dict[str, str]] = None,
+        tags: dict[str, str] | None = None,
         logger_name: str = "",
         level: str = "INFO",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """LLM Health Portmanteau Tool - Consolidated health, monitoring, and system operations.
 
         This tool consolidates all health, monitoring, system, and server management operations
@@ -268,20 +282,3 @@ def register_llm_health_tools(mcp):
 
     logger.info("Registered LLM Health portmanteau tool")
     return mcp
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

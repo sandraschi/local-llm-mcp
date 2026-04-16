@@ -10,21 +10,22 @@ while maintaining full functionality and improving discoverability. Follows Fast
 best practices and provides comprehensive documentation system.
 """
 
-import logging
-from typing import Dict, List, Any, Optional
 from enum import Enum
+from typing import Any
 
 from llm_mcp.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
+
 class HelpLevel(Enum):
     """Help detail levels for progressive disclosure."""
-    NAMES_ONLY = 0      # Just tool names
-    BASIC = 1           # Basic descriptions
-    INTERMEDIATE = 2    # Examples and workflows
-    ADVANCED = 3        # Performance & integration
-    EXPERT = 4          # Architecture & troubleshooting
+
+    NAMES_ONLY = 0  # Just tool names
+    BASIC = 1  # Basic descriptions
+    INTERMEDIATE = 2  # Examples and workflows
+    ADVANCED = 3  # Performance & integration
+    EXPERT = 4  # Architecture & troubleshooting
 
 
 async def llm_help_tool(
@@ -32,12 +33,12 @@ async def llm_help_tool(
     # Tool discovery parameters
     detail: int = 1,
     # Tool help parameters
-    tool_name: Optional[str] = None,
-    help_detail: Optional[int] = None,
+    tool_name: str | None = None,
+    help_detail: int | None = None,
     # Search parameters
-    query: Optional[str] = None,
-    category: Optional[str] = None,
-) -> Dict[str, Any]:
+    query: str | None = None,
+    category: str | None = None,
+) -> dict[str, Any]:
     """Comprehensive help and documentation system for Local LLM MCP server.
 
     PORTMANTEAU PATTERN: Consolidates 10+ help operations into one tool.
@@ -68,11 +69,16 @@ async def llm_help_tool(
     try:
         # Import here to avoid circular imports
         from llm_mcp.tools.help_tools import (
-            _list_tools_impl, _get_tool_help_impl, _search_tools_impl,
-            _get_tool_signature_impl, _get_workflow_guides_impl,
-            _get_performance_guide_impl, _get_troubleshooting_guide_impl,
-            _get_hardware_requirements, _get_quick_reference_impl,
-            _get_integration_guide_impl
+            _get_hardware_requirements,
+            _get_integration_guide_impl,
+            _get_performance_guide_impl,
+            _get_quick_reference_impl,
+            _get_tool_help_impl,
+            _get_tool_signature_impl,
+            _get_troubleshooting_guide_impl,
+            _get_workflow_guides_impl,
+            _list_tools_impl,
+            _search_tools_impl,
         )
 
         if operation == "list_tools":
@@ -116,28 +122,36 @@ async def llm_help_tool(
             return {
                 "error": f"Unknown operation: {operation}",
                 "available_operations": [
-                    "list_tools", "get_tool_help", "search_tools", "get_tool_signature",
-                    "get_workflow_guides", "get_performance_guide", "get_troubleshooting_guide",
-                    "get_hardware_requirements", "get_quick_reference", "get_integration_guide"
-                ]
+                    "list_tools",
+                    "get_tool_help",
+                    "search_tools",
+                    "get_tool_signature",
+                    "get_workflow_guides",
+                    "get_performance_guide",
+                    "get_troubleshooting_guide",
+                    "get_hardware_requirements",
+                    "get_quick_reference",
+                    "get_integration_guide",
+                ],
             }
 
     except Exception as e:
         logger.error(f"Error in llm_help_tool operation {operation}: {e}", exc_info=True)
-        return {"error": f"Operation failed: {str(e)}", "operation": operation}
+        return {"error": f"Operation failed: {e!s}", "operation": operation}
 
 
 def register_llm_help_tools(mcp):
     """Register the Help Portmanteau tool with the MCP server."""
+
     @mcp.tool()
     async def llm_help_tool_portmanteau(
         operation: str,
         detail: int = 1,
-        tool_name: Optional[str] = None,
-        help_detail: Optional[int] = None,
-        query: Optional[str] = None,
-        category: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        tool_name: str | None = None,
+        help_detail: int | None = None,
+        query: str | None = None,
+        category: str | None = None,
+    ) -> dict[str, Any]:
         """Help Portmanteau Tool - Consolidated help and documentation operations.
 
         This tool consolidates all help and documentation operations into a single interface,

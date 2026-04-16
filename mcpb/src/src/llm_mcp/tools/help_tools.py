@@ -3,32 +3,32 @@
 This module provides self-documenting functionality for the MCP server, allowing
 clients to discover and understand available tools and their usage.
 """
-from typing import Dict, List, Any, Type, Optional, get_origin, get_args, Union, Callable
 import inspect
-from functools import wraps
+from collections.abc import Callable
+from typing import Any, Union, get_args, get_origin
 
 
-def format_type(t: Type) -> str:
+def format_type(t: type) -> str:
     """Format a Python type for documentation.
-    
+
     Args:
         t: The type to format
-        
+
     Returns:
         Formatted type string
     """
-    if t is type(None):  # noqa: E721
+    if t is type(None):
         return "None"
     if t == inspect.Parameter.empty:
         return "any"
-        
+
     # Handle Optional types
     if get_origin(t) is Union:
-        args = [a for a in get_args(t) if a is not type(None)]  # noqa: E721
+        args = [a for a in get_args(t) if a is not type(None)]
         if len(args) == 1:
             return f"{format_type(args[0])} (optional)"
         return " | ".join(format_type(a) for a in args) + " (optional)"
-    
+
     # Handle container types
     if hasattr(t, "__origin__"):
         if t.__origin__ is list:
@@ -38,17 +38,17 @@ def format_type(t: Type) -> str:
             key_type = format_type(t.__args__[0]) if t.__args__ else "any"
             value_type = format_type(t.__args__[1]) if len(t.__args__) > 1 else "any"
             return f"Dict[{key_type}, {value_type}]"
-    
+
     # Default case
     return t.__name__ if hasattr(t, "__name__") else str(t)
 
 
-def get_type_hints(func: Callable) -> Dict[str, Type]:
+def get_type_hints(func: Callable) -> dict[str, type]:
     """Safely get type hints from a function.
-    
+
     Args:
         func: The function to get type hints from
-        
+
     Returns:
         Dictionary of parameter names to types
     """
@@ -58,12 +58,12 @@ def get_type_hints(func: Callable) -> Dict[str, Type]:
         return {}
 
 
-def get_parameter_docs(func: Callable) -> List[Dict[str, Any]]:
+def get_parameter_docs(func: Callable) -> list[dict[str, Any]]:
     """Extract parameter documentation from a function.
-    
+
     Args:
         func: The function to document
-        
+
     Returns:
         List of parameter information dictionaries
     """
@@ -74,11 +74,11 @@ def get_parameter_docs(func: Callable) -> List[Dict[str, Any]]:
         return []
     type_hints = get_type_hints(func)
     params = []
-    
+
     for name, param in sig.parameters.items():
         if name == "self":
             continue
-            
+
         param_info = {
             "name": name,
             "type": format_type(type_hints.get(name, param.annotation)),
@@ -86,7 +86,7 @@ def get_parameter_docs(func: Callable) -> List[Dict[str, Any]]:
             "default": param.default if param.default is not param.empty else None,
             "description": ""
         }
-        
+
         # Get description from docstring
         try:
             doc = inspect.getdoc(func) or ""
@@ -98,18 +98,18 @@ def get_parameter_docs(func: Callable) -> List[Dict[str, Any]]:
         except Exception:
             # If docstring inspection fails, continue without description
             pass
-                
+
         params.append(param_info)
-    
+
     return params
 
 
-def get_return_docs(func: Callable) -> Dict[str, str]:
+def get_return_docs(func: Callable) -> dict[str, str]:
     """Extract return type and description.
-    
+
     Args:
         func: The function to document
-        
+
     Returns:
         Dictionary with return type and description
     """
@@ -118,11 +118,11 @@ def get_return_docs(func: Callable) -> Dict[str, str]:
         return_type = type_hints.get("return", "None")
     except Exception:
         return_type = "None"
-    
+
     try:
         doc = inspect.getdoc(func) or ""
         description = ""
-        
+
         # Extract return description from docstring
         in_returns = False
         for line in doc.split('\n'):
@@ -136,28 +136,28 @@ def get_return_docs(func: Callable) -> Dict[str, str]:
                 description += " " + line.strip()
     except Exception:
         description = ""
-    
+
     return {
         "type": format_type(return_type),
         "description": description
     }
 
 
-def get_tool_info(func: Callable) -> Dict[str, Any]:
+def get_tool_info(func: Callable) -> dict[str, Any]:
     """Get complete documentation for a tool.
-    
+
     Args:
         func: The tool function to document
-        
+
     Returns:
         Dictionary with tool documentation
     """
     doc = inspect.getdoc(func) or ""
     description = doc.split('\n')[0] if doc else ""
-    
+
     # Safe access to function name
     func_name = getattr(func, '__name__', getattr(func, 'name', func.__class__.__name__))
-    
+
     return {
         "name": func_name,
         "description": description,
@@ -168,13 +168,13 @@ def get_tool_info(func: Callable) -> Dict[str, Any]:
 
 
 # Implementation functions
-async def _list_tools_impl(mcp: Any, detail: int = 1) -> Dict[str, Any]:
+async def _list_tools_impl(mcp: Any, detail: int = 1) -> dict[str, Any]:
     """Implementation of list_tools functionality.
-    
+
     Args:
         mcp: The MCP server instance
         detail: Level of detail (0=names only, 1=basic, 2=full)
-        
+
     Returns:
         Dictionary with tool information
     """
@@ -183,7 +183,7 @@ async def _list_tools_impl(mcp: Any, detail: int = 1) -> Dict[str, Any]:
     for name, tool in mcp_tools.items():
         if detail == 0:
             # Safe access to tool name and docstring
-            tool_name = getattr(tool, '__name__', tool.__class__.__name__)
+            getattr(tool, '__name__', tool.__class__.__name__)
             doc = inspect.getdoc(tool) or ""
             tools[name] = {"description": doc.split('\n')[0]}
         else:
@@ -193,13 +193,13 @@ async def _list_tools_impl(mcp: Any, detail: int = 1) -> Dict[str, Any]:
     return {"tools": tools}
 
 
-async def _get_tool_help_impl(mcp: Any, tool_name: str) -> Dict[str, Any]:
+async def _get_tool_help_impl(mcp: Any, tool_name: str) -> dict[str, Any]:
     """Implementation of get_tool_help functionality.
-    
+
     Args:
         mcp: The MCP server instance
         tool_name: Name of the tool to get help for
-        
+
     Returns:
         Detailed documentation for the tool
     """
@@ -210,19 +210,19 @@ async def _get_tool_help_impl(mcp: Any, tool_name: str) -> Dict[str, Any]:
     return {"error": f"Tool '{tool_name}' not found"}
 
 
-async def _search_tools_impl(mcp: Any, query: str) -> Dict[str, Any]:
+async def _search_tools_impl(mcp: Any, query: str) -> dict[str, Any]:
     """Implementation of search_tools functionality.
-    
+
     Args:
         mcp: The MCP server instance
         query: Search term
-        
+
     Returns:
         Dictionary with matching tools
     """
     query = query.lower()
     matches = []
-    
+
     # Fix: await the get_tools() call since it returns a coroutine
     mcp_tools = await mcp.get_tools()
     for name, tool in mcp_tools.items():
@@ -232,17 +232,17 @@ async def _search_tools_impl(mcp: Any, query: str) -> Dict[str, Any]:
                 "name": name,
                 "description": doc.split('\n')[0]
             })
-    
+
     return {"matches": matches}
 
 
-async def _get_tool_signature_impl(mcp: Any, tool_name: str) -> Dict[str, Any]:
+async def _get_tool_signature_impl(mcp: Any, tool_name: str) -> dict[str, Any]:
     """Implementation of get_tool_signature functionality.
-    
+
     Args:
         mcp: The MCP server instance
         tool_name: Name of the tool
-        
+
     Returns:
         Dictionary with tool signature information
     """
@@ -271,85 +271,85 @@ async def _get_tool_signature_impl(mcp: Any, tool_name: str) -> Dict[str, Any]:
 
 def register_help_tools(mcp):
     """Register help tools with the MCP server using FastMCP 2.12+ features.
-    
+
     Args:
         mcp: The MCP server instance
-        
+
     Returns:
         The MCP server instance with help tools registered
-        
+
     Notes:
         - Tools are registered with stateful=True to maintain state between invocations
         - State TTL is set based on the expected cache duration for each tool
     """
     # Tool listing
     @mcp.tool()
-    async def list_available_tools(detail: int = 1) -> Dict[str, Any]:
+    async def list_available_tools(detail: int = 1) -> dict[str, Any]:
         """List all available tools with stateful caching.
-        
+
         This tool maintains a cache of available tools to improve performance.
         The cache is automatically managed by FastMCP's stateful tools.
-        
+
         Args:
             detail: Level of detail (0=names only, 1=basic, 2=full)
-            
+
         Returns:
             Dictionary with tool information
         """
         return await _list_tools_impl(mcp, detail)
-    
+
     @mcp.tool()  # Get tool help
-    async def get_tool_help(tool_name: str) -> Dict[str, Any]:
+    async def get_tool_help(tool_name: str) -> dict[str, Any]:
         """Get detailed help for a specific tool with caching.
-        
+
         This tool caches tool help documentation to improve performance.
         The cache is automatically managed by FastMCP's stateful tools.
-        
+
         Args:
             tool_name: Name of the tool to get help for
-            
+
         Returns:
             Detailed documentation for the tool
         """
         return await _get_tool_help_impl(mcp, tool_name)
-    
+
     @mcp.tool()  # Search tools
-    async def search_tools(query: str) -> Dict[str, Any]:
+    async def search_tools(query: str) -> dict[str, Any]:
         """Search for tools by name or description with stateful caching.
-        
+
         This tool maintains a search index and caches search results.
         The cache is automatically managed by FastMCP's stateful tools.
-        
+
         Args:
             query: Search term
-            
+
         Returns:
             Dictionary with matching tools
         """
         return await _search_tools_impl(mcp, query)
-    
+
     @mcp.tool()  # Get tool signature
-    async def get_tool_signature(tool_name: str) -> Dict[str, Any]:
+    async def get_tool_signature(tool_name: str) -> dict[str, Any]:
         """Get the function signature for a tool with caching.
-        
+
         This tool caches tool signatures to improve performance.
         The cache is automatically managed by FastMCP's stateful tools.
-        
+
         Args:
             tool_name: Name of the tool
-            
+
         Returns:
             Dictionary with tool signature information
         """
         return await _get_tool_signature_impl(mcp, tool_name)
-    
+
     @mcp.tool  # Get hardware requirements
-    async def hardware_requirements() -> Dict[str, Any]:
+    async def hardware_requirements() -> dict[str, Any]:
         """Get hardware requirements and performance estimates for fine-tuning with caching.
-        
+
         This tool caches hardware requirements to improve performance.
         The cache is automatically managed by FastMCP's stateful tools.
-        
+
         Returns:
             Dictionary with hardware requirements information
         """

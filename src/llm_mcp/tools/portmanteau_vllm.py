@@ -9,22 +9,17 @@ related operations into a single interface. Prevents tool explosion (5+ tools â†
 full functionality and improving discoverability. Follows FastMCP 2.13+ best practices.
 """
 
-import logging
-from typing import Dict, Any, Optional
-
-from llm_mcp.tools.vllm_tools import (
-    register_vllm_tools as _register_vllm_tools,
-    # Import individual functions if available
-)
+from typing import Any
 
 # Try to import vLLM functions
 try:
     from llm_mcp.tools.vllm_tools import (
+        _vllm_get_status_impl,
         _vllm_list_models_impl,
         _vllm_load_model_impl,
         _vllm_unload_model_impl,
-        _vllm_get_status_impl,
     )
+
     VLLM_FUNCTIONS_AVAILABLE = True
 except ImportError:
     VLLM_FUNCTIONS_AVAILABLE = False
@@ -35,19 +30,21 @@ logger = get_logger(__name__)
 
 # Import FastMCP components
 try:
-    from fastmcp import FastMCP
-    from fastmcp.tools import Tool
+    from fastmcp import FastMCP  # noqa: F401
+    from fastmcp.tools import Tool  # noqa: F401
+
     FASTMCP_AVAILABLE = True
 except ImportError:
     logger.error("FastMCP not available - portmanteau tools require FastMCP >= 2.12.0")
     FASTMCP_AVAILABLE = False
 
+
 async def llm_vllm(
     operation: str,
     # Model operations
-    model_name: Optional[str] = None,
-    model_config: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    model_name: str | None = None,
+    model_config: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Comprehensive vLLM management tool for Local LLM MCP server.
 
     PORTMANTEAU PATTERN: Consolidates 5+ vLLM operations into one tool.
@@ -94,12 +91,13 @@ async def llm_vllm(
         else:
             return {
                 "error": f"Unknown operation: {operation}",
-                "available_operations": ["list_models", "load_model", "unload_model", "get_status", "get_metrics"]
+                "available_operations": ["list_models", "load_model", "unload_model", "get_status", "get_metrics"],
             }
 
     except Exception as e:
         logger.error(f"Error in llm_vllm operation {operation}: {e}", exc_info=True)
-        return {"error": f"Operation failed: {str(e)}", "operation": operation}
+        return {"error": f"Operation failed: {e!s}", "operation": operation}
+
 
 def register_llm_vllm_tools(mcp):
     """Register the vLLM Portmanteau tool with the MCP server."""
@@ -110,9 +108,9 @@ def register_llm_vllm_tools(mcp):
     @mcp.tool()
     async def llm_vllm_tool(
         operation: str,
-        model_name: Optional[str] = None,
-        model_config: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        model_name: str | None = None,
+        model_config: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """vLLM Portmanteau Tool - Consolidated vLLM operations.
 
         This tool consolidates all vLLM operations into a single interface,

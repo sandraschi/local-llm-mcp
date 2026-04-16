@@ -5,7 +5,9 @@ This script demonstrates how to use the QLoRA Evolved fine-tuning method
 with the LLM MCP server.
 """
 import asyncio
-from llm_mcp.tools.qloraevolved_tools import qloraevolved_load_model, qloraevolved_train, qloraevolved_generate
+
+from llm_mcp.tools.qloraevolved_tools import qloraevolved_generate, qloraevolved_load_model, qloraevolved_train
+
 
 async def main():
     # Load a model with QLoRA Evolved
@@ -20,9 +22,9 @@ async def main():
         lora_dropout=0.1,
         target_modules=["q_proj", "v_proj"],
     )
-    
+
     print(f"Model loaded with ID: {model_info['model_id']}")
-    
+
     # Fine-tune the model (example with dummy dataset)
     print("\nStarting fine-tuning...")
     try:
@@ -38,9 +40,9 @@ async def main():
         )
         print(f"\nTraining completed! Model saved to: {training_result['output_dir']}")
     except Exception as e:
-        print(f"Training failed: {str(e)}")
+        print(f"Training failed: {e!s}")
         return
-    
+
     # Generate text with the fine-tuned model
     print("\nGenerating text with the fine-tuned model...")
     generation_result = await qloraevolved_generate(
@@ -51,11 +53,12 @@ async def main():
     )
     print("\nGenerated text:")
     print(generation_result["generated_text"])
-    
+
     # Clean up
     print("\nCleaning up...")
     # Uncomment to delete the model when done
     # await qloraevolved_unload_model(model_info["model_id"])
+
 
 if __name__ == "__main__":
     asyncio.run(main())
