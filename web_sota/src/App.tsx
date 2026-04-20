@@ -8,6 +8,8 @@ import { Performance } from "@/pages/performance";
 import { Settings } from "@/pages/settings";
 import { Vision } from "@/pages/vision";
 
+import { Help } from "@/pages/help";
+
 function App() {
   return (
     <Router>
@@ -20,6 +22,7 @@ function App() {
           <Route path="/fleet" element={<Fleet />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/help" element={<Help />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AppLayout>

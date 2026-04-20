@@ -31,6 +31,14 @@ class ModelManager:
         """Initialize with some default models."""
         default_models = [
             ModelInfo(
+                id="qwen3.6-35b-a3b",
+                name="Qwen 3.6 35B MoE",
+                provider="ollama",
+                context_length=32768,
+                max_tokens=4096,
+                description="SOTA Agentic Coding model (Activated 3B / Total 35B)",
+            ),
+            ModelInfo(
                 id="gpt-4o",
                 name="GPT-4o",
                 provider="openai",

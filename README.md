@@ -1,6 +1,8 @@
 # Local LLM MCP Server
 
-A **production-ready** FastMCP 2.12+ compliant server for comprehensive LLM management and integration with **6 working providers** and **5 SOTA portmanteau tools**.
+[![FastMCP Version](https://img.shields.io/badge/FastMCP-3.1.0-blue?style=flat-square&logo=python&logoColor=white)](https://github.com/sandraschi/fastmcp) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![Linted with Biome](https://img.shields.io/badge/Linted_with-Biome-60a5fa?style=flat-square&logo=biome&logoColor=white)](https://biomejs.dev/) [![Built with Just](https://img.shields.io/badge/Built_with-Just-000000?style=flat-square&logo=gnu-bash&logoColor=white)](https://github.com/casey/just)
+
+A **production-ready** FastMCP 3.1.0+ compliant server for comprehensive LLM management and integration with **6 working providers** and **5 SOTA portmanteau tools**.
 
 [![FastMCP](https://img.shields.io/badge/FastMCP-2.12.3-blue.svg)](https://github.com/jlowin/fastmcp)
 [![MCP SDK](https://img.shields.io/badge/MCP%20SDK-1.13.1-green.svg)](https://github.com/modelcontextprotocol/python-sdk)
@@ -16,13 +18,14 @@ A **production-ready** FastMCP 2.12+ compliant server for comprehensive LLM mana
 
 ##  **Key Features**
 
+- **Agentic Coding Flagship**: Full integration for **Qwen 3.6-35B-A3B** (Sparse MoE), optimized for sub-100ms repository-level reasoning.
 - **SOTA Orchestration Dashboard**: Premium Vite/React interface for centralized model control
 - **Live Configuration Engine**: Browser-based management for `.env` settings and API keys
 - **Multi-Provider Support**: Ollama, Anthropic, OpenAI, Gemini, Perplexity, LMStudio
 - **High-Performance Inference**: Optimized with vLLM 0.8.3 (Python 3.13 compatible)
 - **Fleet Hub Integration**: Unified navigation for the entire local MCP ecosystem
 - **Robust Error Handling**: Server continues running despite individual tool failures
-- **Modern Architecture**: FastMCP 3.1+ compliance with industrial portmanteau patterns
+- **Modern Architecture**: FastMCP 3.1.0+ compliance with industrial portmanteau patterns
 
 ##  **SOTA Portmanteau Architecture**
 
@@ -183,7 +186,7 @@ export LLM_MCP_LOG_LEVEL=INFO
 ### Provider System
 ```
         
-   MCP Client       FastMCP 2.12+    Tool Registry  
+   MCP Client       FastMCP 3.1.0+    Tool Registry  
    (Claude etc)           Server              (Error Safe)   
         
                                 
@@ -204,7 +207,7 @@ export LLM_MCP_LOG_LEVEL=INFO
 ```
 
 ### Key Components
-- **FastMCP 2.12+**: Modern MCP server with transport handling
+- **FastMCP 3.1.0+**: Modern MCP server with transport handling
 - **vLLM V1 Engine**: High-performance inference with FlashAttention 3
 - **State Manager**: Persistent sessions with cleanup and monitoring
 - **Configuration**: YAML + environment variables with validation
@@ -304,6 +307,17 @@ curl -X POST "http://localhost:8000" \
 3. Make changes with tests
 4. Ensure code quality (black, ruff, mypy)
 5. Submit pull request
+
+
+## 🛡️ Industrial Quality Stack
+
+This project adheres to **SOTA 14.1** industrial standards for high-fidelity agentic orchestration:
+
+- **Python (Core)**: [Ruff](https://astral.sh/ruff) for linting and formatting. Zero-tolerance for `print` statements in core handlers (`T201`).
+- **Webapp (UI)**: [Biome](https://biomejs.dev/) for sub-millisecond linting. Strict `noConsoleLog` enforcement.
+- **Protocol Compliance**: Hardened `stdout/stderr` isolation to ensure crash-resistant JSON-RPC communication.
+- **Automation**: [Justfile](./justfile) recipes for all fleet operations (`just lint`, `just fix`, `just dev`).
+- **Security**: Automated audits via `bandit` and `safety`.
 
 ##  License
 

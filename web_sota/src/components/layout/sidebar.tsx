@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Gauge,
   Image as ImageIcon,
+  HelpCircle,
   LayoutDashboard,
   LayoutGrid,
   Settings,
@@ -24,6 +25,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const navItems = [
     { href: "/", label: "Overview", icon: LayoutDashboard },
     { href: "/chat", label: "Chat", icon: Bot },
+    { href: "/help", label: "Help", icon: HelpCircle },
     { href: "/performance", label: "Performance", icon: Gauge },
     { href: "/vision", label: "Vision", icon: ImageIcon },
     { href: "/fleet", label: "Fleet", icon: LayoutGrid },

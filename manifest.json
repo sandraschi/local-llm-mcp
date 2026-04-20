@@ -282,7 +282,10 @@
     "ai",
     "ollama",
     "anthropic",
-    "local-ai"
+    "local-ai",
+    "qwen3.6",
+    "agentic-coding",
+    "moe"
   ],
   "license": "MIT",
   "user_config": {},
