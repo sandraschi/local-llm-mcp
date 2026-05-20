@@ -46,6 +46,7 @@ try:
     import pkg_resources
     from fastmcp import FastMCP
     from fastmcp import __version__ as fastmcp_version_installed
+    from fastmcp.server import create_proxy
     from fastmcp.tools import Tool
 
     # Check if the installed version meets our requirements
@@ -162,6 +163,19 @@ async def create_mcp_server_sync() -> FastMCP | None:
             mcp = FastMCP(name="LLM MCP Server", version="1.0.0")
 
             logger.info("MCP server instance created successfully")
+
+            # MCP Bridge: proxy tools from other MCP servers via MCP_BRIDGE_URLS
+            _bridge_proxies: list[str] = []
+            bridge_urls = os.getenv("MCP_BRIDGE_URLS", "")
+            if bridge_urls:
+                for url in bridge_urls.split(","):
+                    url = url.strip()
+                    if url:
+                        try:
+                            mcp.add_provider(create_proxy(url))
+                            _bridge_proxies.append(url)
+                        except Exception:
+                            pass
 
             # Add health check tool
             @mcp.tool(name="health_check", description="Check the health of the MCP server and list available tools.")
