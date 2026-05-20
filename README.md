@@ -7,6 +7,9 @@
   <a href="https://github.com/PrefectHQ/fastmcp"><img src="https://img.shields.io/badge/FastMCP-3.2-7c5cfc?style=flat-square" alt="FastMCP"></a>
 </p>
 
+
+> 📖 **[Installation Guide](INSTALL.md)** — quick start, manual setup, and troubleshooting
+
 A **production-ready** FastMCP 3.1.0+ compliant server for comprehensive LLM management and integration with **6 working providers** and **5 SOTA portmanteau tools**.
 
 [![FastMCP](https://img.shields.io/badge/FastMCP-2.12.3-blue.svg)](https://github.com/jlowin/fastmcp)
