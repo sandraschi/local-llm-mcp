@@ -1,13 +1,13 @@
-import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { listModels, type ModelInfo } from "@/api/client";
-import { ModelSelector } from "@/components/models/ModelSelector";
 import { getDefaults } from "@/api/defaults";
+import { ModelSelector } from "@/components/models/ModelSelector";
+import { Button } from "@/components/ui/button";
 
 export function Vision() {
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [selectedModel, setSelectedModel] = useState("");
-  const [selectedProvider, setSelectedProvider] = useState<string | undefined>();
+  const [_selectedProvider, setSelectedProvider] = useState<string | undefined>();
 
   useEffect(() => {
     listModels().then((list) => {
@@ -32,10 +32,11 @@ export function Vision() {
             Vision Sandbox
           </h2>
           <p className="text-slate-400 max-w-2xl">
-            Multimodal intelligence playground. Test image-to-text capabilities with Gemma 4 and local vision-SOTA models.
+            Multimodal intelligence playground. Test image-to-text capabilities with Gemma 4 and
+            local vision-SOTA models.
           </p>
         </div>
-        <ModelSelector 
+        <ModelSelector
           models={models}
           selectedModel={selectedModel}
           onSelect={(id, provider) => {
@@ -64,15 +65,13 @@ export function Vision() {
         <Card className="glass-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-               <Search className="h-4 w-4 text-blue-400" />
-               Prompt Analysis
+              <Search className="h-4 w-4 text-blue-400" />
+              Prompt Analysis
             </CardTitle>
-            <CardDescription>
-              Instruction for the multimodal engine
-            </CardDescription>
+            <CardDescription>Instruction for the multimodal engine</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <textarea 
+            <textarea
               className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-600"
               placeholder="Describe this image in detail..."
             />

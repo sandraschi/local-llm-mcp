@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "llm-mcp"
 version = "1.0.0"  # Production release with Pydantic V2 and enhanced logging
-description = "ðŸ”¥ Production-ready FastMCP 3.1.0 server for managing local and cloud LLMs with vLLM 1.0 integration and Claude Desktop compatibility"
+description = "Optional fleet LLM hub: FastMCP server for Ollama, LM Studio, cloud APIs, and dashboard orchestration"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
@@ -14,7 +14,7 @@ authors = [
 ]
 dependencies = [
     # Core MCP
-    "fastmcp>=3.1.0,<4",
+    "fastmcp>=3.2,<4",
     "pydantic>=2.8.0",
     "python-dotenv>=1.0.0",
     # Web framework

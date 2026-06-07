@@ -1,6 +1,6 @@
 # 🛡️ Repository Protection Documentation
 
-**Complete guide to keeping your notepadpp-mcp repository safe**
+**Repository protection guide (template — originally from notepadpp-mcp; verify paths before use)**
 
 ---
 

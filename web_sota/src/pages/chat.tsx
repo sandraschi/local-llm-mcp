@@ -19,9 +19,9 @@ import { getDefaults } from "@/api/defaults";
 import { getPersonality, PERSONALITIES } from "@/common/personalities";
 import { createSpeechRecognition, isSTTSupported, isTTSSupported, speak } from "@/common/speech";
 import { cn } from "@/common/utils";
+import { ModelSelector } from "@/components/models/ModelSelector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ModelSelector } from "@/components/models/ModelSelector";
 
 const REFINE_PROMPT_PREFIX =
   "Rewrite the following into a single clear, self-contained prompt for an LLM. Preserve the user's intent. Output only the rewritten prompt, no commentary.\n\n";
@@ -90,7 +90,7 @@ function SpeakButton({ text }: { text: string }) {
 }
 
 export function Chat() {
-  const modelSelectId = useRef(`model-select-${Math.random().toString(36).substr(2, 9)}`).current;
+  const _modelSelectId = useRef(`model-select-${Math.random().toString(36).substr(2, 9)}`).current;
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedProvider, setSelectedProvider] = useState<string | undefined>();
@@ -227,7 +227,7 @@ export function Chat() {
           <p className="text-slate-400">Personality, refinement, and model</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          <ModelSelector 
+          <ModelSelector
             models={models}
             selectedModel={selectedModel}
             onSelect={(id, provider) => {

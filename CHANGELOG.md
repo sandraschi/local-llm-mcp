@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- README: removed duplicate quick starts, false "EXCELLENT" claims, machine paths, and broken local screenshot URLs
+- `llms.txt` / `llms-full.txt`: replaced 6k-line auto-dump (notepadpp-mcp contamination, `.git` links) with curated fleet manifests
+- `docs/development/README.md`: corrected project name
+- `docs/repository-protection/README.md`: marked as stale template
+- `pyproject.toml`: fixed garbled package description
+
+### Added
+- `docs/PURPOSE.md` — hub vs per-repo Ollama sampling
+- `AGENTS.md` — manifest and stale-doc guidance for agents
+
 ## [1.1.0] - 2026-04-15
 
 ### Added

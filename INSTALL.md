@@ -41,15 +41,19 @@ If you prefer not to use `just`:
    ```powershell
    uv sync --all-extras
    ```
-4. Start the server:
+4. Configure providers:
    ```powershell
-   # stdio mode (for MCP clients like Claude Desktop)
-   uv run python -m local_llm_mcp.server
-
-   # HTTP mode (for web dashboard)
-   uv run uvicorn local_llm_mcp.server:app --port 10833
+   copy .env.example .env
    ```
-5. Open `http://localhost:10833` or the frontend URL.
+5. Start the MCP server (stdio for IDEs):
+   ```powershell
+   uv run llm-mcp
+   ```
+6. Optional dashboard:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File web_sota\start.ps1
+   ```
+   Open `http://127.0.0.1:10832` (UI) · API `10833`.
 
 ---
 

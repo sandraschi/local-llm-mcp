@@ -1,4 +1,6 @@
-# 📝 Notepad++ Documentation Hub
+# Notepad++ Documentation Hub
+
+> **Stale template** — copied into this repo by mistake. Not related to local-llm-mcp. Safe to ignore or delete.
 
 **Everything you need to know about Notepad++ - from history to advanced usage**
 

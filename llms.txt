@@ -1,40 +1,77 @@
 # local-llm-mcp
-> **Guides, best practices, and lessons learned for developing notepadpp-mcp** --- 📄 [AI_DEVELOPMENT_RULES.md](AI_DEVELOPMENT_RULES.md) **Guidelines for AI-assisted development** - Best practices for wo...
 
-This project includes automated llms.txt generation for AI accessibility.
+> Optional fleet LLM hub: MCP portmanteau tools for Ollama, LM Studio, and cloud APIs, plus dashboard on 10832/10833. Not the default sampling backend — most fleet MCPs use Ollama at `127.0.0.1:11434/v1` directly.
 
-## Docs
-- [Readme](docs\development\README.md): **Guides, best practices, and lessons learned for developing notepadpp-mcp**
-- [Readme](docs\tool_calling\README.md): This document explains how to use the tool calling functionality in the LLM MCP server, which allows...
-- [Readme](docs\glama-platform\README.md): **Complete guide to achieving and maintaining Gold Status on Glama.ai**
-- [Readme](docs\notepadpp\README.md): **Everything you need to know about Notepad++ - from history to advanced usage**
-- [Readme](docs\gradio\README.md): This document explains how to create interactive web interfaces for the LLM MCP server using Gradio.
-- [Readme](README.md): A **production-ready** FastMCP 2.12+ compliant server for comprehensive LLM management and integrati...
-- [Readme](docs\repository-protection\README.md): **Complete guide to keeping your notepadpp-mcp repository safe**
-- [Readme](docs\lora\README.md): This document explains how to integrate and use LoRA (Low-Rank Adaptation) with the LLM MCP server f...
-- [Readme](docs\integrations\README.md): This directory contains documentation and resources for integrating LLM MCP with various tools and p...
-- [Readme](docs\mcpb-packaging\README.md): **Complete guide to packaging and distributing MCP servers with MCPB**
+**Full detail: see [llms-full.txt](llms-full.txt)**
 
-## Api
-- [  Init  ](src\llm_mcp\api\v1\models\__init__.py): Api definitions and implementations
-- [  Init  ](src\llm_mcp\api\v1\__init__.py): Api definitions and implementations
-- [Mcp Servers](src\llm_mcp\api\v1\endpoints\mcp_servers.py): Api definitions and implementations
-- [Mcp Servers](src\llm_mcp\api\v1\endpoints\mcp_servers.py): Endpoints definitions and implementations
-- [Models](src\llm_mcp\api\v1\endpoints\models.py): Endpoints definitions and implementations
-- [  Init  ](src\llm_mcp\api\v1\endpoints\__init__.py): Endpoints definitions and implementations
-- [  Init  ](src\llm_mcp\api\v1\models\__init__.py): Models definitions and implementations
-- [Models](src\llm_mcp\api\v1\endpoints\models.py): Models definitions and implementations
-- [Models](src\llm_mcp\providers\vllm_v1\models.py): Models definitions and implementations
+---
 
-## Examples
-- [Examples](examples/): Example code and implementations
+## Quick links
 
-## Configuration
-- [Pyproject](pyproject.toml): Python project configuration and dependencies
-- [Package](web_sota\package.json): Node.js project configuration and dependencies
-- [Config](.git\config): Application configuration files
+- [README.md](README.md) — quick start and honest status
+- [INSTALL.md](INSTALL.md) — setup and troubleshooting
+- [docs/PURPOSE.md](docs/PURPOSE.md) — hub vs per-repo Ollama
+- [docs/PRD.md](docs/PRD.md) — product requirements (some features partial)
+- [CHANGELOG.md](CHANGELOG.md) — release notes
+- [.env.example](.env.example) — provider URLs and API keys (copy to `.env`)
 
-## Optional
-- [Changelog](CHANGELOG.md): Project changelog information
-- [Contributing](CONTRIBUTING.md): Project contributing information
-- [License](LICENSE): Project license information
+---
+
+## Ports
+
+| Service | Default |
+|---------|---------|
+| Dashboard frontend | `10832` |
+| Dashboard API | `10833` |
+| Ollama (external) | `11434` |
+| LM Studio (external) | `1234` |
+
+---
+
+## Run (summary)
+
+```powershell
+uv sync
+copy .env.example .env
+uv run llm-mcp
+```
+
+Dashboard: `powershell -ExecutionPolicy Bypass -File web_sota\start.ps1`
+
+---
+
+## Tools (summary)
+
+Portmanteau pattern — pass `operation=...` on each tool.
+
+| Tool | Role |
+|------|------|
+| `llm_health` | Health, metrics, tool discovery |
+| `llm_models` | Model list, registration, provider inventory |
+| `llm_generation` | Text, chat, embeddings |
+| `llm_multimodal` | Vision / image ops (provider-dependent) |
+| `llm_finetuning` | LoRA / adapter ops (heavy deps) |
+| `llm_ollama` | Ollama-specific operations |
+| `llm_lmstudio` | LM Studio-specific operations |
+| `llm_vllm` | vLLM (optional, often disabled) |
+| `llm_gpu` | GPU telemetry |
+| `health_check` | Server heartbeat |
+
+Legacy tools: `LLM_MCP_ENABLE_LEGACY_TOOLS=true`.
+
+---
+
+## Providers
+
+| Provider | Typical use |
+|----------|-------------|
+| Ollama | Local models (`OLLAMA_BASE_URL`) |
+| LM Studio | Local GUI backend (`LMSTUDIO_BASE_URL`) |
+| OpenAI / Anthropic / Gemini / Perplexity | Cloud (API keys in `.env`) |
+| vLLM / HuggingFace | Experimental; optional install |
+
+---
+
+## Fleet note
+
+Registered in mcp-central-docs as **local-llm-mcp** (`10832`/`10833`). Keep for centralized LLM ops; do not assume other MCPs route through this server unless you change their `*_SAMPLING_BASE_URL`.

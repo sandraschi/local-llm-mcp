@@ -1,5 +1,3 @@
-import { APIService } from "./client";
-
 export interface GPUStats {
   name: string;
   total_mb: number;

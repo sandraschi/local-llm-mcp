@@ -1,6 +1,6 @@
 # 💻 Development Documentation
 
-**Guides, best practices, and lessons learned for developing notepadpp-mcp**
+**Guides, best practices, and lessons learned for developing local-llm-mcp**
 
 ---
 

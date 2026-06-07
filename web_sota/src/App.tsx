@@ -4,11 +4,10 @@ import { Analytics } from "@/pages/analytics";
 import { Chat } from "@/pages/chat";
 import { Dashboard } from "@/pages/dashboard";
 import { Fleet } from "@/pages/fleet";
+import { Help } from "@/pages/help";
 import { Performance } from "@/pages/performance";
 import { Settings } from "@/pages/settings";
 import { Vision } from "@/pages/vision";
-
-import { Help } from "@/pages/help";
 
 function App() {
   return (

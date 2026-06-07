@@ -1,22 +1,15 @@
+import { Activity, Cpu, Flame, Gauge, HardDrive, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
-import { 
-  Activity, 
-  Cpu, 
-  Flame, 
-  Gauge, 
-  HardDrive, 
-  Zap 
-} from "lucide-react";
-import { 
-  Area, 
-  AreaChart, 
-  ResponsiveContainer, 
-  Tooltip, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid 
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
-import { getTelemetry, TelemetryResponse } from "@/api/telemetry";
+import { getTelemetry, type TelemetryResponse } from "@/api/telemetry";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
@@ -41,12 +34,16 @@ export function Performance() {
 
         if (res.gpu.gpu) {
           const newEntry: ChartData = {
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+            time: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            }),
             load: res.gpu.gpu.utilization_gpu,
             power: res.gpu.gpu.power_draw,
             temp: res.gpu.gpu.temperature,
           };
-          setHistory(prev => [...prev.slice(-19), newEntry]);
+          setHistory((prev) => [...prev.slice(-19), newEntry]);
         }
       } catch (err) {
         console.error("Telemetry fetch failed", err);
@@ -78,8 +75,8 @@ export function Performance() {
           GPU Performance Foundry
         </h2>
         <p className="text-slate-400 max-w-2xl">
-          Real-time high-fidelity metrics for the local compute cluster.
-          Monitoring <span className="text-emerald-400 font-mono">{gpu.name}</span>.
+          Real-time high-fidelity metrics for the local compute cluster. Monitoring{" "}
+          <span className="text-emerald-400 font-mono">{gpu.name}</span>.
         </p>
       </div>
 
@@ -91,7 +88,11 @@ export function Performance() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold font-mono">{gpu.utilization_gpu}%</div>
-            <Progress value={gpu.utilization_gpu} className="h-1 mt-3 bg-white/5" indicatorClassName="bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+            <Progress
+              value={gpu.utilization_gpu}
+              className="h-1 mt-3 bg-white/5"
+              indicatorClassName="bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+            />
           </CardContent>
         </Card>
 
@@ -102,7 +103,9 @@ export function Performance() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold font-mono">{gpu.power_draw}W</div>
-            <p className="text-[10px] text-slate-500 mt-2 uppercase tracking-widest">Instantaneous Consumption</p>
+            <p className="text-[10px] text-slate-500 mt-2 uppercase tracking-widest">
+              Instantaneous Consumption
+            </p>
           </CardContent>
         </Card>
 
@@ -113,7 +116,9 @@ export function Performance() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold font-mono">{gpu.temperature}°C</div>
-            <p className="text-[10px] text-slate-500 mt-2 uppercase tracking-widest">Core Temperature</p>
+            <p className="text-[10px] text-slate-500 mt-2 uppercase tracking-widest">
+              Core Temperature
+            </p>
           </CardContent>
         </Card>
 
@@ -125,7 +130,7 @@ export function Performance() {
           <CardContent>
             <div className="text-3xl font-bold font-mono">{gpu.used_mb} MB</div>
             <p className="text-[10px] text-slate-500 mt-2 uppercase tracking-widest">
-              {(gpu.used_mb/1024).toFixed(1)}GB / {(gpu.total_mb/1024).toFixed(1)}GB
+              {(gpu.used_mb / 1024).toFixed(1)}GB / {(gpu.total_mb / 1024).toFixed(1)}GB
             </p>
           </CardContent>
         </Card>
@@ -134,55 +139,58 @@ export function Performance() {
       <div className="grid gap-6 lg:grid-cols-7">
         <Card className="lg:col-span-5 glass-card">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold text-emerald-500/80 uppercase tracking-widest">Inference Force Trend</CardTitle>
+            <CardTitle className="text-lg font-semibold text-emerald-500/80 uppercase tracking-widest">
+              Inference Force Trend
+            </CardTitle>
           </CardHeader>
           <CardContent className="h-[400px] w-full pt-4">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={history}>
                 <defs>
                   <linearGradient id="colorLoad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorPower" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                <XAxis 
-                  dataKey="time" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{fill: '#64748b', fontSize: 10}} 
+                <XAxis
+                  dataKey="time"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#64748b", fontSize: 10 }}
                   minTickGap={30}
                 />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{fill: '#64748b', fontSize: 10}} 
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 10 }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#0f172a",
+                    border: "1px solid #1e293b",
+                    borderRadius: "12px",
+                    fontSize: "12px",
+                  }}
+                  itemStyle={{ fontWeight: "bold" }}
                 />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', fontSize: '12px' }}
-                  itemStyle={{ fontWeight: 'bold' }}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="load" 
+                <Area
+                  type="monotone"
+                  dataKey="load"
                   name="GPU Load %"
-                  stroke="#10b981" 
+                  stroke="#10b981"
                   strokeWidth={2}
-                  fillOpacity={1} 
-                  fill="url(#colorLoad)" 
+                  fillOpacity={1}
+                  fill="url(#colorLoad)"
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="power" 
+                <Area
+                  type="monotone"
+                  dataKey="power"
                   name="Power (W)"
-                  stroke="#3b82f6" 
+                  stroke="#3b82f6"
                   strokeWidth={2}
-                  fillOpacity={1} 
-                  fill="url(#colorPower)" 
+                  fillOpacity={1}
+                  fill="url(#colorPower)"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -191,12 +199,17 @@ export function Performance() {
 
         <Card className="lg:col-span-2 glass-card">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold text-emerald-500/80 uppercase tracking-widest">Memory Reservoir</CardTitle>
+            <CardTitle className="text-lg font-semibold text-emerald-500/80 uppercase tracking-widest">
+              Memory Reservoir
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 pt-4">
             <div className="flex flex-col items-center justify-center py-6">
               <div className="relative w-40 h-40">
-                <svg className="w-full h-full transform -rotate-90">
+                <svg
+                  className="w-full h-full transform -rotate-90"
+                  aria-label="GPU utilization gauge"
+                >
                   <circle
                     cx="80"
                     cy="80"
@@ -221,7 +234,9 @@ export function Performance() {
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-2xl font-bold">{vramPercent.toFixed(0)}%</span>
-                  <span className="text-[10px] uppercase text-slate-500 font-bold tracking-tighter">Capacity Used</span>
+                  <span className="text-[10px] uppercase text-slate-500 font-bold tracking-tighter">
+                    Capacity Used
+                  </span>
                 </div>
               </div>
             </div>
@@ -229,15 +244,21 @@ export function Performance() {
             <div className="space-y-4">
               <div className="flex justify-between items-center text-xs">
                 <span className="text-slate-400">Total VRAM</span>
-                <span className="text-slate-100 font-mono">{(gpu.total_mb/1024).toFixed(2)} GB</span>
+                <span className="text-slate-100 font-mono">
+                  {(gpu.total_mb / 1024).toFixed(2)} GB
+                </span>
               </div>
               <div className="flex justify-between items-center text-xs">
                 <span className="text-slate-400">Available</span>
-                <span className="text-emerald-400 font-mono">{(gpu.free_mb/1024).toFixed(2)} GB</span>
+                <span className="text-emerald-400 font-mono">
+                  {(gpu.free_mb / 1024).toFixed(2)} GB
+                </span>
               </div>
               <div className="flex justify-between items-center text-xs">
                 <span className="text-slate-400">In-Use</span>
-                <span className="text-purple-400 font-mono">{(gpu.used_mb/1024).toFixed(2)} GB</span>
+                <span className="text-purple-400 font-mono">
+                  {(gpu.used_mb / 1024).toFixed(2)} GB
+                </span>
               </div>
             </div>
 
