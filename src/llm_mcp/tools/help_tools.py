@@ -241,14 +241,20 @@ def get_tool_examples(tool_name: str) -> list[dict[str, Any]]:
             },
             {
                 "description": "Advanced generation with parameters",
-                "code": 'await llm_generation_tool("generate_text", model="llama3", prompt="Explain AI", temperature=0.1, max_tokens=500)',
+                "code": (
+                    'await llm_generation_tool("generate_text", model="llama3", '
+                    'prompt="Explain AI", temperature=0.1, max_tokens=500)'
+                ),
                 "expected": "Precise, detailed explanation",
             },
         ],
         "llm_huggingface_tool": [
             {
                 "description": "Download gated FLUX model",
-                "code": 'await llm_huggingface_tool("download_model", model_id="blackforestlabs/FLUX.1-dev", local_path="./models")',
+                "code": (
+                    'await llm_huggingface_tool("download_model", '
+                    'model_id="blackforestlabs/FLUX.1-dev", local_path="./models")'
+                ),
                 "expected": "FLUX model downloaded (requires HUGGINGFACE_TOKEN)",
             }
         ],

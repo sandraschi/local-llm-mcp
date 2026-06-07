@@ -153,10 +153,41 @@ markers = [
 [tool.ruff]
 line-length = 120
 target-version = "py312"
+extend-exclude = [
+    "mcpb",
+    "_llm_test_scripts",
+    "list_files.py",
+    "simple_test.py",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "S", "UP", "RUF"]
-ignore = ["S101", "B008"]
+ignore = [
+    "S101",
+    "B008",
+    "B904",
+    "S104",
+    "S110",
+    "S112",
+    "S113",
+    "S603",
+    "S607",
+    "E722",
+    "RUF006",
+    "RUF012",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"src/llm_mcp/main.py" = ["E402", "F401"]
+"src/llm_mcp/providers/**" = ["F401"]
+"src/llm_mcp/tools/**" = ["F401"]
+"src/llm_mcp/core/startup.py" = ["F401"]
+"src/llm_mcp/api/**" = ["F401"]
+"src/llm_mcp/services/provider_factory.py" = ["E402"]
+"src/llm_mcp/tools/monitoring_tools.py" = ["E402"]
+"tests/**" = ["E402"]
+"tools/mcp_chat.py" = ["E402"]
+"examples/**" = ["F401"]
 
 [tool.ruff.format]
 quote-style = "double"

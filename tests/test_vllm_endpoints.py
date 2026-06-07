@@ -1,4 +1,5 @@
 """Tests for vLLM API endpoints."""
+
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -21,20 +22,16 @@ MOCK_MODEL_INFO = ModelInfo(
     provider=TEST_PROVIDER,
     description="Test model",
     capabilities=["generate"],
-    parameters={"temperature": {"type": "float", "default": 0.7}}
+    parameters={"temperature": {"type": "float", "default": 0.7}},
 )
 
-MOCK_PROVIDER_INFO = ProviderInfo(
-    name=TEST_PROVIDER,
-    description="vLLM provider",
-    capabilities=["generate", "stream"]
-)
+MOCK_PROVIDER_INFO = ProviderInfo(name=TEST_PROVIDER, description="vLLM provider", capabilities=["generate", "stream"])
 
 
 @pytest.fixture
 def mock_vllm_provider():
     """Mock the vLLM provider."""
-    with patch('src.llm_mcp.services.model_service.VLLMv1Provider') as mock_provider:
+    with patch("src.llm_mcp.services.model_service.VLLMv1Provider") as mock_provider:
         # Mock provider methods
         mock_instance = mock_provider.return_value
         mock_instance.initialize = AsyncMock()
@@ -44,8 +41,11 @@ def mock_vllm_provider():
         mock_instance.pull_model = AsyncMock(return_value={"status": "success"})
 
         # Add to providers
-        with patch.dict('src.llm_mcp.services.model_service.PROVIDER_CLASSES',
-                       {'vllm': 'src.llm_mcp.providers.vllm_v1.provider.VLLMv1Provider'}, clear=False):
+        with patch.dict(
+            "src.llm_mcp.services.model_service.PROVIDER_CLASSES",
+            {"vllm": "src.llm_mcp.providers.vllm_v1.provider.VLLMv1Provider"},
+            clear=False,
+        ):
             yield mock_instance
 
 
@@ -75,7 +75,7 @@ def test_pull_model_vllm(mock_vllm_provider):
     """Test pulling a model with vLLM provider."""
     response = client.post(
         f"/v1/models/pull?model={TEST_MODEL}&provider={TEST_PROVIDER}",
-        json={"quantization": "awq"}  # Test with quantization
+        json={"quantization": "awq"},  # Test with quantization
     )
     assert response.status_code == 200
     result = response.json()
@@ -93,7 +93,7 @@ def test_generate_text_vllm(mock_vllm_provider):
         "temperature": 0.8,
         "max_tokens": 50,
         "top_k": 40,
-        "top_p": 0.95
+        "top_p": 0.95,
     }
 
     # Test non-streaming
@@ -144,7 +144,7 @@ def test_generate_text_vllm_with_advanced_params(mock_vllm_provider):
         "tensor_parallel_size": 1,
         "gpu_memory_utilization": 0.9,
         "max_seq_len": 2048,
-        "quantization": "awq"
+        "quantization": "awq",
     }
 
     response = client.post("/v1/generate", json=request_data)

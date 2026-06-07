@@ -10,7 +10,7 @@ This module provides tools for working with multimodal models, including:
 import base64
 import io
 import logging
-from typing import Any, Union
+from typing import Any
 
 from PIL import Image
 from pydantic import BaseModel, Field
@@ -31,7 +31,7 @@ except ImportError:
     )
 
 # Type aliases
-ImageInput = Union[str, bytes, Image.Image]
+ImageInput = str | bytes | Image.Image
 
 
 class ImageAnalysisResult(BaseModel):
@@ -91,7 +91,8 @@ class MultimodalTools:
         """
         if not HAS_MM_DEPS:
             raise ImportError(
-                "Multimodal dependencies not installed. Install with 'pip install transformers sentence-transformers Pillow'"
+                "Multimodal dependencies not installed. "
+                "Install with 'pip install transformers sentence-transformers Pillow'"
             )
 
         # Load model if not already loaded

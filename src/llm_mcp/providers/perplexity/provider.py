@@ -363,7 +363,7 @@ class PerplexityProvider(BaseProvider):
                 return ModelMetadata(
                     id=model["id"],
                     name=model["name"],
-                    provider=ModelProvider.GEMINI if "gemini" in file_path else ModelProvider.PERPLEXITY,
+                    provider=ModelProvider.PERPLEXITY,
                     capabilities=[ModelCapability.TEXT_GENERATION, ModelCapability.CHAT],
                     parameters={"max_tokens": model.get("max_tokens", 4096)},
                 )

@@ -161,16 +161,6 @@ VLLM_MODELS = {
         context_length=512,
         supports_v1_engine=True,
     ),
-    # === Embedding Models ===
-    "BAAI/bge-large-en-v1.5": VLLMModel(
-        id="BAAI/bge-large-en-v1.5",
-        name="BGE Large v1.5",
-        type=ModelType.EMBEDDING,
-        capabilities=[ModelCapability.EMBEDDING],
-        vram_required="6GB",
-        context_length=512,
-        supports_v1_engine=True,
-    ),
     "intfloat/multilingual-e5-large": VLLMModel(
         id="intfloat/multilingual-e5-large",
         name="Multilingual E5 Large",
@@ -360,22 +350,6 @@ VLLM_MODELS = {
         context_length=128000,
         max_images=20,
         max_image_size=2048,
-        supports_v1_engine=True,
-    ),
-    # Qwen2-VL (Excellent multimodal performance)
-    "Qwen/Qwen2-VL-7B-Instruct": VLLMMultimodalModel(
-        id="Qwen/Qwen2-VL-7B-Instruct",
-        name="Qwen2-VL 7B Instruct",
-        type=ModelType.MULTIMODAL,
-        capabilities=[
-            ModelCapability.TEXT_GENERATION,
-            ModelCapability.CHAT,
-            ModelCapability.VISION,
-        ],
-        vram_required="12GB",
-        context_length=32768,
-        max_images=20,
-        max_video_frames=32,
         supports_v1_engine=True,
     ),
     "Qwen/Qwen2-VL-72B-Instruct": VLLMMultimodalModel(

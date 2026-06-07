@@ -58,9 +58,9 @@ except ImportError:
 
 # Hugging Face dependencies
 try:
-    import huggingface_hub  # noqa: F401
-    from huggingface_hub import HfApi, HfFolder, login, logout, whoami  # noqa: F401
-    from huggingface_hub.utils import HfHubHTTPError  # noqa: F401
+    import huggingface_hub
+    from huggingface_hub import HfApi, HfFolder, login, logout, whoami
+    from huggingface_hub.utils import HfHubHTTPError
 
     HF_AVAILABLE = True
 except ImportError:
@@ -144,7 +144,10 @@ async def llm_huggingface(
             auth_token = token or config.api_token
             if not auth_token:
                 return {
-                    "error": "token required for login operation. Set HUGGINGFACE_TOKEN or HF_TOKEN environment variable, or pass token parameter"
+                    "error": (
+                        "token required for login operation. Set HUGGINGFACE_TOKEN or "
+                        "HF_TOKEN environment variable, or pass token parameter"
+                    )
                 }
             try:
                 login(token=auth_token)
@@ -171,7 +174,10 @@ async def llm_huggingface(
                 auth_token = config.api_token
                 if not auth_token:
                     return {
-                        "error": "No authentication token available. Set HUGGINGFACE_TOKEN or HF_TOKEN environment variable, or use login operation first"
+                        "error": (
+                            "No authentication token available. Set HUGGINGFACE_TOKEN or "
+                            "HF_TOKEN environment variable, or use login operation first"
+                        )
                     }
 
                 user_info = whoami(token=auth_token)
@@ -285,7 +291,10 @@ async def llm_huggingface(
             except Exception as e:
                 error_msg = f"Failed to download model: {e!s}"
                 if "gated" in str(e).lower() or "private" in str(e).lower():
-                    error_msg += ". This may be a gated model requiring authentication. Ensure HUGGINGFACE_TOKEN or HF_TOKEN is set."
+                    error_msg += (
+                        ". This may be a gated model requiring authentication. "
+                        "Ensure HUGGINGFACE_TOKEN or HF_TOKEN is set."
+                    )
                 return {"error": error_msg}
 
         elif operation == "download_dataset":
@@ -312,7 +321,10 @@ async def llm_huggingface(
             except Exception as e:
                 error_msg = f"Failed to download dataset: {e!s}"
                 if "gated" in str(e).lower() or "private" in str(e).lower():
-                    error_msg += ". This may be a gated dataset requiring authentication. Ensure HUGGINGFACE_TOKEN or HF_TOKEN is set."
+                    error_msg += (
+                        ". This may be a gated dataset requiring authentication. "
+                        "Ensure HUGGINGFACE_TOKEN or HF_TOKEN is set."
+                    )
                 return {"error": error_msg}
 
         elif operation == "upload_file":

@@ -11,7 +11,7 @@ from llm_mcp.providers.vllm_v1.provider import VLLMv1Provider
 # Skip these tests if vLLM is not installed
 pytestmark = pytest.mark.skipif(
     os.environ.get("TEST_VLLM", "0").lower() not in ("1", "true", "yes"),
-    reason="vLLM tests are disabled by default. Set TEST_VLLM=1 to enable."
+    reason="vLLM tests are disabled by default. Set TEST_VLLM=1 to enable.",
 )
 
 # Test configuration
@@ -132,7 +132,7 @@ async def test_cleanup(vllm_provider):
 
 
 # Mock tests for when vLLM is not available
-@patch('llm_mcp.providers.vllm_v1.provider.VLLM_AVAILABLE', False)
+@patch("llm_mcp.providers.vllm_v1.provider.VLLM_AVAILABLE", False)
 def test_vllm_not_available():
     """Test that an error is raised when vLLM is not available."""
     with pytest.raises(ImportError):
@@ -140,11 +140,14 @@ def test_vllm_not_available():
 
 
 # Test with different configurations
-@pytest.mark.parametrize("config", [
-    {"model": "gpt2", "tensor_parallel_size": 1},
-    {"model": "gpt2", "gpu_memory_utilization": 0.3},
-    {"model": "gpt2", "quantization": "awq"},
-])
+@pytest.mark.parametrize(
+    "config",
+    [
+        {"model": "gpt2", "tensor_parallel_size": 1},
+        {"model": "gpt2", "gpu_memory_utilization": 0.3},
+        {"model": "gpt2", "quantization": "awq"},
+    ],
+)
 @pytest.mark.asyncio
 async def test_different_configs(config):
     """Test the provider with different configurations."""

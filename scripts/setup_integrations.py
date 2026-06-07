@@ -6,6 +6,7 @@ This script helps set up and configure integrations with:
 - Ollama Web UI
 - LM Studio MCP
 """
+
 import json
 import subprocess
 from pathlib import Path
@@ -19,11 +20,7 @@ DOCKER_COMPOSE_PATH = ROOT_DIR / "docker-compose.ollama-webui.yml"
 def check_docker() -> bool:
     """Check if Docker is installed and running."""
     try:
-        subprocess.run(
-            ["docker", "--version"],
-            capture_output=True,
-            check=True
-        )
+        subprocess.run(["docker", "--version"], capture_output=True, check=True)
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
@@ -43,10 +40,7 @@ def setup_ollama_webui() -> None:
 
     try:
         print("🐳 Starting Ollama Web UI container...")
-        subprocess.run(
-            ["docker", "compose", "-f", str(DOCKER_COMPOSE_PATH), "up", "-d"],
-            check=True
-        )
+        subprocess.run(["docker", "compose", "-f", str(DOCKER_COMPOSE_PATH), "up", "-d"], check=True)
         print("✅ Ollama Web UI is now running at http://localhost:3000")
         print("   - Connect to your local Ollama instance at http://host.docker.internal:11434")
     except subprocess.CalledProcessError as e:

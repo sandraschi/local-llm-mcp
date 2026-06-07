@@ -17,7 +17,7 @@ for p in sys.path:
 try:
     print("\nAttempting to import FastMCP...")
     from fastmcp import FastMCP
-    print("✓ Successfully imported FastMCP"
+    print("✓ Successfully imported FastMCP")
     print(f"FastMCP version: {FastMCP.__version__ if hasattr(FastMCP, '__version__') else 'N/A'}")
 except Exception as e:
     print(f"✗ Failed to import FastMCP: {e}")

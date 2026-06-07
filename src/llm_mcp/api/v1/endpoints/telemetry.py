@@ -28,11 +28,8 @@ async def get_telemetry() -> dict[str, Any]:
             "gpu": gpu_data,
             "system": {
                 "status": "online",
-            }
+            },
         }
     except Exception as e:
         logger.error(f"Failed to retrieve telemetry: {e!s}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Telemetry error: {e!s}"
-        ) from e
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Telemetry error: {e!s}") from e

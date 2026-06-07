@@ -27,7 +27,7 @@ def get_gpu_info() -> dict[str, Any]:
             "power.draw",
             "clocks.gr",
         ]
-        result = subprocess.run(  # noqa: S603
+        result = subprocess.run(
             [
                 "C:\\Windows\\System32\\nvidia-smi.exe",
                 f"--query-gpu={','.join(query_fields)}",
@@ -118,7 +118,7 @@ def get_audio_duration(audio_path: Path) -> float | None:
             "default=noprint_wrappers=1:nokey=1",
             str(audio_path),
         ]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)  # noqa: S603
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
         if result.returncode == 0 and result.stdout.strip():
             return float(result.stdout.strip())
     except Exception as e:

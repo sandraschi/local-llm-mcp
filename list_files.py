@@ -1,6 +1,4 @@
-""
-Simple script to list files in the src directory and check Python package structure.
-"""
+"""Simple script to list files in the src directory and check Python package structure."""
 import os
 from pathlib import Path
 

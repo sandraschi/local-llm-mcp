@@ -31,12 +31,9 @@ DEFAULT_MANIFEST = {
     "author": {
         "name": "Your Name",
         "email": "your.email@example.com",
-        "url": "https://github.com/yourusername/llm-mcp"
+        "url": "https://github.com/yourusername/llm-mcp",
     },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/yourusername/llm-mcp"
-    },
+    "repository": {"type": "git", "url": "https://github.com/yourusername/llm-mcp"},
     "homepage": "https://github.com/yourusername/llm-mcp",
     "documentation": "https://github.com/yourusername/llm-mcp#readme",
     "support": "https://github.com/yourusername/llm-mcp/issues",
@@ -46,13 +43,9 @@ DEFAULT_MANIFEST = {
         "entry_point": "server/main.py",
         "mcp_config": {
             "command": "python",
-            "args": [
-                "${__dirname}/server/main.py"
-            ],
-            "env": {
-                "PYTHONPATH": "${__dirname}/server"
-            }
-        }
+            "args": ["${__dirname}/server/main.py"],
+            "env": {"PYTHONPATH": "${__dirname}/server"},
+        },
     },
     "tools": [],
     "keywords": ["llm", "mcp", "ai", "ollama", "anthropic", "local-ai"],
@@ -61,29 +54,28 @@ DEFAULT_MANIFEST = {
     "compatibility": {
         "claude_desktop": ">=0.10.0",
         "platforms": ["darwin", "win32", "linux"],
-        "runtimes": {
-            "python": ">=3.8.0 <4"
-        }
-    }
+        "runtimes": {"python": ">=3.8.0 <4"},
+    },
 }
 
 # Type to schema mapping for user config
 type_to_schema = {
-    'str': {'type': 'string'},
-    'int': {'type': 'number'},
-    'float': {'type': 'number'},
-    'bool': {'type': 'boolean'},
-    'path': {'type': 'string', 'format': 'path'},
-    'file': {'type': 'string', 'format': 'file'},
-    'directory': {'type': 'string', 'format': 'directory'}
+    "str": {"type": "string"},
+    "int": {"type": "number"},
+    "float": {"type": "number"},
+    "bool": {"type": "boolean"},
+    "path": {"type": "string", "format": "path"},
+    "file": {"type": "string", "format": "file"},
+    "directory": {"type": "string", "format": "directory"},
 }
 
 
 class ToolParameter:
     """Represents a parameter for an MCP tool."""
 
-    def __init__(self, name: str, type_: type, default: Any = None,
-                 description: str | None = None, required: bool = True):
+    def __init__(
+        self, name: str, type_: type, default: Any = None, description: str | None = None, required: bool = True
+    ):
         self.name = name
         self.type = type_
         self.default = default
@@ -101,7 +93,7 @@ class ToolParameter:
         if self.description:
             schema["description"] = self.description
 
-        schema["title"] = self.name.replace('_', ' ').title()
+        schema["title"] = self.name.replace("_", " ").title()
 
         return schema
 
@@ -123,22 +115,24 @@ class ToolDefinition:
         parameters = {}
 
         for param_name, param in sig.parameters.items():
-            if param_name == 'self':
+            if param_name == "self":
                 continue
 
             param_type = type_hints.get(param_name, str)
 
             # Handle Python 3.10+ union types (using | operator)
-            if hasattr(param_type, '__or__') and hasattr(param_type, '__args__'):
+            if hasattr(param_type, "__or__") and hasattr(param_type, "__args__"):
                 # Convert to typing.Union for consistent handling
                 param_type = param_type.__args__[0] | param_type.__args__[1]
 
             # Handle Optional[] and Union types
-            if hasattr(param_type, '__origin__') and param_type.__origin__ is not None:
+            if hasattr(param_type, "__origin__") and param_type.__origin__ is not None:
                 # Handle Optional[Type] which is Union[Type, None]
-                if (param_type.__origin__ is Union and
-                    type(None) in param_type.__args__ and
-                    len(param_type.__args__) == 2):
+                if (
+                    param_type.__origin__ is Union
+                    and type(None) in param_type.__args__
+                    and len(param_type.__args__) == 2
+                ):
                     # Get the non-None type from Optional[Type] -> Union[Type, None]
                     param_type = next(t for t in param_type.__args__ if t is not type(None))
                 # Handle other Union types
@@ -148,11 +142,11 @@ class ToolDefinition:
                     param_type = non_none_types[0] if non_none_types else str
 
             # Handle other complex types (List, Dict, etc.) by converting to string for now
-            if hasattr(param_type, '__origin__') and param_type.__origin__ not in (Union, type(None)):
+            if hasattr(param_type, "__origin__") and param_type.__origin__ not in (Union, type(None)):
                 param_type = str
 
             # Handle types from the types module (like types.UnionType in Python 3.10+)
-            if hasattr(param_type, '__module__') and param_type.__module__ == 'types':
+            if hasattr(param_type, "__module__") and param_type.__module__ == "types":
                 param_type = str
 
             # Extract description from docstring
@@ -163,7 +157,7 @@ class ToolDefinition:
                 type_=param_type,
                 default=param.default if param.default != inspect.Parameter.empty else None,
                 description=param_desc,
-                required=(param.default == inspect.Parameter.empty)
+                required=(param.default == inspect.Parameter.empty),
             )
 
         return parameters
@@ -174,7 +168,7 @@ class ToolDefinition:
             return ""
 
         # Look for :param param_name: description pattern
-        pattern = rf':param\s+{param_name}:(.*?)(?=\n\s*:param|\s*:return:|\s*:raises:|\s*$)'
+        pattern = rf":param\s+{param_name}:(.*?)(?=\n\s*:param|\s*:return:|\s*:raises:|\s*$)"
         match = re.search(pattern, self.docstring, re.DOTALL)
 
         if match:
@@ -186,18 +180,12 @@ class ToolDefinition:
         """Convert tool definition to dictionary for JSON serialization."""
         return {
             "name": self.name,
-            "description": self.docstring.split('\n')[0] if self.docstring else "",
+            "description": self.docstring.split("\n")[0] if self.docstring else "",
             "parameters": {
                 "type": "object",
-                "properties": {
-                    name: param.to_dict()
-                    for name, param in self.parameters.items()
-                },
-                "required": [
-                    name for name, param in self.parameters.items()
-                    if param.required
-                ]
-            }
+                "properties": {name: param.to_dict() for name, param in self.parameters.items()},
+                "required": [name for name, param in self.parameters.items() if param.required],
+            },
         }
 
 
@@ -213,12 +201,12 @@ def get_module_name_from_path(module_path: str, project_root: str) -> str:
     # Convert path to module name
     module_parts = []
     for part in rel_path.parts:
-        if part.endswith('.py'):
+        if part.endswith(".py"):
             module_parts.append(part[:-3])  # Remove .py
-        elif part != '..' and part != '.':
+        elif part != ".." and part != ".":
             module_parts.append(part)
 
-    return '.'.join(module_parts)
+    return ".".join(module_parts)
 
 
 def setup_import_paths(module_path: str) -> tuple:
@@ -256,9 +244,7 @@ def discover_tools(module_path: str) -> dict[str, ToolDefinition]:
 
         # Import the module with proper package context
         spec = importlib.util.spec_from_file_location(
-            full_module_name,
-            module_path,
-            submodule_search_locations=[module_dir]
+            full_module_name, module_path, submodule_search_locations=[module_dir]
         )
 
         if spec is None or spec.loader is None:
@@ -271,7 +257,7 @@ def discover_tools(module_path: str) -> dict[str, ToolDefinition]:
         sys.modules[full_module_name] = module
 
         # Store the original FastMCP import if it exists
-        original_fastmcp = sys.modules.get('fastmcp')
+        original_fastmcp = sys.modules.get("fastmcp")
 
         try:
             # Execute the module
@@ -280,14 +266,14 @@ def discover_tools(module_path: str) -> dict[str, ToolDefinition]:
             # Try to get the FastMCP instance from the module
             mcp_instance = None
             for _name, obj in inspect.getmembers(module):
-                if isinstance(obj, type) and 'FastMCP' in str(obj):
+                if isinstance(obj, type) and "FastMCP" in str(obj):
                     print(f"Found FastMCP class: {obj}")
-                elif 'FastMCP' in str(type(getattr(obj, '__class__', ''))):
+                elif "FastMCP" in str(type(getattr(obj, "__class__", ""))):
                     print(f"Found FastMCP instance: {obj}")
                     mcp_instance = obj
 
             # If we found an MCP instance, try to get tools from it
-            if mcp_instance and hasattr(mcp_instance, '_tool_manager'):
+            if mcp_instance and hasattr(mcp_instance, "_tool_manager"):
                 print("Found MCP instance with tool manager, attempting to get tools...")
                 try:
                     # Try to get tools using the FastMCP 2.10.2 API
@@ -322,6 +308,7 @@ def discover_tools(module_path: str) -> dict[str, ToolDefinition]:
                 except Exception as e:
                     print(f"Error getting tools from MCP instance: {e}")
                     import traceback
+
                     traceback.print_exc()
 
             # Fall back to scanning for decorated functions and setup_mcp
@@ -329,16 +316,16 @@ def discover_tools(module_path: str) -> dict[str, ToolDefinition]:
                 print("No tools found via MCP instance, falling back to scanning for decorated functions...")
 
                 # First check the main module for directly decorated tools
-                for _name, obj in inspect.getmembers(module):
+                for name, obj in inspect.getmembers(module):
                     if not inspect.isfunction(obj):
                         continue
 
                     # Check for @mcp.tool() decorator (supports multiple possible attribute names)
                     tool_attrs = [
-                        '_mcp_tool_info',  # Standard FastMCP
-                        '_tool_info',      # Alternative FastMCP
-                        'mcp_tool',        # Another possible attribute
-                        'is_mcp_tool'      # Yet another possibility
+                        "_mcp_tool_info",  # Standard FastMCP
+                        "_tool_info",  # Alternative FastMCP
+                        "mcp_tool",  # Another possible attribute
+                        "is_mcp_tool",  # Yet another possibility
                     ]
 
                     if any(hasattr(obj, attr) for attr in tool_attrs):
@@ -347,23 +334,24 @@ def discover_tools(module_path: str) -> dict[str, ToolDefinition]:
                         tools[tool_name] = ToolDefinition(tool_name, obj)
 
                 # If still no tools found, look for a setup_mcp function
-                if not tools and hasattr(module, 'setup_mcp'):
+                if not tools and hasattr(module, "setup_mcp"):
                     print("Found setup_mcp function, extracting tools from it...")
 
                     # Create a dummy MCP instance to capture tool registrations
                     class DummyMCP:
                         def __init__(self):
                             self.tools = {}
-                            self.app = type('DummyApp', (), {'state': type('DummyState', (), {})})()
+                            self.app = type("DummyApp", (), {"state": type("DummyState", (), {})})()
 
                         def tool(self, func=None, **kwargs):
                             def decorator(f):
-                                tool_name = kwargs.get('name', f.__name__)
+                                tool_name = kwargs.get("name", f.__name__)
                                 self.tools[tool_name] = f
                                 # Add the tool info to the function for later extraction
                                 f._mcp_tool_info = True
                                 f._mcp_tool_name = tool_name
                                 return f
+
                             return decorator if func is None else decorator(func)
 
                     dummy_mcp = DummyMCP()
@@ -379,6 +367,7 @@ def discover_tools(module_path: str) -> dict[str, ToolDefinition]:
                     except Exception as e:
                         print(f"Warning: Error extracting tools from setup_mcp: {e}")
                         import traceback
+
                         traceback.print_exc()
 
             # If we still don't have tools, try to find them in submodules
@@ -390,7 +379,7 @@ def discover_tools(module_path: str) -> dict[str, ToolDefinition]:
                 # Walk through all Python files in the same directory
                 for root, _, files in os.walk(package_dir):
                     for file in files:
-                        if not file.endswith('.py') or file == '__init__.py':
+                        if not file.endswith(".py") or file == "__init__.py":
                             continue
 
                         file_path = os.path.join(root, file)
@@ -401,12 +390,12 @@ def discover_tools(module_path: str) -> dict[str, ToolDefinition]:
                             continue
 
                         # Calculate the module name
-                        rel_module = os.path.splitext(rel_path)[0].replace(os.sep, '.')
+                        rel_module = os.path.splitext(rel_path)[0].replace(os.sep, ".")
                         submodule_name = f"{module_name}.{rel_module}" if rel_module else module_name
 
                         try:
                             # Skip files that might cause issues (like other main.py files)
-                            if os.path.basename(file_path) == 'main.py' and not file_path.endswith('llm_mcp/main.py'):
+                            if os.path.basename(file_path) == "main.py" and not file_path.endswith("llm_mcp/main.py"):
                                 print(f"Skipping potential conflicting main.py: {file_path}")
                                 continue
 
@@ -440,10 +429,10 @@ def discover_tools(module_path: str) -> dict[str, ToolDefinition]:
                                         continue
 
                                     # Check for any known tool decorator attributes
-                                    if any(hasattr(obj, attr) for attr in [
-                                        "_mcp_tool_info", "_tool_info",
-                                        "mcp_tool", "is_mcp_tool"
-                                    ]):
+                                    if any(
+                                        hasattr(obj, attr)
+                                        for attr in ["_mcp_tool_info", "_tool_info", "mcp_tool", "is_mcp_tool"]
+                                    ):
                                         tool_name = getattr(obj, "_mcp_tool_name", _name)
                                         print(f"Found tool in submodule {submodule_name}: {tool_name}")
                                         tools[tool_name] = ToolDefinition(tool_name, obj)
@@ -453,6 +442,7 @@ def discover_tools(module_path: str) -> dict[str, ToolDefinition]:
                         except Exception as e:
                             print(f"Warning: Could not import {submodule_name}: {e}")
                             import traceback
+
                             traceback.print_exc()
 
             return tools
@@ -460,19 +450,18 @@ def discover_tools(module_path: str) -> dict[str, ToolDefinition]:
         finally:
             # Restore the original FastMCP module if it existed
             if original_fastmcp is not None:
-                sys.modules['fastmcp'] = original_fastmcp
+                sys.modules["fastmcp"] = original_fastmcp
 
     except Exception as e:
         print(f"Error discovering tools: {e}")
         import traceback
+
         traceback.print_exc()
         return tools
 
 
 def generate_manifest(
-    output_file: str,
-    module_path: str,
-    manifest_overrides: dict[str, Any] | None = None
+    output_file: str, module_path: str, manifest_overrides: dict[str, Any] | None = None
 ) -> dict[str, Any]:
     """Generate a DXT manifest.json file."""
     # Start with default manifest
@@ -490,7 +479,7 @@ def generate_manifest(
         print(f"Warning: Could not discover tools: {e}")
 
     # Write the manifest to a file
-    with open(output_file, 'w', encoding='utf-8') as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2, ensure_ascii=False)
 
     print(f"Generated DXT manifest: {output_file}")
@@ -499,13 +488,10 @@ def generate_manifest(
 
 def main():
     """Main entry point for the DXT manifest generator."""
-    parser = argparse.ArgumentParser(description='Generate DXT manifest.json for an MCP server')
-    parser.add_argument('--module', '-m', required=True,
-                       help='Path to the Python module containing MCP tools')
-    parser.add_argument('--output', '-o', default='manifest.json',
-                       help='Output file path (default: manifest.json)')
-    parser.add_argument('--overrides', type=str,
-                       help='JSON file with manifest overrides')
+    parser = argparse.ArgumentParser(description="Generate DXT manifest.json for an MCP server")
+    parser.add_argument("--module", "-m", required=True, help="Path to the Python module containing MCP tools")
+    parser.add_argument("--output", "-o", default="manifest.json", help="Output file path (default: manifest.json)")
+    parser.add_argument("--overrides", type=str, help="JSON file with manifest overrides")
 
     args = parser.parse_args()
 
@@ -513,7 +499,7 @@ def main():
     overrides = {}
     if args.overrides and os.path.isfile(args.overrides):
         try:
-            with open(args.overrides, encoding='utf-8') as f:
+            with open(args.overrides, encoding="utf-8") as f:
                 overrides = json.load(f)
         except Exception as e:
             print(f"Error loading overrides: {e}")
@@ -528,6 +514,7 @@ def main():
         return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
+
     sys.exit(main())

@@ -293,9 +293,9 @@ class Config(BaseModel):
 
         # Tensor parallelism recommendations
         if self.vllm.tensor_parallel_size > compatibility["cuda_device_count"]:
-            compatibility["recommendations"].append(
-                f"tensor_parallel_size ({self.vllm.tensor_parallel_size}) exceeds available GPUs ({compatibility['cuda_device_count']})"
-            )
+            tp = self.vllm.tensor_parallel_size
+            gpus = compatibility["cuda_device_count"]
+            compatibility["recommendations"].append(f"tensor_parallel_size ({tp}) exceeds available GPUs ({gpus})")
 
         return compatibility
 

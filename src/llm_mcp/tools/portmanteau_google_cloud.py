@@ -30,7 +30,8 @@ try:
 except ImportError:
     GOOGLE_CLOUD_AVAILABLE = False
     logger.warning(
-        "Google Cloud AI not available. Install with: pip install google-cloud-aiplatform google-cloud-storage google-generativeai vertexai"
+        "Google Cloud AI not available. Install with: pip install "
+        "google-cloud-aiplatform google-cloud-storage google-generativeai vertexai"
     )
 
 
@@ -136,7 +137,10 @@ async def llm_google_cloud(
     """
     if not GOOGLE_CLOUD_AVAILABLE:
         return {
-            "error": "Google Cloud AI not available. Install with: pip install google-cloud-aiplatform google-cloud-storage google-generativeai vertexai"
+            "error": (
+                "Google Cloud AI not available. Install with: pip install "
+                "google-cloud-aiplatform google-cloud-storage google-generativeai vertexai"
+            )
         }
 
     try:
@@ -164,7 +168,10 @@ async def llm_google_cloud(
         if operation == "authenticate":
             if not config.api_key:
                 return {
-                    "error": "API key required. Set GOOGLE_CLOUD_TOKEN, GEMINI_API_KEY, or GOOGLE_AI_API_KEY environment variable"
+                    "error": (
+                        "API key required. Set GOOGLE_CLOUD_TOKEN, GEMINI_API_KEY, "
+                        "or GOOGLE_AI_API_KEY environment variable"
+                    )
                 }
             try:
                 # Test authentication
