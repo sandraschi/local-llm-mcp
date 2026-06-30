@@ -51,3 +51,11 @@ try:
     app.include_router(api_router, prefix="/api/v1")
 except Exception as e:
     logger.warning("API router not loaded: %s. Dashboard will have limited functionality.", e)
+
+try:
+    from llm_mcp.gateway.router import gateway_router
+
+    app.include_router(gateway_router)
+    logger.info("Gateway router mounted: %d providers registered", len(__import__("llm_mcp.gateway.base", fromlist=["list_providers"]).list_providers()))
+except Exception as e:
+    logger.warning("Gateway router not loaded: %s", e)
