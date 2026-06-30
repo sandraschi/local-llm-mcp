@@ -1,6 +1,6 @@
 # AI Gateway — Lightport-compatible proxy
 
-Provides `POST /v1/chat/completions` that translates OpenAI-format requests to/from 27 LLM provider native formats. Ported from [glama-ai/lightport](https://github.com/glama-ai/lightport).
+Provides `POST /v1/chat/completions` that translates OpenAI-format requests to/from 28 LLM provider native formats. Ported from [glama-ai/lightport](https://github.com/glama-ai/lightport).
 
 ## Usage
 

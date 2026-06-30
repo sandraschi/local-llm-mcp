@@ -10,7 +10,7 @@
 
 > 📖 **[Installation Guide](INSTALL.md)** — quick start, manual setup, and troubleshooting
 
-A **production-ready** FastMCP 3.1.0+ compliant server for comprehensive LLM management and integration with **6 working providers** and **5 SOTA portmanteau tools**.
+A **production-ready** FastMCP 3.1.0+ compliant server for comprehensive LLM management and integration with **28 gateway providers** and **5 SOTA portmanteau tools**.
 
 [![FastMCP](https://img.shields.io/badge/FastMCP-2.12.3-blue.svg)](https://github.com/jlowin/fastmcp)
 [![MCP SDK](https://img.shields.io/badge/MCP%20SDK-1.13.1-green.svg)](https://github.com/modelcontextprotocol/python-sdk)
@@ -34,7 +34,7 @@ If you don't have `just` installed:
 ##  **Status: EXCELLENT** 
 
 **Server Status**: Fully functional with robust error handling  
-**Provider Support**: 6/8 providers working (75% success rate)  
+**Provider Support**: 28 providers via Lightport-compatible AI gateway  
 **Tool Architecture**: 5 SOTA portmanteau tools (Advanced Memory MCP pattern)  
 **Architecture**: Production-ready with graceful degradation
 
@@ -43,7 +43,7 @@ If you don't have `just` installed:
 - **Agentic Coding Flagship**: Full integration for **Qwen 3.6-35B-A3B** (Sparse MoE), optimized for sub-100ms repository-level reasoning.
 - **SOTA Orchestration Dashboard**: Premium Vite/React interface for centralized model control
 - **Live Configuration Engine**: Browser-based management for `.env` settings and API keys
-- **Multi-Provider Support**: Ollama, Anthropic, OpenAI, Gemini, Perplexity, LMStudio
+- **Multi-Provider Support**: 28 providers via AI gateway (Ollama, Anthropic, OpenAI, Gemini, DeepSeek, Groq, xAI, Mistral, OpenRouter, and 20+ more)
 - **High-Performance Inference**: Optimized with vLLM 0.8.3 (Python 3.13 compatible)
 - **Fleet Hub Integration**: Unified navigation for the entire local MCP ecosystem
 - **Robust Error Handling**: Server continues running despite individual tool failures
@@ -71,6 +71,22 @@ await llm_finetuning("lora_load_adapter", adapter_name="my_adapter")
 
 ### **Migration Support**
 Legacy individual tools are available during migration via `LLM_MCP_ENABLE_LEGACY_TOOLS=true` environment variable.
+
+##  AI Gateway (28 Providers)
+
+OpenAI-compatible `/v1/chat/completions` proxy that routes to 28 LLM providers:
+
+| Local | Cloud |
+|-------|-------|
+| Ollama, LM Studio, vLLM | Anthropic, Azure, Bedrock, Cohere, DeepInfra, DeepSeek, Featherless, Fireworks, Gemini, Groq, Hyperbolic, Lepton, Mistral, Modal, Nebius, Novita, OpenAI, OpenRouter, Perplexity, Replicate, SambaNova, SiliconFlow, Together, xAI (Grok), Anyscale |
+
+Select provider via `x-lightport-provider` header or model prefix:
+```python
+from openai import OpenAI
+client = OpenAI(base_url="http://127.0.0.1:10833/v1", api_key="...")
+client.default_headers["x-lightport-provider"] = "deepseek"
+resp = client.chat.completions.create(model="deepseek-chat", messages=...)
+```
 
 ##  Performance
 
