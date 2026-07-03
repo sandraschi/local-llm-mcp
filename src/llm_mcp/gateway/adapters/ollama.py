@@ -45,7 +45,6 @@ class OllamaAdapter(BaseLLMAdapter):
         message = resp_data.get("message", {})
         content = message.get("content", "")
         finish = resp_data.get("done_reason", "stop")
-        usage_data = resp_data.get("metrics", {})
         return self._openai_chunk(
             model=model,
             choice={

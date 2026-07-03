@@ -31,43 +31,49 @@ async def list_providers() -> list[ProviderInfo]:
         providers = []
 
         # Add vLLM provider if available
+        vllm_available = False
         try:
-            from ....providers.vllm_v1.provider import VLLMv1Provider
+            import importlib.util as _util
+            vllm_available = _util.find_spec("vllm") is not None
+        except ImportError:
+            pass
 
-            providers.append(
-                ProviderInfo(
-                    name="vllm",
-                    description="vLLM provider for high-performance LLM inference",
-                    capabilities=["generate", "stream", "batch", "embeddings"],
-                    parameters={
-                        "model": {"type": "string", "required": True, "description": "Model name or path"},
-                        "tensor_parallel_size": {
-                            "type": "integer",
-                            "required": False,
-                            "default": 1,
-                            "description": "Number of GPUs to use",
+        try:
+            if vllm_available:
+                providers.append(
+                    ProviderInfo(
+                        name="vllm",
+                        description="vLLM provider for high-performance LLM inference",
+                        capabilities=["generate", "stream", "batch", "embeddings"],
+                        parameters={
+                            "model": {"type": "string", "required": True, "description": "Model name or path"},
+                            "tensor_parallel_size": {
+                                "type": "integer",
+                                "required": False,
+                                "default": 1,
+                                "description": "Number of GPUs to use",
+                            },
+                            "gpu_memory_utilization": {
+                                "type": "float",
+                                "required": False,
+                                "default": 0.9,
+                                "description": "Fraction of GPU memory to use",
+                            },
+                            "max_seq_len": {
+                                "type": "integer",
+                                "required": False,
+                                "default": 2048,
+                                "description": "Maximum sequence length",
+                            },
+                            "quantization": {
+                                "type": "string",
+                                "required": False,
+                                "enum": [None, "awq", "gptq", "squeezellm"],
+                                "description": "Quantization method",
+                            },
                         },
-                        "gpu_memory_utilization": {
-                            "type": "float",
-                            "required": False,
-                            "default": 0.9,
-                            "description": "Fraction of GPU memory to use",
-                        },
-                        "max_seq_len": {
-                            "type": "integer",
-                            "required": False,
-                            "default": 2048,
-                            "description": "Maximum sequence length",
-                        },
-                        "quantization": {
-                            "type": "string",
-                            "required": False,
-                            "enum": [None, "awq", "gptq", "squeezellm"],
-                            "description": "Quantization method",
-                        },
-                    },
+                    )
                 )
-            )
         except ImportError:
             logger.warning("vLLM provider not available")
 
@@ -90,7 +96,7 @@ async def list_providers() -> list[ProviderInfo]:
         logger.error(f"Failed to list providers: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to list providers: {e!s}"
-        )
+        ) from e
 
 
 @router.get("/models", response_model=list[ModelInfo])
@@ -194,7 +200,7 @@ async def list_models(
         raise
     except Exception as e:
         logger.error(f"Failed to list models: {e!s}", exc_info=True)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to list models: {e!s}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to list models: {e!s}") from e
 
 
 @router.get("/models/{model_name}", response_model=ModelInfo)
@@ -211,12 +217,12 @@ async def get_model(model_name: str, provider: str | None = None) -> ModelInfo:
     try:
         return await model_service.get_model_info(model_name, provider)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Failed to get model info for {model_name}: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to get model info: {e!s}"
-        )
+        ) from e
 
 
 @router.post("/models/pull", response_model=ModelOperationResponse)
@@ -272,17 +278,17 @@ async def pull_model(
                     success=True, message=f"Successfully pulled model {model_name} using vLLM", details=result
                 )
 
-            except ImportError:
+            except ImportError as e:
                 if provider:  # Only raise if vLLM was explicitly requested
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST, detail="vLLM provider is not available"
-                    )
+                    ) from e
             except Exception as e:
                 logger.error(f"Error pulling vLLM model {model_name}: {e!s}", exc_info=True)
                 if provider:  # Only raise if vLLM was explicitly requested
                     raise HTTPException(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to pull vLLM model: {e!s}"
-                    )
+                    ) from e
 
         # If we get here, either vLLM is not the provider or the pull failed
         try:
@@ -304,7 +310,7 @@ async def pull_model(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to pull model: {e!s}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to pull model: {e!s}") from e
 
 
 @router.post("/generate", response_model=GenerateResponse)
@@ -349,9 +355,9 @@ async def generate_text(request: GenerateRequest, raw_request: Request) -> Gener
         )
 
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to generate text: {e!s}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to generate text: {e!s}") from e
 
 
 async def generate_stream(request: GenerateRequest, raw_request: Request) -> AsyncGenerator[bytes, None]:

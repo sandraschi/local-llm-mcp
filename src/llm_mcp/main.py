@@ -128,7 +128,7 @@ def setup_signal_handlers():
 
     def signal_handler(signum, frame):
         logger.info(f"Signal {signum} received")
-        asyncio.create_task(shutdown_handler.shutdown(signum))
+        asyncio.create_task(shutdown_handler.shutdown(signum))  # noqa: RUF006
 
     if sys.platform == "win32":
         # Windows signal handling

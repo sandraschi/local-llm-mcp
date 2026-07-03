@@ -22,8 +22,8 @@ logger = get_logger(__name__)
 
 # Import FastMCP components
 try:
-    from fastmcp import FastMCP  # noqa: F401
-    from fastmcp.tools import Tool  # noqa: F401
+    from fastmcp import FastMCP
+    from fastmcp.tools import Tool
 
     FASTMCP_AVAILABLE = True
 except ImportError:

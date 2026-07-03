@@ -24,4 +24,4 @@ async def update_config(updates: dict[str, Any]):
         settings.update_and_save(updates)
         return {"status": "success", "message": "Configuration updated and persisted to .env"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

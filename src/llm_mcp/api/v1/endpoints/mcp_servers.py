@@ -52,7 +52,7 @@ async def list_mcp_servers(enabled_only: bool = True) -> list[MCPServerStatus]:
         logger.error(f"Failed to list MCP servers: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to list MCP servers: {e!s}"
-        )
+        ) from e
 
 
 @router.post("/mcp-servers", response_model=MCPServer, status_code=status.HTTP_201_CREATED)
@@ -84,12 +84,12 @@ async def create_mcp_server(server: MCPServerCreate) -> MCPServer:
         return MCPServer(**created.dict(), status=ServerStatus.RUNNING if server.enabled else ServerStatus.STOPPED)
 
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Failed to create MCP server: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to create MCP server: {e!s}"
-        )
+        ) from e
 
 
 @router.get("/mcp-servers/{server_name}", response_model=MCPServer)
@@ -120,7 +120,7 @@ async def get_mcp_server(server_name: str) -> MCPServer:
         logger.error(f"Failed to get MCP server '{server_name}': {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to get MCP server: {e!s}"
-        )
+        ) from e
 
 
 @router.put("/mcp-servers/{server_name}", response_model=MCPServer)
@@ -170,7 +170,7 @@ async def update_mcp_server(server_name: str, server_update: MCPServerUpdate) ->
         logger.error(f"Failed to update MCP server '{server_name}': {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to update MCP server: {e!s}"
-        )
+        ) from e
 
 
 @router.delete("/mcp-servers/{server_name}", status_code=status.HTTP_204_NO_CONTENT)
@@ -192,7 +192,7 @@ async def delete_mcp_server(server_name: str):
         logger.error(f"Failed to delete MCP server '{server_name}': {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to delete MCP server: {e!s}"
-        )
+        ) from e
 
 
 @router.post("/mcp-servers/{server_name}/start", response_model=MCPServerOperation)
@@ -244,7 +244,7 @@ async def start_mcp_server(server_name: str) -> MCPServerOperation:
         logger.error(f"Failed to start MCP server '{server_name}': {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to start MCP server: {e!s}"
-        )
+        ) from e
 
 
 @router.post("/mcp-servers/{server_name}/stop", response_model=MCPServerOperation)
@@ -283,7 +283,7 @@ async def stop_mcp_server(server_name: str) -> MCPServerOperation:
         logger.error(f"Failed to stop MCP server '{server_name}': {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to stop MCP server: {e!s}"
-        )
+        ) from e
 
 
 @router.get("/mcp-servers/{server_name}/status", response_model=MCPServerStatus)
@@ -319,7 +319,7 @@ async def get_mcp_server_status(server_name: str) -> MCPServerStatus:
         logger.error(f"Failed to get status for MCP server '{server_name}': {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to get MCP server status: {e!s}"
-        )
+        ) from e
 
 
 @router.get("/mcp-servers/{server_name}/logs", response_model=MCPServerLogs)
@@ -354,7 +354,7 @@ async def get_mcp_server_logs(server_name: str, limit: int = 100, next_token: st
         logger.error(f"Failed to get logs for MCP server '{server_name}': {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to get MCP server logs: {e!s}"
-        )
+        ) from e
 
 
 @router.get("/mcp-servers/discover/available", response_model=list[MCPServerDiscovery])
@@ -373,4 +373,4 @@ async def discover_available_servers() -> list[MCPServerDiscovery]:
         logger.error(f"Failed to discover available MCP servers: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to discover available MCP servers: {e!s}"
-        )
+        ) from e

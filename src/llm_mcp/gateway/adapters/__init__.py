@@ -26,4 +26,4 @@ import llm_mcp.gateway.adapters.sambanova
 import llm_mcp.gateway.adapters.siliconflow
 import llm_mcp.gateway.adapters.together
 import llm_mcp.gateway.adapters.vllm
-import llm_mcp.gateway.adapters.xai
+import llm_mcp.gateway.adapters.xai  # noqa: F401

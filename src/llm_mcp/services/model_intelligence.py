@@ -1,8 +1,7 @@
 """Service for providing rich intelligence and metadata about LLMs."""
 
 import logging
-from typing import Dict, Optional, Any
-from datetime import datetime
+from typing import Any
 
 from llm_mcp.api.v1.models.llm import ModelIntelligence
 
@@ -10,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 # THE 2026 VANGUARD REGISTRY
 # Curated metadata for the elite 2025/2026 SOTA models
-VANGUARD_REGISTRY: Dict[str, Dict[str, Any]] = {
+VANGUARD_REGISTRY: dict[str, dict[str, Any]] = {
     "gemma-4-7b": {
         "hf_id": "google/gemma-4-7b-it",
         "developer": "Google",
@@ -83,12 +82,12 @@ class ModelIntelligenceService:
     def __init__(self):
         self.registry = VANGUARD_REGISTRY
 
-    def get_intelligence(self, model_id: str) -> Optional[ModelIntelligence]:
+    def get_intelligence(self, model_id: str) -> ModelIntelligence | None:
         """Get rich metadata for a model by its ID.
-        
+
         Args:
             model_id: The identifier for the model.
-            
+
         Returns:
             ModelIntelligence object if found, else enriched dynamic metadata.
         """
@@ -96,30 +95,30 @@ class ModelIntelligenceService:
         normalized_id = model_id.lower()
         if "/" in normalized_id:
             normalized_id = normalized_id.split("/")[-1]
-        
+
         # Check carefully for fuzzy matches in the registry
         registry_data = None
         for key in self.registry:
             if key in normalized_id or normalized_id in key:
                 registry_data = self.registry[key]
                 break
-        
+
         if registry_data:
             return ModelIntelligence(**registry_data)
-        
+
         # Fallback to dynamic metadata detection
         return self._detect_metadata(model_id)
 
     def _detect_metadata(self, model_id: str) -> ModelIntelligence:
         """Infer metadata for models not in the curated registry."""
         model_id_lower = model_id.lower()
-        
+
         # Determine if legacy (pre-2025)
         is_legacy = any(x in model_id_lower for x in ["llama-3", "gemma-2", "gpt-4-turbo", "claude-3"])
-        
+
         # Estimate VRAM
         vram_req = self.estimate_vram_requirement(model_id)
-        
+
         developer = "Unknown"
         if "meta" in model_id_lower or "llama" in model_id_lower:
             developer = "Meta"
@@ -133,7 +132,7 @@ class ModelIntelligenceService:
             developer = "Mistral"
         elif "microsoft" in model_id_lower or "phi" in model_id_lower:
             developer = "Microsoft"
-            
+
         return ModelIntelligence(
             hf_id=model_id if "/" in model_id else None,
             developer=developer,
@@ -147,49 +146,54 @@ class ModelIntelligenceService:
     def estimate_vram_requirement(self, model_id: str) -> float:
         """Estimate VRAM requirement in GB based on model identifier strings."""
         id_lower = model_id.lower()
-        
+
         # Tiny/Special cases
         if any(x in id_lower for x in ["tinyllama", "phi-2", "phi-3-mini", "stable-lm-2"]):
             return 3.0
         if "phi-3-medium" in id_lower or "phi-4" in id_lower:
             return 10.0
-            
+
         # Parameter count patterns (e.g. 7B, 13B, 70B)
         import re
         match = re.search(r"(\d+)[bm]", id_lower)
         if match:
             count = int(match.group(1))
             unit = match.group(0)[-1]
-            
+
             if unit == 'b':
                 # 4-bit quantization baseline: ~0.6-0.8 GB per Billion params + overhead
-                if count <= 3: return 4.0
-                if count <= 8: return 6.0
-                if count <= 14: return 12.0
-                if count <= 30: return 20.0
-                if count <= 75: return 45.0
+                if count <= 3:
+                    return 4.0
+                if count <= 8:
+                    return 6.0
+                if count <= 14:
+                    return 12.0
+                if count <= 30:
+                    return 20.0
+                if count <= 75:
+                    return 45.0
                 return count * 0.7
             if unit == 'm':
                 return 2.0
-        
+
         # Default fallback
         return 8.0
 
     def get_compatibility(self, model_vram: float, gpu_vram_gb: float) -> str:
         """Compare model requirement against available hardware.
-        
+
         Returns one of: 'READY', 'TIGHT', 'OOM', 'UNKNOWN'
         """
         if gpu_vram_gb <= 0:
             return "UNKNOWN"
-        
+
         if model_vram == 0: # Cloud model
             return "READY"
-            
+
         if gpu_vram_gb >= (model_vram + 3.0): # Healthy buffer
             return "READY"
-        
+
         if gpu_vram_gb >= model_vram: # Fits but tight
             return "TIGHT"
-            
+
         return "OOM"

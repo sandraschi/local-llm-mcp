@@ -156,7 +156,25 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "S", "UP", "RUF"]
-ignore = ["S101", "B008"]
+ignore = ["S101", "B008", "S110"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/llm_mcp/main.py" = ["E402", "F401"]
+"src/llm_mcp/tools/*.py" = ["F401", "E501"]
+"src/llm_mcp/providers/huggingface/*.py" = ["F401"]
+"src/llm_mcp/providers/multimodal_provider.py" = ["F401", "RUF012", "E501"]
+"src/llm_mcp/providers/vllm_v1/*.py" = ["F401", "S104"]
+"src/llm_mcp/providers/vllm.py" = ["F401"]
+"src/llm_mcp/providers/ollama/__init__.py" = ["E722", "RUF006"]
+"src/llm_mcp/core/config.py" = ["S104"]
+"src/llm_mcp/tools/gradio_tools.py" = ["F401", "S104"]
+"src/llm_mcp/tools/dora_tools.py" = ["RUF006"]
+"src/llm_mcp/tools/monitoring_tools.py" = ["RUF006"]
+"src/llm_mcp/tools/multimodal_tools.py" = ["UP007", "S113"]
+"src/llm_mcp/services/provider_factory.py" = ["S112", "E402"]
+"src/llm_mcp/api/v1/endpoints/models.py" = ["E501"]
+"src/llm_mcp/config.py" = ["E501"]
+"src/llm_mcp/services/model_intelligence.py" = ["E501"]
 
 [tool.ruff.format]
 quote-style = "double"

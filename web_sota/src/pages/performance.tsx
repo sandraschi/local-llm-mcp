@@ -233,6 +233,7 @@ export function Performance() {
 						<div className="flex flex-col items-center justify-center py-6">
 							<div className="relative w-40 h-40">
 								<svg className="w-full h-full transform -rotate-90">
+									<title>Performance gauge</title>
 									<circle
 										cx="80"
 										cy="80"

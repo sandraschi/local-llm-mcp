@@ -198,19 +198,10 @@ def register_all_tools(mcp):
     torch_installed = False
     transformers_installed = False
 
-    try:
-        import torch
+    import importlib.util as _util
 
-        torch_installed = True
-    except ImportError:
-        pass
-
-    try:
-        import transformers
-
-        transformers_installed = True
-    except ImportError:
-        pass
+    torch_installed = _util.find_spec("torch") is not None
+    transformers_installed = _util.find_spec("transformers") is not None
 
     if torch_installed and transformers_installed:
         # Log ML tool registration progress

@@ -289,11 +289,6 @@ async def monitor_gpu_health(gpu_id: int = 0) -> dict[str, Any]:
             },
             "recommendations": _generate_gpu_recommendations(status),
             "alerts": [
-                f"High memory usage ({status.memory_utilization:.1f}%)" if status.memory_utilization > 85 else None,
-                f"High temperature ({status.temperature}°C)" if status.temperature > 85 else None,
-                f"High system memory ({system_memory.percent}%)" if system_memory.percent > 90 else None,
-            ],
-            "alerts": [
                 alert
                 for alert in [
                     f"High memory usage ({status.memory_utilization:.1f}%)" if status.memory_utilization > 85 else None,

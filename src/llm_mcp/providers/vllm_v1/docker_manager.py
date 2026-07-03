@@ -126,7 +126,7 @@ class VLLMDockerManager:
             if self.container:
                 try:
                     self.container.remove(force=True)
-                except:
+                except Exception:
                     pass
             raise
 
@@ -169,7 +169,7 @@ class VLLMDockerManager:
                     "total_gb": mem_info.total / (1024**3),
                     "utilization_percent": (mem_info.used / mem_info.total) * 100,
                 }
-            except:
+            except Exception:
                 pass
 
             return {

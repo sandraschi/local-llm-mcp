@@ -58,9 +58,9 @@ except ImportError:
 
 # Hugging Face dependencies
 try:
-    import huggingface_hub  # noqa: F401
-    from huggingface_hub import HfApi, HfFolder, login, logout, whoami  # noqa: F401
-    from huggingface_hub.utils import HfHubHTTPError  # noqa: F401
+    import huggingface_hub
+    from huggingface_hub import HfApi, HfFolder, login, logout, whoami
+    from huggingface_hub.utils import HfHubHTTPError
 
     HF_AVAILABLE = True
 except ImportError:

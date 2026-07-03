@@ -246,7 +246,7 @@ class MultimodalProvider(BaseProvider):
         # Load and preprocess image
         if isinstance(image, str):
             if image.startswith("http"):
-                response = requests.get(image)
+                response = requests.get(image, timeout=30)
                 img = Image.open(BytesIO(response.content))
             else:
                 img = Image.open(image)
@@ -394,7 +394,7 @@ class MultimodalProvider(BaseProvider):
         for img_input in [image1, image2]:
             if isinstance(img_input, str):
                 if img_input.startswith("http"):
-                    response = requests.get(img_input)
+                    response = requests.get(img_input, timeout=30)
                     img = Image.open(BytesIO(response.content))
                 else:
                     img = Image.open(img_input)
