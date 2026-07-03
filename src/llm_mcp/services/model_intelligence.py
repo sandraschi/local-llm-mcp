@@ -76,7 +76,6 @@ VANGUARD_REGISTRY: Dict[str, Dict[str, Any]] = {
         "model_card_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4"
     }
 }
-}
 
 class ModelIntelligenceService:
     """Service to provide rich metadata for LLMs."""

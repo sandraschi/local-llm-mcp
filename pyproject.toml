@@ -14,7 +14,7 @@ authors = [
 ]
 dependencies = [
     # Core MCP
-    "fastmcp>=3.1.0,<4",
+    "fastmcp>=3.4.2,<4",
     "pydantic>=2.8.0",
     "python-dotenv>=1.0.0",
     # Web framework

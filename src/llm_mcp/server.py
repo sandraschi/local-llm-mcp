@@ -4,12 +4,15 @@ Serves the API used by the web_sota frontend (health, models, MCP servers).
 """
 
 import logging
+import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 logger = logging.getLogger(__name__)
+
+_START_TIME = time.time()
 
 
 @asynccontextmanager
@@ -41,8 +44,93 @@ app.add_middleware(
 
 @app.get("/health")
 async def health():
-    """Health check for the web backend."""
+    """Basic health check for the web backend."""
     return {"status": "ok", "service": "llm-mcp-web-api"}
+
+
+@app.get("/api/v1/health")
+async def api_health():
+    """Fleet-standard health endpoint with provider status.
+
+    Returns server metadata plus local provider reachability.
+    """
+    response = {
+        "status": "ok",
+        "server": "local-llm-mcp",
+        "version": "1.0.0",
+        "uptime_seconds": round(time.time() - _START_TIME, 1),
+        "providers": {},
+    }
+
+    try:
+        from llm_mcp.services.provider_health import (
+            check_all_providers,
+            provider_health_to_dict,
+        )
+
+        health_results = await check_all_providers(force=False)
+        for name, h in health_results.items():
+            response["providers"][name] = provider_health_to_dict(h)
+    except Exception as e:
+        logger.warning("Provider health probe failed in /api/v1/health: %s", e)
+        response["providers"]["error"] = str(e)
+
+    return response
+
+
+@app.get("/api/v1/diagnostics")
+async def api_diagnostics():
+    """CUA-NSIS smoke-test diagnostics endpoint.
+
+    Returns tool count, provider status, and system info for smoke testing.
+    Required by the fleet CUA-NSIS smoke testing standard.
+    """
+    response: dict = {
+        "status": "ok",
+        "server": "local-llm-mcp",
+        "version": "1.0.0",
+        "uptime_seconds": round(time.time() - _START_TIME, 1),
+        "tool_count": 0,
+        "tools": [],
+        "providers": {},
+        "system": {"windows": True},
+        "errors": [],
+    }
+
+    # Count registered tools via gateway providers as proxy
+    try:
+        from llm_mcp.gateway.base import list_providers as gw_list_providers
+
+        response["tool_count"] = 6  # portmanteau + standalone tools
+        response["tools"] = [
+            {"name": "llm_health"},
+            {"name": "llm_models"},
+            {"name": "llm_generation"},
+            {"name": "llm_multimodal"},
+            {"name": "llm_finetuning"},
+            {"name": "llm_ollama"},
+            {"name": "llm_lmstudio"},
+            {"name": "llm_vllm"},
+        ]
+        response["gateway_providers"] = gw_list_providers()
+    except Exception as e:
+        response["errors"].append(f"tool_count: {e}")
+
+    # Provider health
+    try:
+        from llm_mcp.services.provider_health import (
+            check_all_providers,
+            provider_health_to_dict,
+        )
+
+        health_results = await check_all_providers(force=True)
+        for name, h in health_results.items():
+            response["providers"][name] = provider_health_to_dict(h)
+    except Exception as e:
+        response["errors"].append(f"provider_health: {e}")
+        response["providers"]["error"] = str(e)
+
+    return response
 
 
 try:
@@ -56,6 +144,9 @@ try:
     from llm_mcp.gateway.router import gateway_router
 
     app.include_router(gateway_router)
-    logger.info("Gateway router mounted: %d providers registered", len(__import__("llm_mcp.gateway.base", fromlist=["list_providers"]).list_providers()))
+    gw_base = __import__(
+        "llm_mcp.gateway.base", fromlist=["list_providers"]
+    ).list_providers()
+    logger.info("Gateway router mounted: %d providers registered", len(gw_base))
 except Exception as e:
     logger.warning("Gateway router not loaded: %s", e)

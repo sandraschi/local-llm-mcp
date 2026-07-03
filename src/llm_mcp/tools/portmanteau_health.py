@@ -13,15 +13,15 @@ from llm_mcp.tools.monitoring_tools import (
     get_metrics_impl,
     set_log_level_impl,
 )
-from llm_mcp.tools.system_tools import get_service_status, get_system_info
+from llm_mcp.tools.system_tools import _check_local_providers, get_service_status, get_system_info
 from llm_mcp.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 # Import FastMCP components
 try:
-    from fastmcp import FastMCP
-    from fastmcp.tools import Tool
+    import fastmcp  # noqa: F401
+    from fastmcp.tools import Tool  # noqa: F401
 
     FASTMCP_AVAILABLE = True
 except ImportError:
@@ -55,6 +55,7 @@ async def llm_health(
 
     SUPPORTED OPERATIONS:
     - health_check: Overall server health status
+    - provider_check: Health of local LLM providers (Ollama, LM Studio)
     - list_tools: List all available tools (detail: 0=names, 1=basic, 2=full)
     - tool_help: Get detailed help for specific tool (requires tool_name)
     - search_tools: Search tools by name/description (requires query)
@@ -117,9 +118,9 @@ async def llm_health(
                 health_score -= 20
                 issues.append(".1f")
 
-            # Check services
+            # Check services (including Ollama and LM Studio)
             for service_name, status_info in service_status.items():
-                if isinstance(status_info, dict) and status_info.get("status") == "error":
+                if isinstance(status_info, dict) and status_info.get("status") not in ("running", "loaded"):
                     health_score -= 15
                     issues.append(f"Service {service_name} is down")
 
@@ -131,6 +132,9 @@ async def llm_health(
                 "system": system_info,
                 "services": service_status,
             }
+
+        elif operation == "provider_check":
+            return await _check_local_providers()
 
         elif operation == "list_tools":
             if not _mcp:
@@ -207,6 +211,7 @@ async def llm_health(
                 "error": f"Unknown operation: {operation}",
                 "available_operations": [
                     "health_check",
+                    "provider_check",
                     "list_tools",
                     "tool_help",
                     "search_tools",
@@ -255,6 +260,7 @@ def register_llm_health_tools(mcp):
 
         Use the 'operation' parameter to specify what you want to do:
         - health_check: Overall server health status
+        - provider_check: Health of local LLM providers (Ollama, LM Studio)
         - list_tools: List all available tools
         - tool_help: Get help for specific tool
         - search_tools: Search for tools

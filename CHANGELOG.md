@@ -5,7 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - 2026-04-15
+## [1.2.0] - 2026-07-03
+
+### Added
+- **Provider Health Service** (`services/provider_health.py`)
+  - Unified liveness checks for Ollama and LM Studio with 3s connect timeout
+  - Result caching with 30-second TTL
+  - Circuit breaker: 3 consecutive failures → mark unavailable for 60 seconds
+  - LM Studio Docker port-conflict detection (validates content-type + JSON shape on :1234)
+- **Provider Health Endpoints**
+  - `GET /api/v1/health` — fleet-standard health with provider status
+  - `GET /api/v1/diagnostics` — CUA-NSIS smoke test endpoint (tool count, provider status, system info)
+  - `GET /v1/gateway/providers/health` — per-provider reachability probe
+- **Provider check MCP tool** — `llm_health(operation="provider_check")` returns structured Ollama/LM Studio health
+- **Connection hardening** across all local provider code paths:
+  - Granular timeouts: 5s connect, 30s read, 300s pull
+  - Retry with exponential backoff (1s, 2s, 4s) on connection failures
+  - Structured error types: `connection_refused`, `timeout`, `docker_conflict`, `circuit_open`
+
+### Fixed
+- **Ollama `unload_model`**: was sending bogus `POST /api/chat` with empty model; now uses correct `POST /api/generate` with `keep_alive: 0`
+- **`core/startup.py`**: removed dead import from non-existent `..managers.model_manager` that crashed on import
+- **`services/model_service.py`**: fixed unreachable `_initialized = True` after `return`; missing `HTTPException`/`status` imports; duplicate dead `except Exception` block; missing `try:` block in `get_model_info`
+- **`services/model_intelligence.py`**: removed extra `}` causing syntax error
+- **`gateway/adapters/bedrock.py`**: added missing `import httpx` (F821)
+- **`tools/dora_tools.py`**: added missing `import asyncio` (F821)
+- **`providers/gemini/provider.py`**, **`providers/perplexity/provider.py`**: fixed `file_path` → `model.get("id", "")` (F821)
 
 ### Added
 - **Model Orchestration Dashboard** (Vite + React + Tailwind)

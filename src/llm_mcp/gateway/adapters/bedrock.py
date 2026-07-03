@@ -3,6 +3,8 @@
 import json
 from typing import Any
 
+import httpx
+
 from llm_mcp.gateway.base import BaseLLMAdapter, register_provider
 
 
@@ -70,7 +72,7 @@ class BedrockAdapter(BaseLLMAdapter):
 
     async def complete(self, body: dict[str, Any], headers: dict[str, Any]) -> dict[str, Any]:
         import os
-        import aws4py  # pip install aws4py
+
         from aws4py import AWSRequest
 
         mapped = self.map_params(body)

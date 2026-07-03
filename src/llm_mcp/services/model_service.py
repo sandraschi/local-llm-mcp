@@ -4,6 +4,9 @@ import logging
 from collections.abc import AsyncGenerator
 from typing import Any
 
+from fastapi import HTTPException
+from starlette import status
+
 from ..config import Settings, get_settings
 from ..providers import ProviderFactory
 from ..utils.gpu import refresh_gpu_info
@@ -54,6 +57,9 @@ class ModelService:
 
             except Exception as e:
                 logger.error(f"Error initializing provider {provider_name}: {e!s}", exc_info=True)
+
+        self._initialized = True
+        logger.info("ModelService initialization complete")
 
     async def _initialize_vllm_provider(self, provider_name: str, config: dict[str, Any]) -> Any:
         """Special initialization for vLLM provider.
@@ -118,9 +124,6 @@ class ModelService:
 
         return None, None
 
-        self._initialized = True
-        logger.info("ModelService initialization complete")
-
     async def list_models(self, provider_name: str | None = None) -> list[dict[str, Any]]:
         """List all available models from all or a specific provider.
 
@@ -145,7 +148,7 @@ class ModelService:
             provider_models = await provider.list_models()
             gpu_data = refresh_gpu_info()
             available_vram = gpu_data["gpu"]["free_gb"] if gpu_data["available"] else 0
-            
+
             for model in provider_models:
                 model["provider"] = provider_name
                 # Enrich with intelligence
@@ -153,7 +156,7 @@ class ModelService:
                 if intel:
                     model["intelligence"] = intel.model_dump()
                     model["hardware_compatibility"] = self.intelligence_service.get_compatibility(
-                        intel.vram_required_gb or 0, 
+                        intel.vram_required_gb or 0,
                         available_vram
                     )
                 models.append(model)
@@ -164,7 +167,7 @@ class ModelService:
                     provider_models = await provider.list_models()
                     gpu_data = refresh_gpu_info()
                     available_vram = gpu_data["gpu"]["free_gb"] if gpu_data["available"] else 0
-                    
+
                     for model in provider_models:
                         model["provider"] = provider_name
                         # Enrich with intelligence
@@ -172,7 +175,7 @@ class ModelService:
                         if intel:
                             model["intelligence"] = intel.model_dump()
                             model["hardware_compatibility"] = self.intelligence_service.get_compatibility(
-                                intel.vram_required_gb or 0, 
+                                intel.vram_required_gb or 0,
                                 available_vram
                             )
                         models.append(model)
@@ -224,7 +227,11 @@ class ModelService:
                         vllm_config = {
                             k: v
                             for k, v in kwargs.items()
-                            if k in ["model", "tensor_parallel_size", "gpu_memory_utilization", "max_seq_len", "quantization"]
+                            if k in [
+                                "model", "tensor_parallel_size",
+                                "gpu_memory_utilization", "max_seq_len",
+                                "quantization",
+                            ]
                         }
                         vllm_provider = VLLMv1Provider(vllm_config)
                         await vllm_provider.initialize()
@@ -235,13 +242,19 @@ class ModelService:
 
                     return
 
-                except ImportError:
+                except ImportError as e:
                     if provider:
-                        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="vLLM provider is not available")
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="vLLM provider is not available",
+                        ) from e
                 except Exception as e:
                     logger.error(f"vLLM generation error: {e!s}", exc_info=True)
                     if provider:
-                        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"vLLM generation failed: {e!s}")
+                        raise HTTPException(
+                            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"vLLM generation failed: {e!s}",
+                        ) from e
 
             # Standard provider interface
             try:
@@ -260,12 +273,9 @@ class ModelService:
         except Exception as e:
             logger.error(f"Generation error: {e!s}", exc_info=True)
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to generate text: {e!s}"
-            )
-
-        except Exception as e:
-            logger.error(f"Error during generation with {provider_name}/{model}: {e!s}", exc_info=True)
-            raise
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to generate text: {e!s}",
+            ) from e
 
     async def get_model_info(self, model_name: str, provider_name: str | None = None) -> dict[str, Any]:
         """Get detailed information about a specific model.
@@ -294,13 +304,14 @@ class ModelService:
                 model_info["provider"] = provider_name
                 return model_info
             except Exception as e:
-                raise ValueError(f"Error getting model info: {e!s}")
+                raise ValueError(f"Error getting model info: {e!s}") from e
 
         # Otherwise, search all providers
         for provider_name, provider in self.providers.items():
+            try:
                 model_info = await provider.get_model_info(model_name)
                 model_info["provider"] = provider_name
-                
+
                 # Enrich with intelligence
                 intel = self.intelligence_service.get_intelligence(model_name)
                 if intel:
@@ -308,10 +319,10 @@ class ModelService:
                     gpu_data = refresh_gpu_info()
                     available_vram = gpu_data["gpu"]["free_gb"] if gpu_data["available"] else 0
                     model_info["hardware_compatibility"] = self.intelligence_service.get_compatibility(
-                        intel.vram_required_gb or 0, 
+                        intel.vram_required_gb or 0,
                         available_vram
                     )
-                    
+
                 return model_info
             except (ValueError, KeyError):
                 continue

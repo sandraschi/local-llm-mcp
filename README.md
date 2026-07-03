@@ -40,11 +40,12 @@ If you don't have `just` installed:
 
 ##  **Key Features**
 
+- **Provider Hardening**: Unified ProviderHealthService with liveness checks, circuit breaker (3 failures → 60s cooldown), and Docker port-conflict detection for LM Studio
 - **Agentic Coding Flagship**: Full integration for **Qwen 3.6-35B-A3B** (Sparse MoE), optimized for sub-100ms repository-level reasoning.
 - **SOTA Orchestration Dashboard**: Premium Vite/React interface for centralized model control
 - **Live Configuration Engine**: Browser-based management for `.env` settings and API keys
 - **Multi-Provider Support**: 28 providers via AI gateway (Ollama, Anthropic, OpenAI, Gemini, DeepSeek, Groq, xAI, Mistral, OpenRouter, and 20+ more)
-- **High-Performance Inference**: Optimized with vLLM 0.8.3 (Python 3.13 compatible)
+- **High-Performance Inference**: Optimized with vLLM 1.0+ (Python 3.13 compatible)
 - **Fleet Hub Integration**: Unified navigation for the entire local MCP ecosystem
 - **Robust Error Handling**: Server continues running despite individual tool failures
 - **Modern Architecture**: FastMCP 3.1.0+ compliance with industrial portmanteau patterns

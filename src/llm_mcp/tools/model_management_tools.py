@@ -1,9 +1,12 @@
 """Model management tools for Ollama and LM Studio.
 
 This module provides tools to manage LLM models in Ollama and LM Studio,
-including loading, unloading, and downloading models.
+including loading, unloading, and downloading models. All operations route
+through the unified ProviderHealthService for liveness checks and circuit
+breaking before making real API calls.
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -15,13 +18,27 @@ logger = logging.getLogger(__name__)
 OLLAMA_API_BASE = "http://localhost:11434/api"
 LMSTUDIO_API_BASE = "http://localhost:1234/v1"
 
+# Granular timeouts: fast connect, longer read for inference
+_CONNECT_TIMEOUT = aiohttp.ClientTimeout(total=30, connect=5)
+_PULL_TIMEOUT = aiohttp.ClientTimeout(total=300, connect=10)
+
+
+def _invalidate_health(provider_name: str) -> None:
+    """Clear cached health for a provider to force re-check on next request."""
+    try:
+        from llm_mcp.services.provider_health import invalidate_provider_health
+        invalidate_provider_health(provider_name)
+    except Exception:
+        logger.debug("Could not invalidate provider health cache", exc_info=True)
+
 
 class ModelManager:
-    """Base class for model management operations."""
+    """Base class for model management operations with health-check integration."""
 
-    def __init__(self, api_base: str):
-        """Initialize with API base URL."""
+    def __init__(self, api_base: str, provider_name: str):
+        """Initialize with API base URL and provider name for health routing."""
         self.api_base = api_base
+        self.provider_name = provider_name
         self._session = None
 
     @property
@@ -36,46 +53,125 @@ class ModelManager:
         if self._session and not self._session.closed:
             await self._session.close()
 
+    async def _check_health(self) -> dict[str, Any]:
+        """Verify provider liveness before making a real request.
+
+        Returns health dict with 'reachable' bool. Raises ConnectionError if
+        circuit breaker is open or health check fails.
+        """
+        from llm_mcp.services.provider_health import (
+            check_lmstudio_health,
+            check_ollama_health,
+        )
+
+        if self.provider_name == "ollama":
+            health = await check_ollama_health()
+        elif self.provider_name == "lmstudio":
+            health = await check_lmstudio_health()
+        else:
+            return {"reachable": True}
+
+        if not health.reachable:
+            raise ConnectionError(
+                f"{self.provider_name} is unreachable: {health.error}. "
+                f"Suggestion: {health.suggestion}"
+            )
+        return {"reachable": True, "latency_ms": health.latency_ms}
+
     async def _make_request(self, method: str, endpoint: str, **kwargs) -> dict[str, Any]:
-        """Make an HTTP request to the model API."""
+        """Make an HTTP request with health check, retry, and structured errors."""
+        await self._check_health()
+
         url = f"{self.api_base}/{endpoint}"
-        try:
-            async with self.session.request(method, url, **kwargs) as response:
-                response.raise_for_status()
-                if response.status == 204:  # No content
-                    return {}
-                return await response.json()
-        except Exception as e:
-            logger.error(f"Request to {url} failed: {e}")
-            raise
+        timeout_override = kwargs.pop("_timeout", _CONNECT_TIMEOUT)
+        kwargs.setdefault("timeout", timeout_override)
+
+        last_error = None
+        for attempt in range(3):
+            try:
+                async with self.session.request(method, url, **kwargs) as response:
+                    response.raise_for_status()
+                    if response.status == 204:
+                        return {}
+                    return await response.json()
+            except aiohttp.ClientConnectorError as e:
+                last_error = e
+                if attempt < 2:
+                    delay = (attempt + 1) * 1.0
+                    logger.warning(
+                        "Connection to %s failed (attempt %d/3), retrying in %.1fs: %s",
+                        self.provider_name,
+                        attempt + 1,
+                        delay,
+                        e,
+                    )
+                    await asyncio.sleep(delay)
+                    # Force health re-check on retry
+                    _invalidate_health(self.provider_name)
+                else:
+                    raise ConnectionError(
+                        f"{self.provider_name} is not reachable after 3 attempts. "
+                        f"Last error: {e}. Check that the service is running."
+                    ) from e
+            except aiohttp.ClientResponseError as e:
+                raise ConnectionError(
+                    f"{self.provider_name} API error: HTTP {e.status} — {e.message}"
+                ) from e
+            except TimeoutError as e:
+                raise TimeoutError(
+                    f"{self.provider_name} request timed out. The daemon may be hung."
+                ) from e
+            except Exception as e:
+                logger.error("Request to %s failed: %s", url, e)
+                raise
+
+        raise ConnectionError(f"{self.provider_name}: max retries exceeded") from last_error
 
 
 class OllamaManager(ModelManager):
-    """Manager for Ollama models."""
+    """Manager for Ollama models with correct API semantics."""
 
     def __init__(self):
         """Initialize Ollama manager with default API base."""
-        super().__init__(OLLAMA_API_BASE)
+        super().__init__(OLLAMA_API_BASE, "ollama")
 
-    async def list_models(self) -> list[dict[str, Any]]:
+    async def list_models(self) -> dict[str, Any]:
         """List all available Ollama models."""
         return await self._make_request("GET", "tags")
 
     async def pull_model(self, model_name: str) -> dict[str, Any]:
-        """Download a model from Ollama."""
-        return await self._make_request("POST", "pull", json={"name": model_name})
+        """Download a model from Ollama (long timeout for large downloads)."""
+        return await self._make_request("POST", "pull", json={"name": model_name}, _timeout=_PULL_TIMEOUT)
 
     async def delete_model(self, model_name: str) -> dict[str, Any]:
         """Delete a model from Ollama."""
         return await self._make_request("DELETE", "delete", json={"name": model_name})
 
     async def load_model(self, model_name: str) -> dict[str, Any]:
-        """Load a model into memory."""
-        return await self._make_request("POST", "generate", json={"model": model_name, "prompt": "", "stream": False})
+        """Load a model into memory and keep it alive.
 
-    async def unload_model(self) -> dict[str, Any]:
-        """Unload the current model from memory."""
-        return await self._make_request("POST", "api/chat", json={"model": ""})
+        Uses /api/chat with keep_alive to trigger model warm-up
+        without producing side effects.
+        """
+        return await self._make_request("POST", "chat", json={
+            "model": model_name,
+            "messages": [{"role": "user", "content": "ping"}],
+            "stream": False,
+            "keep_alive": -1,
+        })
+
+    async def unload_model(self, model_name: str) -> dict[str, Any]:
+        """Unload a model from memory using keep_alive=0.
+
+        Sets keep_alive to 0 which causes Ollama to unload the model
+        after the current request completes.
+        """
+        return await self._make_request("POST", "generate", json={
+            "model": model_name,
+            "prompt": "",
+            "stream": False,
+            "keep_alive": 0,
+        })
 
 
 class LMStudioManager(ModelManager):
@@ -83,9 +179,9 @@ class LMStudioManager(ModelManager):
 
     def __init__(self):
         """Initialize LM Studio manager with default API base."""
-        super().__init__(LMSTUDIO_API_BASE)
+        super().__init__(LMSTUDIO_API_BASE, "lmstudio")
 
-    async def list_models(self) -> list[dict[str, Any]]:
+    async def list_models(self) -> dict[str, Any]:
         """List all available LM Studio models."""
         return await self._make_request("GET", "models")
 
@@ -157,10 +253,13 @@ async def _ollama_load_model_impl(model_name: str) -> dict[str, Any]:
     return await ollama.load_model(model_name)
 
 
-async def _ollama_unload_model_impl() -> dict[str, Any]:
-    """Implementation of ollama_unload_model."""
+async def _ollama_unload_model_impl(model_name: str) -> dict[str, Any]:
+    """Implementation of ollama_unload_model.
+
+    Uses keep_alive=0 to trigger immediate model unload from Ollama memory.
+    """
     ollama = get_ollama()
-    return await ollama.unload_model()
+    return await ollama.unload_model(model_name)
 
 
 async def _lmstudio_list_models_impl() -> dict[str, Any]:
@@ -285,8 +384,11 @@ def register_model_management_tools(mcp):
         return await _ollama_load_model_impl(model_name)
 
     @mcp.tool()  # Unload Ollama model
-    async def ollama_unload_model() -> dict[str, Any]:
+    async def ollama_unload_model(model_name: str = "") -> dict[str, Any]:
         """Unload the currently loaded Ollama model.
+
+        Args:
+            model_name: Name of the model to unload from memory.
 
         Returns:
             Dictionary with unload status
@@ -296,7 +398,7 @@ def register_model_management_tools(mcp):
         """
         # Invalidate the load model cache when unloading
         mcp.invalidate_state(ollama_load_model)
-        return await _ollama_unload_model_impl()
+        return await _ollama_unload_model_impl(model_name)
 
     @mcp.tool()  # List LM Studio models
     async def lmstudio_list_models() -> dict[str, Any]:

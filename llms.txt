@@ -1,40 +1,36 @@
 # local-llm-mcp
-> **Guides, best practices, and lessons learned for developing notepadpp-mcp** --- 📄 [AI_DEVELOPMENT_RULES.md](AI_DEVELOPMENT_RULES.md) **Guidelines for AI-assisted development** - Best practices for wo...
 
-This project includes automated llms.txt generation for AI accessibility.
+Unified MCP server for local (Ollama, LM Studio) and cloud LLM providers with 28 gateway providers, SOTA portmanteau tools, and a web dashboard.
+
+> Full reference: [llms-full.txt](llms-full.txt)
+
+## Key Capabilities
+- **Provider hardening**: Unified health service with circuit breaker, 3s timeout, Docker port conflict detection
+- **Local providers**: Ollama (11434), LM Studio (1234) — connection retry with backoff, structured error types
+- **28 gateway providers**: Anthropic, OpenAI, Gemini, DeepSeek, Groq, Claude, xAI, Mistral, OpenRouter, etc.
+- **Health endpoints**: `GET /api/v1/health`, `GET /api/v1/diagnostics`, `GET /v1/gateway/providers/health`
+- **Portmanteau MCP tools**: `llm_health`, `llm_models`, `llm_generation`, `llm_multimodal`, `llm_finetuning`
+- **Web dashboard**: Vite/React on 10832, FastAPI backend on 10833
+
+## Quick Start
+```bash
+just
+# or manual: uv sync && uv run llm-mcp
+```
+
+## Ports
+| Port | Service |
+|------|---------|
+| 10832 | Dashboard frontend (Vite) |
+| 10833 | Dashboard API (FastAPI) |
+| 11434 | Ollama (external dep) |
+| 1234 | LM Studio (external dep) |
 
 ## Docs
-- [Readme](docs\development\README.md): **Guides, best practices, and lessons learned for developing notepadpp-mcp**
-- [Readme](docs\tool_calling\README.md): This document explains how to use the tool calling functionality in the LLM MCP server, which allows...
-- [Readme](docs\glama-platform\README.md): **Complete guide to achieving and maintaining Gold Status on Glama.ai**
-- [Readme](docs\notepadpp\README.md): **Everything you need to know about Notepad++ - from history to advanced usage**
-- [Readme](docs\gradio\README.md): This document explains how to create interactive web interfaces for the LLM MCP server using Gradio.
-- [Readme](README.md): A **production-ready** FastMCP 2.12+ compliant server for comprehensive LLM management and integrati...
-- [Readme](docs\repository-protection\README.md): **Complete guide to keeping your notepadpp-mcp repository safe**
-- [Readme](docs\lora\README.md): This document explains how to integrate and use LoRA (Low-Rank Adaptation) with the LLM MCP server f...
-- [Readme](docs\integrations\README.md): This directory contains documentation and resources for integrating LLM MCP with various tools and p...
-- [Readme](docs\mcpb-packaging\README.md): **Complete guide to packaging and distributing MCP servers with MCPB**
-
-## Api
-- [  Init  ](src\llm_mcp\api\v1\models\__init__.py): Api definitions and implementations
-- [  Init  ](src\llm_mcp\api\v1\__init__.py): Api definitions and implementations
-- [Mcp Servers](src\llm_mcp\api\v1\endpoints\mcp_servers.py): Api definitions and implementations
-- [Mcp Servers](src\llm_mcp\api\v1\endpoints\mcp_servers.py): Endpoints definitions and implementations
-- [Models](src\llm_mcp\api\v1\endpoints\models.py): Endpoints definitions and implementations
-- [  Init  ](src\llm_mcp\api\v1\endpoints\__init__.py): Endpoints definitions and implementations
-- [  Init  ](src\llm_mcp\api\v1\models\__init__.py): Models definitions and implementations
-- [Models](src\llm_mcp\api\v1\endpoints\models.py): Models definitions and implementations
-- [Models](src\llm_mcp\providers\vllm_v1\models.py): Models definitions and implementations
-
-## Examples
-- [Examples](examples/): Example code and implementations
+- [README](README.md)
+- [CHANGELOG](CHANGELOG.md)
+- [llms-full.txt](llms-full.txt)
 
 ## Configuration
-- [Pyproject](pyproject.toml): Python project configuration and dependencies
-- [Package](web_sota\package.json): Node.js project configuration and dependencies
-- [Config](.git\config): Application configuration files
-
-## Optional
-- [Changelog](CHANGELOG.md): Project changelog information
-- [Contributing](CONTRIBUTING.md): Project contributing information
-- [License](LICENSE): Project license information
+- [pyproject.toml](pyproject.toml)
+- [.env.example](.env.example)

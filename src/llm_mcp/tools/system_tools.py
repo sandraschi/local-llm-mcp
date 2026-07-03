@@ -12,6 +12,27 @@ from ..utils.gpu import get_gpu_info
 
 logger = logging.getLogger(__name__)
 
+# Local provider health probe (imported lazily to avoid circular deps)
+
+
+async def _check_local_providers() -> dict[str, Any]:
+    """Check health of Ollama and LM Studio via the unified health service."""
+    results: dict[str, Any] = {}
+    try:
+        from llm_mcp.services.provider_health import (
+            check_all_providers,
+            provider_health_to_dict,
+        )
+
+        health = await check_all_providers(force=False)
+        for name, h in health.items():
+            results[name] = provider_health_to_dict(h)
+    except Exception as e:
+        logger.warning("Provider health check failed: %s", e)
+        results["ollama"] = {"status": "error", "error": str(e)}
+        results["lmstudio"] = {"status": "error", "error": str(e)}
+    return results
+
 
 def get_system_info() -> dict[str, Any]:
     """Get detailed system information.
@@ -88,10 +109,10 @@ def get_service_status() -> dict[str, Any]:
     Returns:
         Dictionary containing service status information
     """
-    services = {}
+    services: dict[str, Any] = {}
 
     # Check Redis
-    redis_status = {"status": "unknown", "version": "unknown"}
+    redis_status: dict[str, str] = {"status": "unknown", "version": "unknown"}
     try:
         import redis
 
@@ -102,8 +123,62 @@ def get_service_status() -> dict[str, Any]:
         redis_status["status"] = f"error: {e!s}"
     services["redis"] = redis_status
 
-    # Check database connections, etc.
-    # Add more service checks as needed
+    # Check Ollama (synchronous probe via httpx in a new event loop)
+    try:
+        import httpx
+
+        with httpx.Client(timeout=httpx.Timeout(connect=3.0, read=5.0)) as client:
+            resp = client.get("http://localhost:11434/api/tags")
+            if resp.status_code == 200:
+                data = resp.json()
+                services["ollama"] = {
+                    "status": "running",
+                    "model_count": len(data.get("models", [])),
+                }
+            else:
+                services["ollama"] = {"status": f"error: HTTP {resp.status_code}"}
+    except httpx.ConnectError:
+        services["ollama"] = {"status": "not running", "error": "Connection refused"}
+    except httpx.TimeoutException:
+        services["ollama"] = {"status": "hung", "error": "Daemon process exists but not responding"}
+    except Exception as e:
+        services["ollama"] = {"status": "error", "error": str(e)}
+
+    # Check LM Studio with Docker conflict detection
+    try:
+        import httpx
+
+        with httpx.Client(timeout=httpx.Timeout(connect=3.0, read=5.0)) as client:
+            resp = client.get("http://localhost:1234/v1/models")
+            ct = resp.headers.get("content-type", "")
+            if "text/html" in ct:
+                services["lmstudio"] = {
+                    "status": "error",
+                    "error": "Port 1234 responded with HTML — likely Docker Desktop, not LM Studio",
+                }
+            elif resp.status_code == 200:
+                data = resp.json()
+                if isinstance(data, dict) and "data" in data:
+                    services["lmstudio"] = {
+                        "status": "running",
+                        "model_count": len(data.get("data", [])),
+                    }
+                else:
+                    services["lmstudio"] = {
+                        "status": "error",
+                        "error": "Port 1234 returned unexpected JSON shape — likely not LM Studio",
+                    }
+            else:
+                services["lmstudio"] = {"status": f"error: HTTP {resp.status_code}"}
+    except httpx.ConnectError:
+        services["lmstudio"] = {"status": "not running", "error": "Connection refused"}
+    except httpx.TimeoutException:
+        services["lmstudio"] = {
+            "status": "hung",
+            "error": "Process exists but not responding — Docker may be the cause",
+        }
+    except Exception as e:
+        services["lmstudio"] = {"status": "error", "error": str(e)}
 
     return services
 

@@ -13,7 +13,6 @@ from typing import Any
 
 import httpx
 
-
 _openai_compat_providers: dict[str, type["BaseLLMAdapter"]] = {}
 
 

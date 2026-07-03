@@ -1,8 +1,6 @@
 """Azure OpenAI adapter — custom endpoint construction."""
 
-from typing import Any
 
-import httpx
 
 from llm_mcp.gateway.adapters.openai import OpenAIAdapter
 from llm_mcp.gateway.base import register_provider

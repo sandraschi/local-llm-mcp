@@ -6062,3 +6062,49 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ```
+
+## Provider Hardening (v1.2.0)
+
+### Unified Provider Health Service
+
+Every Ollama/LM Studio operation is prefixed with a liveness check via `services/provider_health.py`:
+- **3s connect timeout** — fast-fail if the provider is unreachable
+- **30s cache TTL** — repeated calls within 30s use cached health
+- **Circuit breaker** — 3 consecutive failures mark the provider unavailable for 60s
+- **Retry with backoff** — transient connection failures retry at 1s, 2s, 4s intervals
+
+### LM Studio Docker Port Conflict Detection
+
+The health probe validates responses from `http://127.0.0.1:1234/v1/models`:
+- If content-type is `text/html` → Docker Desktop is on port 1234
+- If response is not valid JSON → unknown service on port 1234
+- If JSON but no `data` key → wrong service on port 1234
+- Returns `error_type: "docker_conflict"` with actionable suggestion
+
+### Health Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| GET /health | Basic liveness (`{"status": "ok"}`) |
+| GET /api/v1/health | Fleet-standard health with provider status |
+| GET /api/v1/diagnostics | CUA-NSIS smoke test (tool count, providers, system) |
+| GET /v1/gateway/providers/health | Per-provider reachability probe |
+
+### Ollama Tool Changes
+
+- `ollama_unload_model(model_name: str)` — now requires model name; uses `POST /api/generate` with `keep_alive: 0` instead of bogus `POST /api/chat` with empty model
+- `llm_ollama(operation="unload_model", model="...")` — portmanteau equivalent
+
+### Provider Check Tool
+
+```python
+# Check all local provider health via MCP
+llm_health(operation="provider_check")
+# Returns: {"ollama": {"reachable": true, "latency_ms": 12, "model_count": 5},
+#           "lmstudio": {"reachable": false, "error_type": "connection_refused", ...}}
+
+# Check via REST API
+curl http://127.0.0.1:10833/api/v1/health
+curl http://127.0.0.1:10833/api/v1/diagnostics
+curl http://127.0.0.1:10833/v1/gateway/providers/health
+```
