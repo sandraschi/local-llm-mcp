@@ -6108,3 +6108,40 @@ curl http://127.0.0.1:10833/api/v1/health
 curl http://127.0.0.1:10833/api/v1/diagnostics
 curl http://127.0.0.1:10833/v1/gateway/providers/health
 ```
+
+## LM Link Integration (v1.2.1)
+
+### What is LM Link
+
+LM Link (Feb 2026) is a Tailscale + LM Studio partnership feature for secure remote
+access to local LLMs. Models run on one machine and are used from others over
+Tailscale's encrypted mesh -- no public internet exposure.
+
+### MCP Tool: `llm_lmstudio(operation="link_status")`
+
+Added in v1.2.1. Probes `lms link status --json` via async subprocess to discover
+remote LM Studio peers and their loaded models over the LM Link encrypted mesh.
+
+Returns:
+- `success` (bool), `operation`, `message`
+- `device_name` (str) — this device's name on the link
+- `connected` (bool) — link state
+- `peers` (list) — each peer with `device_name`, `models` (loaded model IDs), `preferred`
+- `peer_count` (int)
+- Graceful `recovery_options` when `lms` CLI is not installed or not logged in
+
+### Provider Health: `check_lm_link_status()`
+
+In `services/provider_health.py`:
+- Probes `lms link status --json` with 15s subprocess timeout
+- 60-second cache TTL
+- Returns `LinkStatus` dataclass: ok, enabled, device_name, peers, peer_count
+- Exposed in `GET /api/v1/health` and `GET /api/v1/diagnostics` under `lm_link` key
+
+### Cross-Repo Architecture
+
+- **tailscale-mcp** (port 10821) — primary LM Link control plane: enable/disable,
+  device naming, preferred device selection. 7 operations via `get_lm_link` tool.
+- **local-llm-mcp** (port 10833) — read-only awareness: peer/model discovery for
+  dashboard and provider health. Both probe `lms link status --json` independently.
+```

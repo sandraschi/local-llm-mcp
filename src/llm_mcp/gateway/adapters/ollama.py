@@ -13,6 +13,7 @@ class OllamaAdapter(BaseLLMAdapter):
 
     def get_base_url(self, headers: dict[str, str]) -> str:
         import os
+
         return os.getenv("OLLAMA_BASE_URL", self.base_url)
 
     def get_api_key(self, headers: dict[str, str]) -> str:

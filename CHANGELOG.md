@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-07-06
+
+### Added
+- **LM Link awareness**: `llm_lmstudio` tool gains `link_status` operation
+  - Probes `lms link status --json` via async subprocess for live peer/model discovery
+  - Returns connected peers, their loaded models, link state, and preferred device
+  - Graceful fallback with `recovery_options` when `lms` CLI is missing
+- **LM Link provider health**: `check_lm_link_status()` in `provider_health.py`
+  - 60-second cache TTL with forced refresh support
+  - Results exposed in `GET /api/v1/health` and `GET /api/v1/diagnostics` under `lm_link` key
+  - Structured `LinkStatus` dataclass: ok, enabled, device_name, peers, peer_count
+
+### Changed
+- `llm_lmstudio` portmanteau now supports 4 operations (was 3): list_models, load_model, unload_model, link_status
+- `GET /api/v1/health` response includes `lm_link` peer data alongside provider status
+
 ## [1.2.0] - 2026-07-03
 
 ### Added

@@ -15,6 +15,7 @@ class AnthropicAdapter(BaseLLMAdapter):
 
     def get_api_key(self, headers: dict[str, str]) -> str:
         import os
+
         key = os.getenv(self.api_key_env, "")
         if not key:
             key = headers.get("x-api-key", "")
@@ -38,10 +39,12 @@ class AnthropicAdapter(BaseLLMAdapter):
             if msg.get("role") == "system":
                 system = msg.get("content", "")
             else:
-                mapped_messages.append({
-                    "role": msg["role"],
-                    "content": msg.get("content", ""),
-                })
+                mapped_messages.append(
+                    {
+                        "role": msg["role"],
+                        "content": msg.get("content", ""),
+                    }
+                )
 
         mapped = {
             "model": body.get("model", "claude-sonnet-4-20250514"),

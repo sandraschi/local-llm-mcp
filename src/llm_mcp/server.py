@@ -50,9 +50,10 @@ async def health():
 
 @app.get("/api/v1/health")
 async def api_health():
-    """Fleet-standard health endpoint with provider status.
+    """Fleet-standard health endpoint with provider status and LM Link.
 
-    Returns server metadata plus local provider reachability.
+    Returns server metadata plus local provider reachability and LM Link
+    peer information (Tailscale + LM Studio encrypted mesh).
     """
     response = {
         "status": "ok",
@@ -60,17 +61,32 @@ async def api_health():
         "version": "1.0.0",
         "uptime_seconds": round(time.time() - _START_TIME, 1),
         "providers": {},
+        "lm_link": None,
     }
 
     try:
         from llm_mcp.services.provider_health import (
             check_all_providers,
+            check_lm_link_status,
             provider_health_to_dict,
         )
 
         health_results = await check_all_providers(force=False)
         for name, h in health_results.items():
             response["providers"][name] = provider_health_to_dict(h)
+
+        try:
+            link = await check_lm_link_status(force=False)
+            response["lm_link"] = {
+                "ok": link.ok,
+                "enabled": link.enabled,
+                "device_name": link.device_name,
+                "peer_count": link.peer_count,
+                "peers": link.peers,
+                "preferred_device": link.preferred_device,
+            }
+        except Exception as e:
+            response["lm_link"] = {"ok": False, "error": str(e)}
     except Exception as e:
         logger.warning("Provider health probe failed in /api/v1/health: %s", e)
         response["providers"]["error"] = str(e)
@@ -93,6 +109,7 @@ async def api_diagnostics():
         "tool_count": 0,
         "tools": [],
         "providers": {},
+        "lm_link": None,
         "system": {"windows": True},
         "errors": [],
     }
@@ -120,12 +137,26 @@ async def api_diagnostics():
     try:
         from llm_mcp.services.provider_health import (
             check_all_providers,
+            check_lm_link_status,
             provider_health_to_dict,
         )
 
         health_results = await check_all_providers(force=True)
         for name, h in health_results.items():
             response["providers"][name] = provider_health_to_dict(h)
+
+        try:
+            link = await check_lm_link_status(force=True)
+            response["lm_link"] = {
+                "ok": link.ok,
+                "enabled": link.enabled,
+                "device_name": link.device_name,
+                "peer_count": link.peer_count,
+                "peers": link.peers,
+                "preferred_device": link.preferred_device,
+            }
+        except Exception as e:
+            response["lm_link"] = {"ok": False, "error": str(e)}
     except Exception as e:
         response["errors"].append(f"provider_health: {e}")
         response["providers"]["error"] = str(e)
@@ -144,9 +175,7 @@ try:
     from llm_mcp.gateway.router import gateway_router
 
     app.include_router(gateway_router)
-    gw_base = __import__(
-        "llm_mcp.gateway.base", fromlist=["list_providers"]
-    ).list_providers()
+    gw_base = __import__("llm_mcp.gateway.base", fromlist=["list_providers"]).list_providers()
     logger.info("Gateway router mounted: %d providers registered", len(gw_base))
 except Exception as e:
     logger.warning("Gateway router not loaded: %s", e)

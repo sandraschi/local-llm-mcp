@@ -156,8 +156,7 @@ class ModelService:
                 if intel:
                     model["intelligence"] = intel.model_dump()
                     model["hardware_compatibility"] = self.intelligence_service.get_compatibility(
-                        intel.vram_required_gb or 0,
-                        available_vram
+                        intel.vram_required_gb or 0, available_vram
                     )
                 models.append(model)
         else:
@@ -175,8 +174,7 @@ class ModelService:
                         if intel:
                             model["intelligence"] = intel.model_dump()
                             model["hardware_compatibility"] = self.intelligence_service.get_compatibility(
-                                intel.vram_required_gb or 0,
-                                available_vram
+                                intel.vram_required_gb or 0, available_vram
                             )
                         models.append(model)
                 except Exception as e:
@@ -227,9 +225,12 @@ class ModelService:
                         vllm_config = {
                             k: v
                             for k, v in kwargs.items()
-                            if k in [
-                                "model", "tensor_parallel_size",
-                                "gpu_memory_utilization", "max_seq_len",
+                            if k
+                            in [
+                                "model",
+                                "tensor_parallel_size",
+                                "gpu_memory_utilization",
+                                "max_seq_len",
                                 "quantization",
                             ]
                         }
@@ -319,8 +320,7 @@ class ModelService:
                     gpu_data = refresh_gpu_info()
                     available_vram = gpu_data["gpu"]["free_gb"] if gpu_data["available"] else 0
                     model_info["hardware_compatibility"] = self.intelligence_service.get_compatibility(
-                        intel.vram_required_gb or 0,
-                        available_vram
+                        intel.vram_required_gb or 0, available_vram
                     )
 
                 return model_info

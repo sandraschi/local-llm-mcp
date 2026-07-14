@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 # Re-use openai library for OpenRouter as it is OpenAI-compatible
 try:
     import openai
+
     OPENAI_AVAILABLE = True
 except ImportError:
     logger.warning("OpenAI not installed, required for OpenRouter. Install with: pip install openai")
@@ -37,6 +38,7 @@ class OpenRouterProvider(BaseProvider):
             raise ImportError("OpenAI is not installed. Please install it with: pip install openai")
 
         from .config import OpenRouterConfig
+
         self.config = OpenRouterConfig(**(config or {}))
 
         # Initialize client with OpenRouter base URL and headers
@@ -83,29 +85,29 @@ class OpenRouterProvider(BaseProvider):
                 "name": "Gemma 2 9B IT",
                 "description": "Google's latest efficient model",
                 "capabilities": ["text-generation", "chat"],
-                "provider": "openrouter"
+                "provider": "openrouter",
             },
             {
                 "id": "google/gemma-2-27b-it",
                 "name": "Gemma 2 27B IT",
                 "description": "High performance Gemma 2 model",
                 "capabilities": ["text-generation", "chat"],
-                "provider": "openrouter"
+                "provider": "openrouter",
             },
             {
                 "id": "meta-llama/llama-3.1-8b-instruct",
                 "name": "Llama 3.1 8B",
                 "description": "Latest Llama 3.1 8B",
                 "capabilities": ["text-generation", "chat"],
-                "provider": "openrouter"
+                "provider": "openrouter",
             },
             {
-              "id": "anthropic/claude-3.5-sonnet",
-              "name": "Claude 3.5 Sonnet",
-              "description": "Anthropic's latest high-IQ model",
-              "capabilities": ["text-generation", "chat", "vision"],
-              "provider": "openrouter"
-            }
+                "id": "anthropic/claude-3.5-sonnet",
+                "name": "Claude 3.5 Sonnet",
+                "description": "Anthropic's latest high-IQ model",
+                "capabilities": ["text-generation", "chat", "vision"],
+                "provider": "openrouter",
+            },
         ]
 
     async def generate(self, prompt: str, model: str, **kwargs) -> AsyncGenerator[str, None]:
@@ -117,10 +119,7 @@ class OpenRouterProvider(BaseProvider):
 
         try:
             stream = await self.client.chat.completions.create(
-                model=model_id,
-                messages=[{"role": "user", "content": prompt}],
-                stream=True,
-                **kwargs
+                model=model_id, messages=[{"role": "user", "content": prompt}], stream=True, **kwargs
             )
 
             async for chunk in stream:
@@ -135,11 +134,7 @@ class OpenRouterProvider(BaseProvider):
         """Generate chat completion from OpenRouter."""
         model_id = model or self.config.default_model
         try:
-            response = await self.client.chat.completions.create(
-                model=model_id,
-                messages=messages,
-                **kwargs
-            )
+            response = await self.client.chat.completions.create(model=model_id, messages=messages, **kwargs)
             return response.choices[0].message.content
         except Exception as e:
             logger.error(f"OpenRouter chat error: {e!s}")
@@ -154,5 +149,5 @@ class OpenRouterProvider(BaseProvider):
         return {
             "status": "healthy" if self.is_ready else "unconfigured",
             "provider": "openrouter",
-            "api_key_set": self.config.api_key is not None
+            "api_key_set": self.config.api_key is not None,
         }

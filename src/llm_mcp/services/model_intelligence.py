@@ -19,7 +19,7 @@ VANGUARD_REGISTRY: dict[str, dict[str, Any]] = {
         "best_for": "Fast, high-quality reasoning and vision tasks.",
         "vram_required_gb": 6.0,
         "quantization_info": "Highly optimized for GGUF-Q4_K_M and EXL2-4.0bpw.",
-        "model_card_url": "https://huggingface.co/google/gemma-4-7b-it"
+        "model_card_url": "https://huggingface.co/google/gemma-4-7b-it",
     },
     "gemma-4-27b": {
         "hf_id": "google/gemma-4-27b-it",
@@ -30,7 +30,7 @@ VANGUARD_REGISTRY: dict[str, dict[str, Any]] = {
         "best_for": "Complex coding, long-document analysis, and deep reasoning.",
         "vram_required_gb": 18.0,
         "quantization_info": "Recommended: EXL2-6.0bpw for dual 3090/4090 setups.",
-        "model_card_url": "https://huggingface.co/google/gemma-4-27b-it"
+        "model_card_url": "https://huggingface.co/google/gemma-4-27b-it",
     },
     "llama-4-8b": {
         "hf_id": "meta-llama/Llama-4-8B-Instruct",
@@ -41,7 +41,7 @@ VANGUARD_REGISTRY: dict[str, dict[str, Any]] = {
         "best_for": "General purpose chat and tool-calling.",
         "vram_required_gb": 7.0,
         "quantization_info": "Flawless performance at Q8_0 or EXL2-8.0bpw.",
-        "model_card_url": "https://huggingface.co/meta-llama/Llama-4-8B-Instruct"
+        "model_card_url": "https://huggingface.co/meta-llama/Llama-4-8B-Instruct",
     },
     "llama-4-70b": {
         "hf_id": "meta-llama/Llama-4-70B-Instruct",
@@ -52,7 +52,7 @@ VANGUARD_REGISTRY: dict[str, dict[str, Any]] = {
         "best_for": "Enterprise-grade orchestration and complex task decomposition.",
         "vram_required_gb": 45.0,
         "quantization_info": "Use Q4_K_M for 48GB VRAM (Dual GPU).",
-        "model_card_url": "https://huggingface.co/meta-llama/Llama-4-70B-Instruct"
+        "model_card_url": "https://huggingface.co/meta-llama/Llama-4-70B-Instruct",
     },
     "claude-4-sonnet": {
         "hf_id": "anthropic/claude-4-sonnet",
@@ -62,7 +62,7 @@ VANGUARD_REGISTRY: dict[str, dict[str, Any]] = {
         "weaknesses": ["Closed weights (OpenRouter only)", "Rate limits"],
         "best_for": "Creative writing, complex artifacts, and high-precision tasks.",
         "vram_required_gb": 0.0,  # Cloud based
-        "model_card_url": "https://www.anthropic.com/claude"
+        "model_card_url": "https://www.anthropic.com/claude",
     },
     "deepseek-v4": {
         "hf_id": "deepseek-ai/DeepSeek-V4",
@@ -72,9 +72,10 @@ VANGUARD_REGISTRY: dict[str, dict[str, Any]] = {
         "weaknesses": ["Can be repetitive in creative tasks", "Closed ecosystem initially"],
         "best_for": "Cheap, fast, high-quality coding and math.",
         "vram_required_gb": 40.0,
-        "model_card_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4"
-    }
+        "model_card_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4",
+    },
 }
+
 
 class ModelIntelligenceService:
     """Service to provide rich metadata for LLMs."""
@@ -140,7 +141,9 @@ class ModelIntelligenceService:
             vram_required_gb=vram_req,
             best_for="General purpose interaction." if not is_legacy else "Legacy support and baseline testing.",
             strengths=["Standard LLM capabilities"] if not is_legacy else ["High compatibility", "Stable performance"],
-            weaknesses=["Metadata not yet curated for this specific model."] if not is_legacy else ["Outdated context/knowledge base (Pre-2025)"]
+            weaknesses=["Metadata not yet curated for this specific model."]
+            if not is_legacy
+            else ["Outdated context/knowledge base (Pre-2025)"],
         )
 
     def estimate_vram_requirement(self, model_id: str) -> float:
@@ -155,12 +158,13 @@ class ModelIntelligenceService:
 
         # Parameter count patterns (e.g. 7B, 13B, 70B)
         import re
+
         match = re.search(r"(\d+)[bm]", id_lower)
         if match:
             count = int(match.group(1))
             unit = match.group(0)[-1]
 
-            if unit == 'b':
+            if unit == "b":
                 # 4-bit quantization baseline: ~0.6-0.8 GB per Billion params + overhead
                 if count <= 3:
                     return 4.0
@@ -173,7 +177,7 @@ class ModelIntelligenceService:
                 if count <= 75:
                     return 45.0
                 return count * 0.7
-            if unit == 'm':
+            if unit == "m":
                 return 2.0
 
         # Default fallback
@@ -187,13 +191,13 @@ class ModelIntelligenceService:
         if gpu_vram_gb <= 0:
             return "UNKNOWN"
 
-        if model_vram == 0: # Cloud model
+        if model_vram == 0:  # Cloud model
             return "READY"
 
-        if gpu_vram_gb >= (model_vram + 3.0): # Healthy buffer
+        if gpu_vram_gb >= (model_vram + 3.0):  # Healthy buffer
             return "READY"
 
-        if gpu_vram_gb >= model_vram: # Fits but tight
+        if gpu_vram_gb >= model_vram:  # Fits but tight
             return "TIGHT"
 
         return "OOM"

@@ -52,7 +52,7 @@ Local LLM MCP Server is a **comprehensive, enterprise-grade Model Control Protoc
 | Provider | Status | Features |
 |----------|--------|----------|
 | **Ollama** | ✅ Full | Local models, automatic management |
-| **LM Studio** | ✅ Full | Local inference, model switching |
+| **LM Studio** | ✅ Full + LM Link | Local inference, model switching, remote peer discovery over Tailscale mesh |
 | **vLLM** | ✅ Full | High-performance, continuous batching |
 | **OpenAI** | ✅ Full | GPT-4, GPT-4o, embeddings |
 | **Anthropic** | ✅ Full | Claude models, function calling |
@@ -69,7 +69,7 @@ Local LLM MCP Server is a **comprehensive, enterprise-grade Model Control Protoc
 - **`llm_multimodal_tool`** - Image analysis and generation
 - **`llm_finetuning_tool`** - LoRA, Sparse, DoRA training
 - **`llm_ollama_tool`** - Ollama model operations
-- **`llm_lmstudio_tool`** - LM Studio model operations
+- **`llm_lmstudio_tool`** - LM Studio model operations + LM Link peer discovery
 - **`llm_vllm_tool`** - vLLM high-performance inference
 - **`llm_huggingface_tool`** - Gated models (FLUX) and datasets
 - **`llm_google_cloud_tool`** - Gemini 3 Flash and Vertex AI

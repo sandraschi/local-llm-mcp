@@ -55,11 +55,23 @@ If you don't have `just` installed:
 Following the **Advanced Memory MCP** pattern, we've consolidated 30+ individual tools into **5 SOTA portmanteau tools** for better UX and maintainability:
 
 ### **Core Portmanteau Tools**
-- **`llm_health`**: Health monitoring, system info, metrics, and server management
+- **`llm_health`**: Health monitoring, system info, metrics, provider checks, and server management
 - **`llm_models`**: Model registration, management, and provider operations (Ollama, LM Studio)
 - **`llm_generation`**: Text generation, chat completion, and embeddings
 - **`llm_multimodal`**: Image analysis, generation, and comparison
 - **`llm_finetuning`**: LoRA, Sparse, and DoRA fine-tuning operations
+- **`llm_ollama`**: Ollama-specific pull, list, chat, unload
+- **`llm_lmstudio`**: LM Studio model ops + LM Link peer discovery (`link_status`)
+- **`llm_gpu`**: GPU / VRAM telemetry
+
+### **LM Link Integration** (Tailscale + LM Studio)
+The `llm_lmstudio(operation="link_status")` operation probes [LM Link](https://lmstudio.ai/docs/lmlink) —
+the Tailscale-powered encrypted mesh for remote LLM access (Feb 2026). Returns live
+peer list, loaded models, link state, and preferred device. Provider health endpoints
+(`/api/v1/health`, `/api/v1/diagnostics`) also include LM Link peer data under the `lm_link` key.
+
+**Cross-repo**: LM Link network control (enable/disable, device naming, preferred device
+selection) lives in [tailscale-mcp](https://github.com/sandraschi/tailscale-mcp).
 
 ### **Usage Example**
 ```python

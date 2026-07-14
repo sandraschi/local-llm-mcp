@@ -12,4 +12,5 @@ class ModalAdapter(OpenAIAdapter):
 
     def get_base_url(self, headers: dict[str, str]) -> str:
         import os
+
         return os.getenv("MODAL_BASE_URL", "https://--your-app--.modal.run/v1")

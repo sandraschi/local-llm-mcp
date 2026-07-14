@@ -15,6 +15,7 @@ class GeminiAdapter(BaseLLMAdapter):
 
     def get_api_key(self, headers: dict[str, str]) -> str:
         import os
+
         return os.getenv(self.api_key_env, "")
 
     def build_headers(self, api_key: str) -> dict[str, str]:
@@ -25,6 +26,7 @@ class GeminiAdapter(BaseLLMAdapter):
 
     def get_base_url(self, headers: dict[str, str]) -> str:
         import os
+
         key = os.getenv(self.api_key_env, "")
         base = os.getenv("GEMINI_BASE_URL", self.base_url)
         return f"{base}?key={key}" if key else base
@@ -66,8 +68,11 @@ class GeminiAdapter(BaseLLMAdapter):
                 text += p.get("text", "")
             finish_reason = c.get("finishReason", "")
             finish = {
-                "STOP": "stop", "MAX_TOKENS": "length", "SAFETY": "content_filter",
-                "RECITATION": "content_filter", "OTHER": "stop",
+                "STOP": "stop",
+                "MAX_TOKENS": "length",
+                "SAFETY": "content_filter",
+                "RECITATION": "content_filter",
+                "OTHER": "stop",
             }.get(finish_reason, "stop")
 
         usage = resp_data.get("usageMetadata", {})

@@ -83,12 +83,14 @@ async def list_models():
     providers = list_providers()
     models = []
     for p in providers:
-        models.append({
-            "id": f"{p}/default",
-            "object": "model",
-            "created": 0,
-            "owned_by": p,
-        })
+        models.append(
+            {
+                "id": f"{p}/default",
+                "object": "model",
+                "created": 0,
+                "owned_by": p,
+            }
+        )
     return {"object": "list", "data": models}
 
 
@@ -130,9 +132,7 @@ async def gateway_provider_health(request: Request):
 
     results: dict[str, Any] = {}
     for name, h in local_health.items():
-        results[name] = (
-            h if isinstance(h, dict) else provider_health_to_dict(h)
-        )
+        results[name] = h if isinstance(h, dict) else provider_health_to_dict(h)
 
     # Mark all registered providers (even non-local ones)
     for p in list_providers():

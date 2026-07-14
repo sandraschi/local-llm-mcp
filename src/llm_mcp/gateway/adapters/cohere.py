@@ -21,10 +21,12 @@ class CohereAdapter(BaseLLMAdapter):
         chat_history = []
         last_msg = ""
         for msg in messages[:-1]:
-            chat_history.append({
-                "role": msg.get("role", "user"),
-                "message": msg.get("content", ""),
-            })
+            chat_history.append(
+                {
+                    "role": msg.get("role", "user"),
+                    "message": msg.get("content", ""),
+                }
+            )
         if messages:
             last_msg = messages[-1].get("content", "")
 

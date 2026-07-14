@@ -1,7 +1,7 @@
 {
   "manifest_version": "0.2",
   "name": "local-llm-mcp",
-  "version": "1.0.0",
+  "version": "1.2.1",
   "description": "State-of-the-Art MCP server for managing local and cloud Large Language Models with comprehensive tool suite",
   "author": {
     "name": "Sandra Schipal"

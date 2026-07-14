@@ -18,9 +18,11 @@ _openai_compat_providers: dict[str, type["BaseLLMAdapter"]] = {}
 
 def register_provider(name: str):
     """Decorator to register a provider adapter."""
+
     def wrapper(cls):
         _openai_compat_providers[name] = cls
         return cls
+
     return wrapper
 
 
@@ -58,6 +60,7 @@ class BaseLLMAdapter(ABC):
     def get_api_key(self, headers: dict[str, str]) -> str:
         env_key = self.api_key_env
         import os
+
         key = os.getenv(env_key, "")
         if not key:
             key = headers.get("authorization", "").replace("Bearer ", "")

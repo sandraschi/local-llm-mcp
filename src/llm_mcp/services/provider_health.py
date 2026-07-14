@@ -1,18 +1,24 @@
 """Unified provider health service with liveness checks, caching, and circuit breaking.
 
 Provides a single source of truth for Ollama and LM Studio reachability,
-used by every code path that touches local providers. Implements:
+used by every code path that touches local providers. Also detects LM Link
+(Tailscale + LM Studio) peer availability via the ``lms`` CLI.
+
+Implements:
 
 - Fast liveness probes (3s connect timeout, 10s read timeout)
 - Result caching with 30-second TTL
 - Circuit breaker: 3 consecutive failures -> mark unavailable for 60 seconds
 - LM Studio Docker port conflict detection (validates response shape)
+- LM Link peer discovery (lms link status --json)
 - Per-provider structured health reports
 """
 
 from __future__ import annotations
 
 import asyncio
+import json
+import shutil
 import time
 from dataclasses import dataclass, field
 from typing import Any
@@ -89,9 +95,7 @@ def _cached_health(provider: str) -> ProviderHealth | None:
 
 
 def _cache_health(health: ProviderHealth) -> None:
-    _provider_health_cache[health.provider] = _CachedHealth(
-        health=health, timestamp=time.monotonic()
-    )
+    _provider_health_cache[health.provider] = _CachedHealth(health=health, timestamp=time.monotonic())
 
 
 def _force_refresh(provider: str) -> None:
@@ -118,9 +122,7 @@ async def check_ollama_health(force: bool = False) -> ProviderHealth:
 
     start = time.monotonic()
     try:
-        timeout = aiohttp.ClientTimeout(
-            total=HEALTH_READ_TIMEOUT, connect=HEALTH_CONNECT_TIMEOUT
-        )
+        timeout = aiohttp.ClientTimeout(total=HEALTH_READ_TIMEOUT, connect=HEALTH_CONNECT_TIMEOUT)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.get(f"{OLLAMA_BASE}/api/tags") as resp:
                 if resp.status == 200:
@@ -211,9 +213,7 @@ async def check_lmstudio_health(force: bool = False) -> ProviderHealth:
 
     start = time.monotonic()
     try:
-        timeout = aiohttp.ClientTimeout(
-            total=HEALTH_READ_TIMEOUT, connect=HEALTH_CONNECT_TIMEOUT
-        )
+        timeout = aiohttp.ClientTimeout(total=HEALTH_READ_TIMEOUT, connect=HEALTH_CONNECT_TIMEOUT)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.get(f"{LMSTUDIO_BASE}/v1/models") as resp:
                 if resp.status != 200:
@@ -243,8 +243,7 @@ async def check_lmstudio_health(force: bool = False) -> ProviderHealth:
                         error="Port 1234 responded with HTML — likely Docker Desktop, not LM Studio",
                         error_type="docker_conflict",
                         suggestion=(
-                            "Docker Desktop is occupying port 1234. "
-                            "Stop Docker or change LM Studio's port in Settings."
+                            "Docker Desktop is occupying port 1234. Stop Docker or change LM Studio's port in Settings."
                         ),
                     )
                     _cache_health(health)
@@ -258,10 +257,7 @@ async def check_lmstudio_health(force: bool = False) -> ProviderHealth:
                         provider="lmstudio",
                         reachable=False,
                         base_url=LMSTUDIO_BASE,
-                        error=(
-                            "Port 1234 responded with non-JSON content "
-                            "— likely Docker or another service"
-                        ),
+                        error=("Port 1234 responded with non-JSON content — likely Docker or another service"),
                         error_type="docker_conflict",
                         suggestion=(
                             "Docker Desktop or another service is occupying port 1234. "
@@ -279,8 +275,7 @@ async def check_lmstudio_health(force: bool = False) -> ProviderHealth:
                         reachable=False,
                         base_url=LMSTUDIO_BASE,
                         error=(
-                            f"Response at port 1234 is JSON but does not match "
-                            f"LM Studio API shape: {raw_body[:200]}"
+                            f"Response at port 1234 is JSON but does not match LM Studio API shape: {raw_body[:200]}"
                         ),
                         error_type="wrong_service",
                         suggestion=(
@@ -354,6 +349,122 @@ async def check_all_providers(force: bool = False) -> dict[str, ProviderHealth]:
         "ollama": results[0],
         "lmstudio": results[1],
     }
+
+
+# -- LM Link (Tailscale + LM Studio) peer discovery -------------------------
+
+_LINK_CACHE_TTL = 60.0
+_link_cache: tuple[float, dict[str, Any] | None] | None = None
+
+
+@dataclass
+class LinkStatus:
+    """Structured LM Link status from ``lms link status --json``."""
+
+    ok: bool
+    enabled: bool = False
+    device_name: str = ""
+    connection_state: str = ""
+    peers: list[dict[str, Any]] = field(default_factory=list)
+    peer_count: int = 0
+    preferred_device: str = ""
+    debug: dict[str, Any] = field(default_factory=dict)
+
+
+def _find_lms() -> str | None:
+    lms = shutil.which("lms")
+    if lms:
+        return lms
+    import os
+
+    for c in [
+        r"C:\Users\sandr\AppData\Local\Programs\lm-studio\lms.exe",
+        r"C:\Program Files\lm-studio\lms.exe",
+    ]:
+        if os.path.isfile(c):
+            return c
+    return None
+
+
+async def check_lm_link_status(force: bool = False) -> LinkStatus:
+    """Probe LM Link via ``lms link status --json`` with 60s cache.
+
+    Returns a ``LinkStatus`` with peer model data; ``ok=False`` when lms
+    is not installed, not logged in, or LM Link is disabled.
+    """
+    if not force and _link_cache is not None:
+        ts, cached = _link_cache
+        if (time.monotonic() - ts) < _LINK_CACHE_TTL and cached is not None:
+            return LinkStatus(**cached)
+
+    binary = _find_lms()
+    if binary is None:
+        result = LinkStatus(ok=False, debug={"error": "lms CLI not found"})
+        _set_link_cache(result)
+        return result
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            binary,
+            "link",
+            "status",
+            "--json",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout_bytes, stderr_bytes = await asyncio.wait_for(proc.communicate(), timeout=15)
+        stdout = stdout_bytes.decode("utf-8", errors="replace").strip()
+        stderr = stderr_bytes.decode("utf-8", errors="replace").strip()
+
+        if proc.returncode != 0:
+            result = LinkStatus(
+                ok=False,
+                debug={"exit_code": proc.returncode, "stderr": stderr[:500]},
+            )
+            _set_link_cache(result)
+            return result
+
+        if not stdout:
+            result = LinkStatus(ok=False, debug={"error": "empty stdout"})
+            _set_link_cache(result)
+            return result
+
+        data = json.loads(stdout)
+        peers = data.get("peers", [])
+        result = LinkStatus(
+            ok=True,
+            enabled=data.get("enabled", False),
+            device_name=data.get("device_name", ""),
+            connection_state=data.get("connection_state", "unknown"),
+            peers=peers,
+            peer_count=len(peers),
+            preferred_device=data.get("preferred_device", ""),
+            debug=data,
+        )
+        _set_link_cache(result)
+        return result
+
+    except (TimeoutError, json.JSONDecodeError, Exception) as e:
+        result = LinkStatus(ok=False, debug={"error": str(e)})
+        _set_link_cache(result)
+        return result
+
+
+def _set_link_cache(status: LinkStatus) -> None:
+    global _link_cache
+    _link_cache = (
+        time.monotonic(),
+        {
+            "ok": status.ok,
+            "enabled": status.enabled,
+            "device_name": status.device_name,
+            "connection_state": status.connection_state,
+            "peers": status.peers,
+            "peer_count": status.peer_count,
+            "preferred_device": status.preferred_device,
+            "debug": status.debug,
+        },
+    )
 
 
 def get_cached_provider_health(provider: str) -> ProviderHealth | None:

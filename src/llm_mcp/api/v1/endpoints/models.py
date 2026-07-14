@@ -34,6 +34,7 @@ async def list_providers() -> list[ProviderInfo]:
         vllm_available = False
         try:
             import importlib.util as _util
+
             vllm_available = _util.find_spec("vllm") is not None
         except ImportError:
             pass
@@ -200,7 +201,9 @@ async def list_models(
         raise
     except Exception as e:
         logger.error(f"Failed to list models: {e!s}", exc_info=True)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to list models: {e!s}") from e
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to list models: {e!s}"
+        ) from e
 
 
 @router.get("/models/{model_name}", response_model=ModelInfo)
@@ -310,7 +313,9 @@ async def pull_model(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to pull model: {e!s}") from e
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to pull model: {e!s}"
+        ) from e
 
 
 @router.post("/generate", response_model=GenerateResponse)
@@ -357,7 +362,9 @@ async def generate_text(request: GenerateRequest, raw_request: Request) -> Gener
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to generate text: {e!s}") from e
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to generate text: {e!s}"
+        ) from e
 
 
 async def generate_stream(request: GenerateRequest, raw_request: Request) -> AsyncGenerator[bytes, None]:

@@ -27,6 +27,7 @@ def _invalidate_health(provider_name: str) -> None:
     """Clear cached health for a provider to force re-check on next request."""
     try:
         from llm_mcp.services.provider_health import invalidate_provider_health
+
         invalidate_provider_health(provider_name)
     except Exception:
         logger.debug("Could not invalidate provider health cache", exc_info=True)
@@ -73,8 +74,7 @@ class ModelManager:
 
         if not health.reachable:
             raise ConnectionError(
-                f"{self.provider_name} is unreachable: {health.error}. "
-                f"Suggestion: {health.suggestion}"
+                f"{self.provider_name} is unreachable: {health.error}. Suggestion: {health.suggestion}"
             )
         return {"reachable": True, "latency_ms": health.latency_ms}
 
@@ -114,13 +114,9 @@ class ModelManager:
                         f"Last error: {e}. Check that the service is running."
                     ) from e
             except aiohttp.ClientResponseError as e:
-                raise ConnectionError(
-                    f"{self.provider_name} API error: HTTP {e.status} — {e.message}"
-                ) from e
+                raise ConnectionError(f"{self.provider_name} API error: HTTP {e.status} — {e.message}") from e
             except TimeoutError as e:
-                raise TimeoutError(
-                    f"{self.provider_name} request timed out. The daemon may be hung."
-                ) from e
+                raise TimeoutError(f"{self.provider_name} request timed out. The daemon may be hung.") from e
             except Exception as e:
                 logger.error("Request to %s failed: %s", url, e)
                 raise
@@ -153,12 +149,16 @@ class OllamaManager(ModelManager):
         Uses /api/chat with keep_alive to trigger model warm-up
         without producing side effects.
         """
-        return await self._make_request("POST", "chat", json={
-            "model": model_name,
-            "messages": [{"role": "user", "content": "ping"}],
-            "stream": False,
-            "keep_alive": -1,
-        })
+        return await self._make_request(
+            "POST",
+            "chat",
+            json={
+                "model": model_name,
+                "messages": [{"role": "user", "content": "ping"}],
+                "stream": False,
+                "keep_alive": -1,
+            },
+        )
 
     async def unload_model(self, model_name: str) -> dict[str, Any]:
         """Unload a model from memory using keep_alive=0.
@@ -166,12 +166,16 @@ class OllamaManager(ModelManager):
         Sets keep_alive to 0 which causes Ollama to unload the model
         after the current request completes.
         """
-        return await self._make_request("POST", "generate", json={
-            "model": model_name,
-            "prompt": "",
-            "stream": False,
-            "keep_alive": 0,
-        })
+        return await self._make_request(
+            "POST",
+            "generate",
+            json={
+                "model": model_name,
+                "prompt": "",
+                "stream": False,
+                "keep_alive": 0,
+            },
+        )
 
 
 class LMStudioManager(ModelManager):

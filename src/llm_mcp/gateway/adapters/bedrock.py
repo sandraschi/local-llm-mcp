@@ -26,10 +26,12 @@ class BedrockAdapter(BaseLLMAdapter):
                 system = msg.get("content", "")
             else:
                 role = "assistant" if msg["role"] == "assistant" else "user"
-                bedrock_messages.append({
-                    "role": role,
-                    "content": [{"text": msg.get("content", "")}],
-                })
+                bedrock_messages.append(
+                    {
+                        "role": role,
+                        "content": [{"text": msg.get("content", "")}],
+                    }
+                )
 
         mapped = {
             "modelId": body.get("model", ""),
