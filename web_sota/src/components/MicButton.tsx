@@ -41,7 +41,7 @@ export function MicButton({ input, setInput }: { input: string; setInput: (val: 
       sttRef.current?.stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [setInput, input]);
 
   if (!isSttAvailable()) return null;
 

@@ -193,15 +193,15 @@ class MCPServerManager:
                     }
                 )
 
-            mcp = FastMCP(name=server_config.name, **config)
+            # FastMCP 3.x rejects transport/state kwargs on the constructor.
+            mcp = FastMCP(name=server_config.name)
 
             # Register tools based on server type
             await self._register_server_tools(mcp, server_config)
 
             # Start the server in the background
-            await mcp.start()
             self._mcp_instances[name] = mcp
-            logger.info(f"Started MCP server: {name}")
+            logger.info(f"Registered MCP server instance: {name}")
             return True
 
         except Exception as e:
@@ -223,7 +223,11 @@ class MCPServerManager:
 
         try:
             mcp = self._mcp_instances.pop(name)
-            await mcp.stop()
+            stop = getattr(mcp, "stop", None)
+            if stop is not None:
+                result = stop()
+                if hasattr(result, "__await__"):
+                    await result
             logger.info(f"Stopped MCP server: {name}")
             return True
         except Exception as e:

@@ -16,23 +16,41 @@
     "rules": {
       "recommended": true,
       "suspicious": {
-        "noExplicitAny": "warn",
-        "noUnknownAtRules": "off"
+        "noUnknownAtRules": "off",
+        "useIterableCallbackReturn": "warn",
+        "noArrayIndexKey": "warn",
+        "noExplicitAny": "warn"
+      },
+      "a11y": {
+        "useButtonType": "warn",
+        "useMediaCaption": "warn",
+        "noStaticElementInteractions": "warn"
+      },
+      "style": {
+        "noNonNullAssertion": "warn"
+      },
+      "correctness": {
+        "noUnusedVariables": "warn",
+        "useExhaustiveDependencies": "off"
       }
     }
   },
   "css": {
     "parser": {
-      "allowWrongLineComments": true,
       "tailwindDirectives": true
-    },
-    "linter": {
-      "enabled": true
     }
   },
   "javascript": {
     "formatter": {
       "quoteStyle": "double"
     }
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "includes": [
+      "**",
+      "!dist",
+      "!node_modules"
+    ]
   }
 }

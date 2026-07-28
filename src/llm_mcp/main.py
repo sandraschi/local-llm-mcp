@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Main entry point for the LLM MCP server - FastMCP 2.12+ compliant.
 
 This module initializes and runs the LLM Model Control Protocol server with all available tools.
@@ -43,15 +45,15 @@ logger = get_logger(__name__)
 # Import FastMCP after logging is configured
 # Try to import FastMCP with version check
 try:
-    import pkg_resources
     from fastmcp import FastMCP
     from fastmcp import __version__ as fastmcp_version_installed
     from fastmcp.server import create_proxy
     from fastmcp.tools import Tool
+    from packaging.version import Version
 
     # Check if the installed version meets our requirements
-    required_version = pkg_resources.parse_version("2.12.0")
-    installed_version = pkg_resources.parse_version(fastmcp_version_installed)
+    required_version = Version("2.12.0")
+    installed_version = Version(fastmcp_version_installed)
 
     if installed_version < required_version:
         raise ImportError(

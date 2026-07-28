@@ -91,7 +91,7 @@ function loadHistory(): Message[] {
 }
 
 export function Chat() {
-  const modelSelectId = useRef(`model-select-${Math.random().toString(36).substr(2, 9)}`).current;
+  const _modelSelectId = useRef(`model-select-${Math.random().toString(36).substr(2, 9)}`).current;
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedProvider, setSelectedProvider] = useState<string | undefined>();

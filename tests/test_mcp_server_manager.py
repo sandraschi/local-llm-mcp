@@ -4,11 +4,12 @@ import json
 import os
 import shutil
 import tempfile
+import uuid
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.llm_mcp.services.mcp_server_manager import (
+from llm_mcp.services.mcp_server_manager import (
     MCPServerConfig,
     MCPServerManager,
 )
@@ -167,78 +168,77 @@ class TestMCPServerManager:
 
 # Test the API endpoints
 @pytest.mark.asyncio
-def test_api_endpoints(test_client):
+def test_api_endpoints():
     """Test the MCP server management API endpoints."""
     # Create a test client with the FastAPI app
     from fastapi.testclient import TestClient
 
-    from src.llm_mcp.main import app
+    from llm_mcp.server import app
 
     client = TestClient(app)
 
     # Test listing servers
-    response = client.get("/api/v1/mcp/servers")
+    response = client.get("/api/v1/mcp/mcp-servers")
     assert response.status_code == 200
     servers = response.json()
     assert isinstance(servers, list)
 
     # Test creating a new server
+    server_name = f"test_api_server_{uuid.uuid4().hex[:8]}"
     new_server = {
-        "name": "test_api_server",
+        "name": server_name,
         "description": "Test API server",
         "server_type": "python",
         "config": {"port": 8002},
         "enabled": True,
     }
 
-    response = client.post("/api/v1/mcp/servers", json=new_server)
+    response = client.post("/api/v1/mcp/mcp-servers", json=new_server)
     assert response.status_code == 201
     created_server = response.json()
-    assert created_server["name"] == "test_api_server"
+    assert created_server["name"] == server_name
 
     # Test getting the server
-    response = client.get("/api/v1/mcp/servers/test_api_server")
+    response = client.get("/api/v1/mcp/mcp-servers/test_api_server")
     assert response.status_code == 200
     server = response.json()
     assert server["name"] == "test_api_server"
 
     # Test updating the server
     update_data = {"description": "Updated description"}
-    response = client.put("/api/v1/mcp/servers/test_api_server", json=update_data)
+    response = client.put("/api/v1/mcp/mcp-servers/test_api_server", json=update_data)
     assert response.status_code == 200
     updated_server = response.json()
     assert updated_server["description"] == "Updated description"
 
     # Test starting the server
     with patch(
-        "src.llm_mcp.services.mcp_server_manager.MCPServerManager.start_server", new_callable=AsyncMock
+        "llm_mcp.services.mcp_server_manager.MCPServerManager.start_server", new_callable=AsyncMock
     ) as mock_start:
         mock_start.return_value = True
-        response = client.post("/api/v1/mcp/servers/test_api_server/start")
+        response = client.post("/api/v1/mcp/mcp-servers/test_api_server/start")
         assert response.status_code == 200
         assert response.json()["success"] is True
 
     # Test stopping the server
-    with patch(
-        "src.llm_mcp.services.mcp_server_manager.MCPServerManager.stop_server", new_callable=AsyncMock
-    ) as mock_stop:
+    with patch("llm_mcp.services.mcp_server_manager.MCPServerManager.stop_server", new_callable=AsyncMock) as mock_stop:
         mock_stop.return_value = True
-        response = client.post("/api/v1/mcp/servers/test_api_server/stop")
+        response = client.post("/api/v1/mcp/mcp-servers/test_api_server/stop")
         assert response.status_code == 200
         assert response.json()["success"] is True
 
     # Test getting server status
-    response = client.get("/api/v1/mcp/servers/test_api_server/status")
+    response = client.get("/api/v1/mcp/mcp-servers/test_api_server/status")
     assert response.status_code == 200
     status_info = response.json()
     assert "status" in status_info
 
     # Test deleting the server
     with patch(
-        "src.llm_mcp.services.mcp_server_manager.MCPServerManager.delete_server", new_callable=AsyncMock
+        "llm_mcp.services.mcp_server_manager.MCPServerManager.delete_server", new_callable=AsyncMock
     ) as mock_delete:
         mock_delete.return_value = True
-        response = client.delete("/api/v1/mcp/servers/test_api_server")
+        response = client.delete("/api/v1/mcp/mcp-servers/test_api_server")
         assert response.status_code == 204
 
 
