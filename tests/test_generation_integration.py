@@ -46,9 +46,7 @@ async def test_generation_manager_uses_provider():
     # Patch the global provider factory used by GenerationManager
     # Note: GenerationManager.__init__ binds self.provider_factory = _provider_factory
 
-    with patch.object(
-        manager.provider_factory, "get_provider_for_model", return_value=mock_provider
-    ):
+    with patch.object(manager.provider_factory, "get_provider_for_model", return_value=mock_provider):
         # Test generate
         result = await manager.generate(model_id="test-model", prompt="Hello")
         assert result["text"] == "Mock response for test-model: Hello"
@@ -56,8 +54,6 @@ async def test_generation_manager_uses_provider():
         assert result["model"] == "test-model"
 
         # Test chat
-        result_chat = await manager.chat(
-            model_id="test-model", messages=[{"role": "user", "content": "Hi"}]
-        )
+        result_chat = await manager.chat(model_id="test-model", messages=[{"role": "user", "content": "Hi"}])
         assert result_chat["message"]["content"] == "Mock chat response for test-model"
         assert result_chat["model"] == "test-model"

@@ -1,4 +1,5 @@
 """Tests for the MCP server manager."""
+
 import json
 import os
 import shutil
@@ -18,12 +19,8 @@ TEST_SERVER_CONFIG = {
         "name": "test_server",
         "description": "Test MCP server",
         "server_type": "python",
-        "config": {
-            "host": "localhost",
-            "port": 8001,
-            "log_level": "info"
-        },
-        "enabled": True
+        "config": {"host": "localhost", "port": 8001, "log_level": "info"},
+        "enabled": True,
     }
 }
 
@@ -41,7 +38,7 @@ def temp_config_dir():
 def config_file(temp_config_dir):
     """Create a temporary config file with test data."""
     config_path = os.path.join(temp_config_dir, "servers.json")
-    with open(config_path, 'w') as f:
+    with open(config_path, "w") as f:
         json.dump(TEST_SERVER_CONFIG, f)
     return config_path
 
@@ -71,11 +68,7 @@ class TestMCPServerManager:
         """Test adding a new server configuration."""
         # Create a new server config
         new_server = MCPServerConfig(
-            name="new_server",
-            description="New test server",
-            server_type="node",
-            config={"port": 3000},
-            enabled=True
+            name="new_server", description="New test server", server_type="node", config={"port": 3000}, enabled=True
         )
 
         # Add the server
@@ -120,7 +113,7 @@ class TestMCPServerManager:
     async def test_start_stop_server(self, manager):
         """Test starting and stopping a server."""
         # Patch the FastMCP class to avoid starting a real server
-        with patch('fastmcp.FastMCP') as mock_mcp_class:
+        with patch("fastmcp.FastMCP") as mock_mcp_class:
             mock_mcp = AsyncMock()
             mock_mcp_class.return_value = mock_mcp
 
@@ -195,7 +188,7 @@ def test_api_endpoints(test_client):
         "description": "Test API server",
         "server_type": "python",
         "config": {"port": 8002},
-        "enabled": True
+        "enabled": True,
     }
 
     response = client.post("/api/v1/mcp/servers", json=new_server)
@@ -217,16 +210,18 @@ def test_api_endpoints(test_client):
     assert updated_server["description"] == "Updated description"
 
     # Test starting the server
-    with patch('src.llm_mcp.services.mcp_server_manager.MCPServerManager.start_server',
-              new_callable=AsyncMock) as mock_start:
+    with patch(
+        "src.llm_mcp.services.mcp_server_manager.MCPServerManager.start_server", new_callable=AsyncMock
+    ) as mock_start:
         mock_start.return_value = True
         response = client.post("/api/v1/mcp/servers/test_api_server/start")
         assert response.status_code == 200
         assert response.json()["success"] is True
 
     # Test stopping the server
-    with patch('src.llm_mcp.services.mcp_server_manager.MCPServerManager.stop_server',
-              new_callable=AsyncMock) as mock_stop:
+    with patch(
+        "src.llm_mcp.services.mcp_server_manager.MCPServerManager.stop_server", new_callable=AsyncMock
+    ) as mock_stop:
         mock_stop.return_value = True
         response = client.post("/api/v1/mcp/servers/test_api_server/stop")
         assert response.status_code == 200
@@ -239,8 +234,9 @@ def test_api_endpoints(test_client):
     assert "status" in status_info
 
     # Test deleting the server
-    with patch('src.llm_mcp.services.mcp_server_manager.MCPServerManager.delete_server',
-              new_callable=AsyncMock) as mock_delete:
+    with patch(
+        "src.llm_mcp.services.mcp_server_manager.MCPServerManager.delete_server", new_callable=AsyncMock
+    ) as mock_delete:
         mock_delete.return_value = True
         response = client.delete("/api/v1/mcp/servers/test_api_server")
         assert response.status_code == 204
@@ -251,4 +247,5 @@ if __name__ == "__main__":
     import sys
 
     import pytest
+
     sys.exit(pytest.main(["-v", "-s"]))

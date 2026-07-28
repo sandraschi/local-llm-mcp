@@ -17,6 +17,7 @@ Or use any OpenAI client — just point the base URL at local-llm-mcp and set `x
 
 ```python
 from openai import OpenAI
+
 client = OpenAI(base_url="http://127.0.0.1:10833/v1", api_key="...")
 # Set provider header via default_headers
 client.default_headers["x-lightport-provider"] = "deepseek"

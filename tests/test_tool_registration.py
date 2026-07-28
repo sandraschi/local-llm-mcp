@@ -1,4 +1,5 @@
 """Test tool registration for the LLM MCP server."""
+
 import logging
 import sys
 from pathlib import Path
@@ -10,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()]
+    handlers=[logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
 
@@ -23,19 +24,14 @@ def test_tool_registration():
     """Test that all tools are properly registered."""
     # Check dependencies first
     deps = check_dependencies()
-    missing_critical = [k for k, v in deps.items()
-                       if not v and k in {'fastmcp', 'torch', 'transformers'}]
+    missing_critical = [k for k, v in deps.items() if not v and k in {"fastmcp", "torch", "transformers"}]
 
     if missing_critical:
         logger.warning(f"Missing critical dependencies: {', '.join(missing_critical)}")
         logger.warning("Some features may not work as expected")
 
     # Initialize MCP server
-    mcp = FastMCP(
-        name="LLM MCP Test",
-        version="1.0.0",
-        description="Test server for tool registration"
-    )
+    mcp = FastMCP(name="LLM MCP Test", version="1.0.0", description="Test server for tool registration")
 
     # Register all tools
     logger.info("Registering all tools...")
