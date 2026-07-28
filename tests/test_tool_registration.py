@@ -15,9 +15,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-from fastmcp import FastMCP  # noqa: E402
+from fastmcp import FastMCP
 
-from llm_mcp.tools import check_dependencies, register_all_tools  # noqa: E402
+from llm_mcp.tools import check_dependencies, register_all_tools
 
 
 def test_tool_registration():
