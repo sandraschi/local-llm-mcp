@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "llm-mcp"
 version = "1.0.0"  # Production release with Pydantic V2 and enhanced logging
-description = "Ã°Å¸â€Â¥ Production-ready FastMCP 3.1.0 server for managing local and cloud LLMs with vLLM 1.0 integration and Claude Desktop compatibility"
+description = "ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â¥ Production-ready FastMCP 3.1.0 server for managing local and cloud LLMs with vLLM 1.0 integration and Claude Desktop compatibility"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
@@ -59,7 +59,6 @@ dependencies = [
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=5.0.0",
     "black>=24.4.0",
-    "ruff>=0.5.0",
     "mypy>=1.10.0",
     "prometheus-client>=0.20.0",
     "prefab-ui>=0.14.0",
@@ -87,7 +86,7 @@ dev = [
     "pytest-cov>=5.0.0",
     "pytest-mock>=3.14.0",
     "black>=24.4.0",
-    "ruff>=0.5.0",
+    "ruff>=0.16.0,<0.17",
     "mypy>=1.10.0",
     "types-requests>=2.32.0",
     "types-pyyaml>=6.0.0",
