@@ -47,10 +47,6 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": [
-      "**",
-      "!dist",
-      "!node_modules"
-    ]
+    "includes": ["**", "!dist", "!node_modules"]
   }
 }
