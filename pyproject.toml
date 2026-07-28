@@ -1,20 +1,20 @@
-[build-system]
+﻿[build-system]
 requires = ["setuptools>=70", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "llm-mcp"
 version = "1.0.0"  # Production release with Pydantic V2 and enhanced logging
-description = "ðŸ”¥ Production-ready FastMCP 3.1.0 server for managing local and cloud LLMs with vLLM 1.0 integration and Claude Desktop compatibility"
+description = "Ã°Å¸â€Â¥ Production-ready FastMCP 3.1.0 server for managing local and cloud LLMs with vLLM 1.0 integration and Claude Desktop compatibility"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [
-    {name = "Sandra Schipal", email = "sandra@example.com"}
+    {name = "Sandra Schipal", email = "sandraschipal@gmail.com"}
 ]
 dependencies = [
     # Core MCP
-    "fastmcp>=3.4.2,<4",
+    "fastmcp>=3.4.4,<4",
     "pydantic>=2.8.0",
     "python-dotenv>=1.0.0",
     # Web framework
@@ -81,6 +81,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "pre-commit>=4.6.1",
     "pytest>=8.2.0",
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=5.0.0",
@@ -179,3 +180,4 @@ ignore = ["S101", "B008", "S110"]
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
