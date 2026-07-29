@@ -69,7 +69,9 @@ def llm_gpu_tool(
 def register_llm_gpu_tools(mcp):
     """Register the GPU Portmanteau tool with the MCP server."""
 
-    @mcp.tool()
+    _MUTATING = {}
+
+    @mcp.tool(annotations=_MUTATING)
     async def llm_gpu_tool_portmanteau(
         operation: str,
         gpu_id: int = 0,

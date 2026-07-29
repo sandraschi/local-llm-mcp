@@ -94,8 +94,7 @@ def register_all_tools(mcp):
         ("portmanteau_vllm", "register_llm_vllm_tools"),
         ("portmanteau_huggingface", "register_llm_huggingface_tools"),
         ("portmanteau_google_cloud", "register_llm_google_cloud_tools"),
-        ("portmanteau_help", "register_llm_help_tools"),
-        ("portmanteau_gpu", "register_gpu_manager_tools"),
+        ("portmanteau_gpu", "register_llm_gpu_tools"),
     ]
 
     # Log portmanteau tool registration progress
@@ -112,52 +111,6 @@ def register_all_tools(mcp):
                 logger.warning(f"Failed to import portmanteau tool: {func_name}")
         except Exception as e:
             error_msg = f"Error registering portmanteau tool {func_name}: {e!s}"
-            logger.error(error_msg, exc_info=True)
-            registration_results[func_name] = error_msg
-
-    # PORTMANTEAU HELP SYSTEM - Consolidated help operations
-    # Single comprehensive help tool replacing 10+ individual help tools
-    portmanteau_help_tools = [
-        ("portmanteau_help", "register_llm_help_tools"),  # Portmanteau help tool
-    ]
-
-    logger.info("Registering portmanteau help system...")
-    for module_name, func_name in portmanteau_help_tools:
-        try:
-            register_func = safe_import_tool_module(module_name, func_name)
-            if register_func:
-                # Pass register_individual_tools=False to disable individual help tools
-                mcp = register_func(mcp, register_individual_tools=False)
-                registration_results[func_name] = True
-                logger.info(f"Successfully registered portmanteau help tool: {func_name}")
-            else:
-                registration_results[func_name] = "Import failed"
-                logger.warning(f"Failed to import portmanteau help tool: {func_name}")
-        except Exception as e:
-            error_msg = f"Error registering portmanteau help tool {func_name}: {e!s}"
-            logger.error(error_msg, exc_info=True)
-            registration_results[func_name] = error_msg
-
-    # PORTMANTEAU GPU SYSTEM - Consolidated GPU operations
-    # Single comprehensive GPU tool replacing 4+ individual GPU tools
-    portmanteau_gpu_tools = [
-        ("gpu_manager", "register_gpu_manager_tools"),  # Portmanteau GPU tool
-    ]
-
-    logger.info("Registering portmanteau GPU system...")
-    for module_name, func_name in portmanteau_gpu_tools:
-        try:
-            register_func = safe_import_tool_module(module_name, func_name)
-            if register_func:
-                # Pass register_individual_tools=False to disable individual GPU tools
-                mcp = register_func(mcp, register_individual_tools=False)
-                registration_results[func_name] = True
-                logger.info(f"Successfully registered portmanteau GPU tool: {func_name}")
-            else:
-                registration_results[func_name] = "Import failed"
-                logger.warning(f"Failed to import portmanteau GPU tool: {func_name}")
-        except Exception as e:
-            error_msg = f"Error registering portmanteau GPU tool {func_name}: {e!s}"
             logger.error(error_msg, exc_info=True)
             registration_results[func_name] = error_msg
 

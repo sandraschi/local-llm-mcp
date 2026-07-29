@@ -100,7 +100,9 @@ def register_llm_ollama_tools(mcp):
         logger.error("Cannot register Ollama tools - FastMCP not available")
         return mcp
 
-    @mcp.tool()
+    _MUTATING = {}
+
+    @mcp.tool(annotations=_MUTATING)
     async def llm_ollama_tool(
         operation: str,
         model: str | None = None,

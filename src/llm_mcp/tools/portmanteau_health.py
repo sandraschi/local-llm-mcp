@@ -257,7 +257,9 @@ def register_llm_health_tools(mcp):
         logger.error("Cannot register LLM Health tools - FastMCP not available")
         return mcp
 
-    @mcp.tool()
+    _MUTATING = {}
+
+    @mcp.tool(annotations=_MUTATING)
     async def llm_health_tool(
         operation: str,
         detail: int = 1,

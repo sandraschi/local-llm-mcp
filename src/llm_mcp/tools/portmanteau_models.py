@@ -190,7 +190,9 @@ def register_llm_models_tools(mcp):
         logger.error("Cannot register LLM Models tools - FastMCP not available")
         return mcp
 
-    @mcp.tool()
+    _MUTATING = {}
+
+    @mcp.tool(annotations=_MUTATING)
     async def llm_models_tool(
         operation: str,
         model_id: str | None = None,

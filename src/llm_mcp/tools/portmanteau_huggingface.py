@@ -470,7 +470,9 @@ def register_llm_huggingface_tools(mcp):
         logger.error("Cannot register Hugging Face tools - FastMCP not available")
         return mcp
 
-    @mcp.tool()
+    _MUTATING = {}
+
+    @mcp.tool(annotations=_MUTATING)
     async def llm_huggingface_tool(
         operation: str,
         model_id: str | None = None,

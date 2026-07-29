@@ -152,7 +152,9 @@ def register_llm_multimodal_tools(mcp):
         logger.error("Cannot register LLM Multimodal tools - FastMCP not available")
         return mcp
 
-    @mcp.tool()
+    _MUTATING = {}
+
+    @mcp.tool(annotations=_MUTATING)
     async def llm_multimodal_tool(
         operation: str,
         image: str | None = None,

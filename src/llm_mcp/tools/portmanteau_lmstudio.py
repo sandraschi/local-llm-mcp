@@ -184,7 +184,9 @@ def register_llm_lmstudio_tools(mcp):
         logger.error("Cannot register LM Studio tools - FastMCP not available")
         return mcp
 
-    @mcp.tool()
+    _MUTATING = {}
+
+    @mcp.tool(annotations=_MUTATING)
     async def llm_lmstudio_tool(
         operation: str,
         model_path: str | None = None,

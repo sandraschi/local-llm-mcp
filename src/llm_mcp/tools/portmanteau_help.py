@@ -143,7 +143,9 @@ async def llm_help_tool(
 def register_llm_help_tools(mcp):
     """Register the Help Portmanteau tool with the MCP server."""
 
-    @mcp.tool()
+    _READ_ONLY = {"readonly": True}
+
+    @mcp.tool(annotations=_READ_ONLY)
     async def llm_help_tool_portmanteau(
         operation: str,
         detail: int = 1,

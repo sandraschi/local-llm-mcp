@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] - 2026-07-29
+
+### Added
+- **RAG as a Service**: Optional LanceDB vector store with sentence-transformers embeddings.
+  `POST /api/v1/rag/ingest`, `GET /api/v1/rag/search`, `DELETE /api/v1/rag/clear`.
+  Opt-in via `uv sync --extra rag`. Returns 501 gracefully when deps missing.
+  Includes `skills/rag-expert/SKILL.md` with usage recipes and cross-repo examples.
+- **Settings LLM provider detection**: Auto-probes Ollama, LM Studio, vLLM via backend health.
+  Shows Detected/Not found per provider with model count. Active provider and model
+  selectors persist to localStorage per WEBAPP_SOTA_STANDARDS.md §VI.
+- **Dashboard hero section**: Oversized brand header with live status chips
+  (model count, server version, uptime). Real GPU telemetry (RTX 4090 VRAM used/total).
+  `data-testid` attributes on all KPIs.
+
+### Fixed
+- **Models endpoint**: `/api/v1/models` now auto-discovers Ollama/LM Studio models by
+  direct probe when ModelService registry is empty — returns 20+ real model names instead of `[]`.
+- **Chat generation**: `POST /api/v1/generate` with provider="ollama" no longer returns
+  "Provider not found". Falls back to calling Ollama's `/api/chat` directly.
+- **API config URLs**: `getConfig()`/`updateConfig()` now hit `/api/v1/config` (was `/config` — 404).
+- **GPU telemetry**: Fixed type mapping so dashboard shows real GPU name and VRAM usage,
+  not "—".
+- **TypeScript build**: Fixed `vision.tsx` missing imports, `Logging.tsx` useRef arg,
+  `chat.tsx` unused variable. `tsc --noEmit` and `bun run build` both clean.
+
 ## [1.2.2] - 2026-07-29
 
 ### Added

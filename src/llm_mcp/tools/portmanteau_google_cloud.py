@@ -648,7 +648,9 @@ def register_llm_google_cloud_tools(mcp):
         logger.warning("Google Cloud AI not available - skipping Google Cloud tools")
         return mcp
 
-    @mcp.tool()
+    _MUTATING = {}
+
+    @mcp.tool(annotations=_MUTATING)
     async def llm_google_cloud_tool(
         operation: str,
         model_id: str | None = None,

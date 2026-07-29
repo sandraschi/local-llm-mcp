@@ -180,7 +180,13 @@ async def create_mcp_server_sync() -> FastMCP | None:
                             pass
 
             # Add health check tool
-            @mcp.tool(name="health_check", description="Check the health of the MCP server and list available tools.")
+            _READ_ONLY = {"readonly": True}
+
+            @mcp.tool(
+                name="health_check",
+                annotations=_READ_ONLY,
+                description="Check the health of the MCP server and list available tools.",
+            )
             async def health_check(verbose: bool = False) -> dict[str, Any]:
                 """Check the health of the MCP server."""
                 response = {

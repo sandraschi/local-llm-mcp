@@ -72,6 +72,12 @@ models/
 # Mypy
 .mypy_cache/
 
+# Assessment / ghaudit reports
+reports/
+*.bak
+*.bak.*
+justfile.bak*
+
 # Coverage reports
 htmlcov/
 .coverage

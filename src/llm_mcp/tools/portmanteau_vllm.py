@@ -105,7 +105,9 @@ def register_llm_vllm_tools(mcp):
         logger.error("Cannot register vLLM tools - FastMCP not available")
         return mcp
 
-    @mcp.tool()
+    _MUTATING = {}
+
+    @mcp.tool(annotations=_MUTATING)
     async def llm_vllm_tool(
         operation: str,
         model_name: str | None = None,

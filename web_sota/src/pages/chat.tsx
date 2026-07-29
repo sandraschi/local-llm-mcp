@@ -91,7 +91,6 @@ function loadHistory(): Message[] {
 }
 
 export function Chat() {
-  const _modelSelectId = useRef(`model-select-${Math.random().toString(36).substr(2, 9)}`).current;
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedProvider, setSelectedProvider] = useState<string | undefined>();
@@ -153,7 +152,6 @@ export function Chat() {
       .catch(() => setModels([]));
   }, [selectedModel]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Trigger scroll on message/loading updates
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
@@ -286,7 +284,7 @@ export function Chat() {
       </div>
 
       {/* Personality pills */}
-      <div className="flex flex-wrap gap-2">
+      <div data-testid="personality-select" className="flex flex-wrap gap-2">
         <span className="text-xs text-slate-500 self-center mr-1">Personality</span>
         {PERSONALITIES.map((p) => (
           <button
@@ -352,6 +350,7 @@ export function Chat() {
                       {group.prompts.map((p) => (
                         <button
                           key={p}
+                          type="button"
                           onClick={() => setInput(p)}
                           className="text-xs px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 text-slate-400 hover:text-slate-200 transition-colors text-left"
                         >
