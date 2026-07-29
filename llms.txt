@@ -1,36 +1,40 @@
 # local-llm-mcp
 
-Unified MCP server for local (Ollama, LM Studio) and cloud LLM providers with 28 gateway providers, SOTA portmanteau tools, and a web dashboard.
+Production-grade FastMCP 3.4.4+ server for local/cloud LLMs. 12 portmanteau tools, 28 gateway providers, SOTA web dashboard.
 
 > Full reference: [llms-full.txt](llms-full.txt)
 
 ## Key Capabilities
-- **Provider hardening**: Unified health service with circuit breaker, 3s timeout, Docker port conflict detection
-- **Local providers**: Ollama (11434), LM Studio (1234) — connection retry with backoff, structured error types
-- **28 gateway providers**: Anthropic, OpenAI, Gemini, DeepSeek, Groq, Claude, xAI, Mistral, OpenRouter, etc.
-- **Health endpoints**: `GET /api/v1/health`, `GET /api/v1/diagnostics`, `GET /v1/gateway/providers/health`
-- **Portmanteau MCP tools**: `llm_health`, `llm_models`, `llm_generation`, `llm_multimodal`, `llm_finetuning`
-- **Web dashboard**: Vite/React on 10832, FastAPI backend on 10833
+- **12 portmanteau tools**: health, models, generation, multimodal, finetuning, ollama, lmstudio, vllm, huggingface, google_cloud, gpu, help
+- **AI Gateway**: OpenAI-compatible `/v1/chat/completions` routing to 28 providers
+- **Provider Health Service**: Circuit breaker, 60s cache, LM Link probes
+- **Web dashboard**: React 19 / Vite 6 on 10832, FastAPI backend on 10833
+- **LM Link**: Tailscale-powered remote LLM access via `llm_lmstudio(operation="link_status")`
+- **Session context injection**: Claude Code, Cursor, Windsurf, Copilot, OpenCode
 
 ## Quick Start
-```bash
-just
-# or manual: uv sync && uv run llm-mcp
+```powershell
+just bootstrap && just serve
 ```
 
 ## Ports
 | Port | Service |
 |------|---------|
-| 10832 | Dashboard frontend (Vite) |
-| 10833 | Dashboard API (FastAPI) |
-| 11434 | Ollama (external dep) |
-| 1234 | LM Studio (external dep) |
+| 10832 | Dashboard frontend |
+| 10833 | API + MCP HTTP + Gateway |
+| 11434 | Ollama |
+| 1234 | LM Studio |
+
+## Core Tool Invocations
+- `llm_health(operation="provider_check")` — probe all providers
+- `llm_models(operation="list_models")` — discover models
+- `llm_lmstudio(operation="link_status")` — LM Link remote peers
+- `llm_generation(operation="generate_text", model="...", prompt="...")` — generate text
+- `llm_health(operation="shutdown", confirm=True)` — graceful shutdown
 
 ## Docs
 - [README](README.md)
 - [CHANGELOG](CHANGELOG.md)
 - [llms-full.txt](llms-full.txt)
-
-## Configuration
 - [pyproject.toml](pyproject.toml)
 - [.env.example](.env.example)
