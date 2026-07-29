@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-07-29
+
+### Added
+- **CORS hardening**: Added `allow_origin_regex` for Tailscale/LAN IPs per fleet standard
+- **Session context injection**: `.claude-plugin/plugin.json` + `hooks/hooks.json` for Claude Code,
+  `.windsurfrules` for Windsurf, `.github/copilot-instructions.md` for GitHub Copilot
+- **Self-termination MCP tool**: `llm_health(operation="shutdown", confirm=True)` for graceful shutdown
+- **Automated error logging**: `_error_response()` helper in `tool_utils.py` with `logger.exception()` auto-logging
+
+### Fixed
+- **Pydantic v2 migration**: Replaced all deprecated `.dict()` calls with `.model_dump()` (6 files)
+- **Bare `except:` in Ollama provider**: Changed to `except Exception` with proper logging
+- **Port zombie clearing**: `start.ps1` now clears port 10833 before binding with readiness poll
+- **Line length violations**: Fixed E501 in `mcp_servers.py`
+
 ## [1.2.1] - 2026-07-06
 
 ### Added

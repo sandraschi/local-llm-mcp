@@ -1,28 +1,20 @@
-﻿
-# Synchronize deps, pre-commit hooks, and web frontend
+set windows-shell := ["powershell.exe", "-NoProfile", "-Command"]
+
 bootstrap:
     uv sync --extra dev --group dev
     uv run pre-commit install
     Set-Location web_sota; npm ci; if ($LASTEXITCODE -ne 0) { npm install }
     Write-Host "Pre-commit hooks installed." -ForegroundColor Green
-set windows-shell := ["powershell.exe", "-NoProfile", "-Command"]
 
-# â”€â”€ Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-# Open the interactive recipe dashboard in the browser
 default:
     @powershell.exe -NoProfile -ExecutionPolicy Bypass -File ../mcp-central-docs/scripts/just-dashboard.ps1 -Path .
 
-# â”€â”€ Quality â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-# Execute Ruff SOTA v13.1 linting
 lint:
     Set-Location '{{justfile_directory()}}'
     uv run ruff check .
     Set-Location '{{justfile_directory()}}\web_sota'
     npx @biomejs/biome ci .
 
-# Execute Ruff SOTA v13.1 fix and formatting
 fix:
     Set-Location '{{justfile_directory()}}'
     uv run ruff check . --fix --unsafe-fixes
@@ -30,15 +22,27 @@ fix:
     Set-Location '{{justfile_directory()}}\web_sota'
     npx @biomejs/biome check --write .
 
-# â”€â”€ Hardening â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+fmt: fix
 
-# Execute Bandit security audit
+test:
+    Set-Location '{{justfile_directory()}}'
+    uv run pytest tests/ -q
+
+serve:
+    Set-Location '{{justfile_directory()}}'
+    uv run python -m llm_mcp
+
+certify: lint test
+
+mcpb-pack:
+    Set-Location '{{justfile_directory()}}'
+    Write-Host "Building MCPB bundle..." -ForegroundColor Yellow
+    uv run mcpb pack . dist/local-llm-mcp-v1.2.2.mcpb
+
 check-sec:
     Set-Location '{{justfile_directory()}}'
     uv run bandit -r src/
 
-# Execute safety audit of dependencies
 audit-deps:
     Set-Location '{{justfile_directory()}}'
     uv run safety check
-

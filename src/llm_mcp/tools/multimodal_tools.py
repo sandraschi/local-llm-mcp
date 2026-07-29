@@ -229,7 +229,7 @@ def register_multimodal_tools(mcp):
             Dictionary with analysis results
         """
         result = await multimodal_tools.analyze_image(image, model_name=model_name)
-        return result.dict()
+        return result.model_dump()
 
     @mcp.tool()
     async def generate_image(

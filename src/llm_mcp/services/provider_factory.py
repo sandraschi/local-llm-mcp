@@ -129,4 +129,4 @@ from ..config import Config
 
 # Initialize with default config
 _config = Config.load()
-_provider_factory = ProviderFactory(_config.dict())
+_provider_factory = ProviderFactory(_config.model_dump())

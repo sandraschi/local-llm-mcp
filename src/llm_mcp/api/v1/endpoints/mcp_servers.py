@@ -81,7 +81,8 @@ async def create_mcp_server(server: MCPServerCreate) -> MCPServer:
         if server.enabled:
             await mcp_server_manager.start_server(server.name)
 
-        return MCPServer(**created.dict(), status=ServerStatus.RUNNING if server.enabled else ServerStatus.STOPPED)
+        status = ServerStatus.RUNNING if server.enabled else ServerStatus.STOPPED
+        return MCPServer(**created.model_dump(), status=status)
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
@@ -110,7 +111,7 @@ async def get_mcp_server(server_name: str) -> MCPServer:
         status_info = await mcp_server_manager.get_server_status(server_name)
 
         return MCPServer(
-            **server.dict(),
+            **server.model_dump(),
             status=ServerStatus.RUNNING if status_info.get("status") == "running" else ServerStatus.STOPPED,
         )
 
@@ -141,7 +142,7 @@ async def update_mcp_server(server_name: str, server_update: MCPServerUpdate) ->
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"MCP server '{server_name}' not found")
 
         # Update fields
-        update_data = server_update.dict(exclude_unset=True)
+        update_data = server_update.model_dump(exclude_unset=True)
 
         # Handle server restart if enabled status changed
         was_enabled = current.enabled
@@ -160,7 +161,7 @@ async def update_mcp_server(server_name: str, server_update: MCPServerUpdate) ->
         status_info = await mcp_server_manager.get_server_status(server_name)
 
         return MCPServer(
-            **updated.dict(),
+            **updated.model_dump(),
             status=ServerStatus.RUNNING if status_info.get("status") == "running" else ServerStatus.STOPPED,
         )
 

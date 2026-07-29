@@ -3,12 +3,15 @@
 This module provides integration with Ollama's local LLM service.
 """
 
+import logging
 from collections.abc import AsyncGenerator
 from typing import Any
 
 import httpx
 
 from ..base import BaseProvider
+
+logger = logging.getLogger(__name__)
 
 
 class OllamaProvider(BaseProvider):
@@ -181,5 +184,5 @@ class OllamaProvider(BaseProvider):
             import asyncio
 
             asyncio.create_task(self.close())
-        except:
-            pass
+        except Exception:
+            logger.exception("Failed to schedule ollama close task")

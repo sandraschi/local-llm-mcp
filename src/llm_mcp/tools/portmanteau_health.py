@@ -4,6 +4,8 @@ This tool consolidates all health, monitoring, system, and server management ope
 into a single interface following the portmanteau pattern from Advanced Memory MCP.
 """
 
+import os
+import signal
 from typing import Any
 
 from llm_mcp.tools.help_tools import _get_tool_help_impl, _get_tool_signature_impl, _list_tools_impl, _search_tools_impl
@@ -45,6 +47,7 @@ async def llm_health(
     # Log operations
     logger_name: str = "",
     level: str = "INFO",
+    confirm: bool = False,
 ) -> dict[str, Any]:
     """Comprehensive health and system management tool for Local LLM MCP server.
 
@@ -68,6 +71,7 @@ async def llm_health(
     - get_metric_stats: Get metric statistics (requires name, optional tags/since_minutes)
     - set_log_level: Set logging level (logger_name, level)
     - collect_metrics: Collect current system metrics
+    - shutdown: Gracefully shut down the MCP server (requires confirm=True)
 
     Args:
         operation: Operation to perform (see SUPPORTED OPERATIONS above)
@@ -206,6 +210,17 @@ async def llm_health(
         elif operation == "collect_metrics":
             return await collect_system_metrics()
 
+        elif operation == "shutdown":
+            if not confirm:
+                return {
+                    "success": False,
+                    "error": "confirm=True required for shutdown operation",
+                    "error_type": "validation",
+                }
+            logger.warning("Shutdown requested via MCP tool")
+            os.kill(os.getpid(), signal.SIGTERM)
+            return {"success": True, "message": "Server shutdown initiated"}
+
         else:
             return {
                 "error": f"Unknown operation: {operation}",
@@ -224,6 +239,7 @@ async def llm_health(
                     "get_metric_stats",
                     "set_log_level",
                     "collect_metrics",
+                    "shutdown",
                 ],
             }
 
@@ -252,6 +268,7 @@ def register_llm_health_tools(mcp):
         tags: dict[str, str] | None = None,
         logger_name: str = "",
         level: str = "INFO",
+        confirm: bool = False,
     ) -> dict[str, Any]:
         """LLM Health Portmanteau Tool - Consolidated health, monitoring, and system operations.
 
@@ -273,6 +290,7 @@ def register_llm_health_tools(mcp):
         - get_metric_stats: Get metric statistics
         - set_log_level: Set logging level
         - collect_metrics: Collect system metrics
+        - shutdown: Gracefully shut down the MCP server (requires confirm=True)
         """
         return await llm_health(
             operation=operation,
@@ -284,6 +302,7 @@ def register_llm_health_tools(mcp):
             tags=tags,
             logger_name=logger_name,
             level=level,
+            confirm=confirm,
         )
 
     logger.info("Registered LLM Health portmanteau tool")

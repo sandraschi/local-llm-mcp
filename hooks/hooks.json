@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "SessionStart": [{
+      "matcher": "",
+      "hooks": [{
+        "type": "text",
+        "text": "## Session Context (Local LLM MCP)\n\nYou have access to Local LLM MCP with 8 portmanteau tools for managing local and cloud LLMs: model discovery, text generation, embeddings, multimodal, fine-tuning, GPU telemetry, and LM Studio management with LM Link peer discovery.\n\n**Before starting work:**\n1. Check which providers are reachable: `llm_health(operation=\"provider_check\")`\n2. List available models: `llm_models(operation=\"list_models\")`\n3. Check LM Link for remote LLM peers: `llm_lmstudio(operation=\"link_status\")`\n\n**At end of work:**\n- Unload models you loaded if no longer needed: `llm_lmstudio(operation=\"unload_model\", model_name=\"...\")`\n- Verify provider health: `llm_health(operation=\"provider_check\")`"
+      }]
+    }]
+  }
+}

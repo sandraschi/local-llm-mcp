@@ -1,0 +1,40 @@
+# Central Documentation Rules
+
+## Rule #1: Read Central Docs First
+
+**BEFORE making any changes or starting work, ALWAYS:**
+
+1. **Read the Central Documentation README:**
+   - Location: `D:\Dev\repos\mcp-central-docs\README.md`
+   - This shows all important documentation "branches" (folder trees)
+   - Navigate from there to find specific information
+
+2. **Follow Documentation Branches:**
+   - Central docs are organized by topic (Anthropic ecosystem, Google ecosystem, patterns, projects, etc.)
+   - Each branch has its own README explaining what's inside
+   - Use the branch structure to find relevant docs
+
+3. **Check for Existing Patterns:**
+   - Look in `docs/patterns/` for design patterns
+   - Check `templates/` for reusable templates
+   - Review `docs/projects/` for similar project examples
+
+4. **Avoid Duplication:**
+   - Search existing docs before creating new ones
+   - Update existing docs rather than creating duplicates
+   - Reference central docs instead of copying content
+
+---
+
+## Session Context (Local LLM MCP)
+
+You have access to Local LLM MCP with 8 portmanteau tools for managing local and cloud LLMs: model discovery, text generation, embeddings, multimodal, fine-tuning, GPU telemetry, and LM Studio management with LM Link peer discovery.
+
+**Before starting work:**
+1. Check which providers are reachable: `llm_health(operation="provider_check")`
+2. List available models: `llm_models(operation="list_models")`
+3. Check LM Link for remote LLM peers: `llm_lmstudio(operation="link_status")`
+
+**At end of work:**
+- Unload models you loaded if no longer needed: `llm_lmstudio(operation="unload_model", model_name="...")`
+- Verify provider health: `llm_health(operation="provider_check")`

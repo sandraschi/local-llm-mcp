@@ -1,0 +1,6 @@
+{
+  "name": "local-llm-mcp",
+  "version": "1.2.1",
+  "description": "Local LLM inference and model orchestration — Ollama, vLLM, LM Studio, gateway to 28 providers",
+  "hooks": "../hooks/hooks.json"
+}

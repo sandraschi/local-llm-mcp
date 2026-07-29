@@ -67,7 +67,7 @@ class MCPServerManager:
             os.makedirs(config_dir, exist_ok=True)
 
             with open(self.config_path, "w") as f:
-                json.dump({name: server.dict() for name, server in self.servers.items()}, f, indent=2)
+                json.dump({name: server.model_dump() for name, server in self.servers.items()}, f, indent=2)
         except Exception as e:
             logger.error(f"Failed to save MCP server configurations: {e}")
             raise
@@ -103,7 +103,7 @@ class MCPServerManager:
             raise ValueError(f"Server with name '{name}' not found")
 
         # Update only the provided fields
-        current = self.servers[name].dict()
+        current = self.servers[name].model_dump()
         updated_config = {**current, **{k: v for k, v in config.items() if v is not None}}
         self.servers[name] = MCPServerConfig(**updated_config)
         self._save_servers()
