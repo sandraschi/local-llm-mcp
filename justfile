@@ -46,3 +46,11 @@ check-sec:
 audit-deps:
     Set-Location '{{justfile_directory()}}'
     uv run safety check
+
+# Run CUA-NSIS smoke test (install -> launch -> nav walk -> uninstall)
+cua-nsis-test:
+    powershell.exe -NoProfile -File "{{justfile_directory()}}\scripts\just\cua-nsis-test.ps1"
+
+# Run CUA webapp test (pre-Tauri: start.ps1 stack + nav walk in browser)
+cua-webapp-test:
+    powershell.exe -NoProfile -File "{{justfile_directory()}}\scripts\just\cua-webapp-test.ps1"
