@@ -198,14 +198,14 @@ def test_api_endpoints():
     assert created_server["name"] == server_name
 
     # Test getting the server
-    response = client.get("/api/v1/mcp/mcp-servers/test_api_server")
+    response = client.get(f"/api/v1/mcp/mcp-servers/{server_name}")
     assert response.status_code == 200
     server = response.json()
-    assert server["name"] == "test_api_server"
+    assert server["name"] == server_name
 
     # Test updating the server
     update_data = {"description": "Updated description"}
-    response = client.put("/api/v1/mcp/mcp-servers/test_api_server", json=update_data)
+    response = client.put(f"/api/v1/mcp/mcp-servers/{server_name}", json=update_data)
     assert response.status_code == 200
     updated_server = response.json()
     assert updated_server["description"] == "Updated description"
@@ -215,19 +215,19 @@ def test_api_endpoints():
         "llm_mcp.services.mcp_server_manager.MCPServerManager.start_server", new_callable=AsyncMock
     ) as mock_start:
         mock_start.return_value = True
-        response = client.post("/api/v1/mcp/mcp-servers/test_api_server/start")
+        response = client.post(f"/api/v1/mcp/mcp-servers/{server_name}/start")
         assert response.status_code == 200
         assert response.json()["success"] is True
 
     # Test stopping the server
     with patch("llm_mcp.services.mcp_server_manager.MCPServerManager.stop_server", new_callable=AsyncMock) as mock_stop:
         mock_stop.return_value = True
-        response = client.post("/api/v1/mcp/mcp-servers/test_api_server/stop")
+        response = client.post(f"/api/v1/mcp/mcp-servers/{server_name}/stop")
         assert response.status_code == 200
         assert response.json()["success"] is True
 
     # Test getting server status
-    response = client.get("/api/v1/mcp/mcp-servers/test_api_server/status")
+    response = client.get(f"/api/v1/mcp/mcp-servers/{server_name}/status")
     assert response.status_code == 200
     status_info = response.json()
     assert "status" in status_info
