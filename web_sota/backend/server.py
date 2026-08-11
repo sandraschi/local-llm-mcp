@@ -1,11 +1,14 @@
 """FastAPI backend with logging support."""
-import sys
-from pathlib import Path
+
 from contextlib import asynccontextmanager
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from web_sota.backend.routes.logging import router as logging_router
+
 from web_sota.backend.log_buffer import activity_log
+from web_sota.backend.routes.logging import router as logging_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -15,6 +18,7 @@ async def lifespan(app: FastAPI):
     activity_log.start_file_watch(log_dir / "server.log")
     activity_log.info("server", "Server started")
     yield
+
 
 app = FastAPI(title="Local LLM MCP", lifespan=lifespan)
 app.add_middleware(
@@ -33,11 +37,14 @@ app.add_middleware(
 )
 app.include_router(logging_router)
 
+
 @app.get("/health")
 @app.get("/api/health")
 async def health():
     return {"status": "ok", "server": "Local LLM MCP", "version": "0.1.0"}
 
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+
+    uvicorn.run(app, host="127.0.0.1", port=10833)

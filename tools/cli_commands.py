@@ -22,6 +22,7 @@ class CommandCategory(Enum):
 @dataclass
 class Command:
     """Represents a CLI command with handler and metadata."""
+
     name: str
     aliases: list[str]
     handler: Callable[..., Awaitable[None]]
@@ -51,7 +52,7 @@ class CommandProcessor:
                 handler=self.cmd_help,
                 description="Show this help message",
                 usage="/help [command]",
-                category=CommandCategory.GENERAL
+                category=CommandCategory.GENERAL,
             ),
             Command(
                 name="exit",
@@ -59,7 +60,7 @@ class CommandProcessor:
                 handler=self.cmd_exit,
                 description="Exit the chat terminal",
                 usage="/exit",
-                category=CommandCategory.GENERAL
+                category=CommandCategory.GENERAL,
             ),
             Command(
                 name="status",
@@ -67,9 +68,8 @@ class CommandProcessor:
                 handler=self.cmd_status,
                 description="Show current status and configuration",
                 usage="/status",
-                category=CommandCategory.GENERAL
+                category=CommandCategory.GENERAL,
             ),
-
             # Conversation commands
             Command(
                 name="clear",
@@ -77,7 +77,7 @@ class CommandProcessor:
                 handler=self.cmd_clear,
                 description="Clear the conversation history",
                 usage="/clear",
-                category=CommandCategory.CONVERSATION
+                category=CommandCategory.CONVERSATION,
             ),
             Command(
                 name="search",
@@ -85,9 +85,8 @@ class CommandProcessor:
                 handler=self.cmd_search,
                 description="Search through conversation history",
                 usage="/search <query>",
-                category=CommandCategory.CONVERSATION
+                category=CommandCategory.CONVERSATION,
             ),
-
             # Configuration commands
             Command(
                 name="config",
@@ -95,7 +94,7 @@ class CommandProcessor:
                 handler=self.cmd_config,
                 description="View or modify configuration",
                 usage="/config [key] [value]",
-                category=CommandCategory.CONFIGURATION
+                category=CommandCategory.CONFIGURATION,
             ),
             Command(
                 name="provider",
@@ -103,7 +102,7 @@ class CommandProcessor:
                 handler=self.cmd_provider,
                 description="Set or show the current LLM provider",
                 usage="/provider [name]",
-                category=CommandCategory.CONFIGURATION
+                category=CommandCategory.CONFIGURATION,
             ),
             Command(
                 name="model",
@@ -112,9 +111,8 @@ class CommandProcessor:
                 description="Set or show the current model",
                 usage="/model [name]",
                 category=CommandCategory.CONFIGURATION,
-                requires_provider=True
+                requires_provider=True,
             ),
-
             # Persona commands
             Command(
                 name="persona",
@@ -122,7 +120,7 @@ class CommandProcessor:
                 handler=self.cmd_persona,
                 description="Set or show the current persona",
                 usage="/persona [name]",
-                category=CommandCategory.PERSONAS
+                category=CommandCategory.PERSONAS,
             ),
             Command(
                 name="personas",
@@ -130,9 +128,8 @@ class CommandProcessor:
                 handler=self.cmd_personas,
                 description="List all available personas",
                 usage="/personas",
-                category=CommandCategory.PERSONAS
+                category=CommandCategory.PERSONAS,
             ),
-
             # System commands
             Command(
                 name="reload",
@@ -140,7 +137,7 @@ class CommandProcessor:
                 handler=self.cmd_reload,
                 description="Reload configuration and personas",
                 usage="/reload",
-                category=CommandCategory.SYSTEM
+                category=CommandCategory.SYSTEM,
             ),
             Command(
                 name="debug",
@@ -149,8 +146,8 @@ class CommandProcessor:
                 description="Toggle debug mode",
                 usage="/debug",
                 category=CommandCategory.SYSTEM,
-                hidden=True
-            )
+                hidden=True,
+            ),
         ]
 
         # Register all commands
@@ -161,7 +158,7 @@ class CommandProcessor:
 
     async def process_command(self, input_text: str) -> bool:
         """Process a command and return True if it was a command."""
-        if not input_text.startswith('/'):
+        if not input_text.startswith("/"):
             return False
 
         # Parse command and arguments
@@ -193,6 +190,7 @@ class CommandProcessor:
         except Exception as e:
             print(f"{Colors.RED}Error executing command: {e}{Colors.ENDC}")
             import traceback
+
             traceback.print_exc()
 
         return True
@@ -251,7 +249,7 @@ class CommandProcessor:
 
         print(f"\n{Colors.BOLD}Configuration:{Colors.ENDC}")
         for field in self.terminal.chat_config.__dataclass_fields__:
-            if field.startswith('_'):
+            if field.startswith("_"):
                 continue
             value = getattr(self.terminal.chat_config, field)
             print(f"  {field}: {value}")
@@ -267,7 +265,7 @@ class CommandProcessor:
             print(f"{Colors.YELLOW}Usage: /search <query>{Colors.ENDC}")
             return
 
-        query = ' '.join(args)
+        query = " ".join(args)
         results = self.terminal.search_history(query)
 
         if not results:
@@ -288,7 +286,7 @@ class CommandProcessor:
             # Show all config
             print(f"{Colors.HEADER}Current Configuration:{Colors.ENDC}")
             for field in self.terminal.chat_config.__dataclass_fields__:
-                if field.startswith('_'):
+                if field.startswith("_"):
                     continue
                 value = getattr(self.terminal.chat_config, field)
                 print(f"  {field}: {value}")
@@ -307,7 +305,7 @@ class CommandProcessor:
 
         if len(args) >= 2:
             # Set value
-            key, value_str = args[0], ' '.join(args[1:])
+            key, value_str = args[0], " ".join(args[1:])
             if not hasattr(self.terminal.chat_config, key):
                 print(f"{Colors.RED}Unknown configuration key: {key}{Colors.ENDC}")
                 return
@@ -316,7 +314,7 @@ class CommandProcessor:
             current_value = getattr(self.terminal.chat_config, key)
             try:
                 if isinstance(current_value, bool):
-                    value = value_str.lower() in ('true', 'yes', 'y', '1')
+                    value = value_str.lower() in ("true", "yes", "y", "1")
                 elif isinstance(current_value, int):
                     value = int(value_str)
                 elif isinstance(current_value, float):
@@ -378,8 +376,7 @@ class CommandProcessor:
         model_name = args[0]
         if model_name not in available_models:
             print(
-                f"{Colors.RED}Unknown model: {model_name}. "
-                f"Available models: {', '.join(available_models)}{Colors.ENDC}"
+                f"{Colors.RED}Unknown model: {model_name}. Available models: {', '.join(available_models)}{Colors.ENDC}"
             )
             return
 
@@ -411,8 +408,7 @@ class CommandProcessor:
         persona_name = args[0]
         if persona_name not in self.terminal.personas:
             print(
-                f"{Colors.RED}Unknown persona: {persona_name}. "
-                f"Use /personas to list available personas.{Colors.ENDC}"
+                f"{Colors.RED}Unknown persona: {persona_name}. Use /personas to list available personas.{Colors.ENDC}"
             )
             return
 
@@ -441,9 +437,10 @@ class CommandProcessor:
     async def cmd_debug(self, args: list[str]) -> None:
         """Toggle debug mode."""
         # This is a hidden command for development
-        self.terminal.debug = not getattr(self.terminal, 'debug', False)
+        self.terminal.debug = not getattr(self.terminal, "debug", False)
         status = "enabled" if self.terminal.debug else "disabled"
         print(f"Debug mode {status}.")
+
 
 # This module can be imported and used like this:
 # processor = CommandProcessor(terminal)

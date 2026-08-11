@@ -36,15 +36,15 @@ from llm_mcp.services.provider_factory import ProviderFactory
 
 # ANSI color codes for terminal output
 class Colors:
-    HEADER = '\033[95m'
-    BLUE = '\033[94m'
-    CYAN = '\033[96m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+    HEADER = "\033[95m"
+    BLUE = "\033[94m"
+    CYAN = "\033[96m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    RED = "\033[91m"
+    ENDC = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
 
 
 class MessageRole(StrEnum):
@@ -56,6 +56,7 @@ class MessageRole(StrEnum):
 @dataclass
 class ChatConfig:
     """Configuration for chat interactions."""
+
     temperature: float = 0.7
     max_tokens: int = 2000
     top_p: float = 1.0
@@ -70,6 +71,7 @@ class ChatConfig:
 @dataclass
 class ChatMessage:
     """A single message in the conversation."""
+
     role: MessageRole
     content: str
     timestamp: datetime = field(default_factory=datetime.now)
@@ -80,28 +82,30 @@ class ChatMessage:
             "role": self.role.value,
             "content": self.content,
             "timestamp": self.timestamp.isoformat(),
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> 'ChatMessage':
+    def from_dict(cls, data: dict[str, Any]) -> "ChatMessage":
         return cls(
             role=MessageRole(data["role"]),
             content=data["content"],
             timestamp=datetime.fromisoformat(data["timestamp"]),
-            metadata=data.get("metadata", {})
+            metadata=data.get("metadata", {}),
         )
 
 
 class Persona:
     """Represents a chat persona with system prompt, rules, and configuration."""
 
-    def __init__(self,
-                 name: str,
-                 description: str = "",
-                 system_prompt: str = "",
-                 rules: list[str] | None = None,
-                 config: dict[str, Any] | None = None):
+    def __init__(
+        self,
+        name: str,
+        description: str = "",
+        system_prompt: str = "",
+        rules: list[str] | None = None,
+        config: dict[str, Any] | None = None,
+    ):
         self.name = name
         self.description = description
         self.system_prompt = system_prompt
@@ -120,17 +124,17 @@ class Persona:
             "description": self.description,
             "system_prompt": self.system_prompt,
             "rules": self.rules,
-            "config": self.config
+            "config": self.config,
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> 'Persona':
+    def from_dict(cls, data: dict[str, Any]) -> "Persona":
         return cls(
             name=data["name"],
             description=data.get("description", ""),
             system_prompt=data.get("system_prompt", ""),
             rules=data.get("rules", []),
-            config=data.get("config", {})
+            config=data.get("config", {}),
         )
 
     def get_system_messages(self) -> list[dict[str, str]]:
@@ -196,7 +200,7 @@ class Conversation:
     def _update_search_index(self, message: ChatMessage, index: int):
         """Update the search index with a new message."""
         # Simple word-based indexing
-        words = re.findall(r'\b\w+\b', message.content.lower())
+        words = re.findall(r"\b\w+\b", message.content.lower())
         for word in words:
             if word not in self._search_index:
                 self._search_index[word] = []
@@ -204,7 +208,7 @@ class Conversation:
 
     def _remove_from_search_index(self, message: ChatMessage, index: int):
         """Remove a message from the search index."""
-        words = re.findall(r'\b\w+\b', message.content.lower())
+        words = re.findall(r"\b\w+\b", message.content.lower())
         for word in words:
             if word in self._search_index and index in self._search_index[word]:
                 self._search_index[word].remove(index)
@@ -277,14 +281,28 @@ class ChatTerminal:
 
         # Save history on exit
         import atexit
+
         atexit.register(readline.write_history_file, histfile)
 
     def _completer(self, text: str, state: int) -> str | None:
         """Tab completion for commands and history."""
         commands = [
-            "/help", "/exit", "/status", "/provider", "/model", "/persona",
-            "/personas", "/rulebook", "/rulebooks", "/rules", "/clear", "/save",
-            "/search", "/config", "/stream", "/history"
+            "/help",
+            "/exit",
+            "/status",
+            "/provider",
+            "/model",
+            "/persona",
+            "/personas",
+            "/rulebook",
+            "/rulebooks",
+            "/rules",
+            "/clear",
+            "/save",
+            "/search",
+            "/config",
+            "/stream",
+            "/history",
         ]
 
         options = [cmd for cmd in commands if cmd.startswith(text)]
@@ -300,9 +318,7 @@ class ChatTerminal:
 
         # Create a message for the prompt
         user_message = ChatMessage(
-            role=MessageRole.USER,
-            content=prompt,
-            metadata={"provider": self.chat_config.provider or "unknown"}
+            role=MessageRole.USER, content=prompt, metadata={"provider": self.chat_config.provider or "unknown"}
         )
         self.conversation.add_message(user_message)
 
@@ -328,7 +344,7 @@ class ChatTerminal:
                 top_p=self.chat_config.top_p,
                 frequency_penalty=self.chat_config.frequency_penalty,
                 presence_penalty=self.chat_config.presence_penalty,
-                timeout=self.chat_config.timeout
+                timeout=self.chat_config.timeout,
             ):
                 if self._stop_event.is_set():
                     break
@@ -351,8 +367,8 @@ class ChatTerminal:
                         "provider": self.chat_config.provider or "unknown",
                         "model": self.model,
                         "temperature": self.chat_config.temperature,
-                        "tokens": len(response_text.split())  # Approximate
-                    }
+                        "tokens": len(response_text.split()),  # Approximate
+                    },
                 )
                 self.conversation.add_message(assistant_message)
                 self._save_history()
@@ -384,12 +400,12 @@ class ChatTerminal:
             "max_tokens": 2000,
             "default_persona": "assistant",
             "default_rulebook": "default",
-            "history_size": 1000
+            "history_size": 1000,
         }
 
         if os.path.exists(self.config_path):
             try:
-                with open(self.config_path, encoding='utf-8') as f:
+                with open(self.config_path, encoding="utf-8") as f:
                     config = yaml.safe_load(f) or {}
                 # Merge with defaults
                 return {**default_config, **config}
@@ -401,7 +417,7 @@ class ChatTerminal:
     def save_config(self):
         """Save configuration to YAML file."""
         try:
-            with open(self.config_path, 'w', encoding='utf-8') as f:
+            with open(self.config_path, "w", encoding="utf-8") as f:
                 yaml.dump(self.config, f, default_flow_style=False)
         except Exception as e:
             print(f"Error saving config: {e}")
@@ -409,12 +425,13 @@ class ChatTerminal:
     def _save_history(self):
         """Save conversation history to file."""
         try:
-            with open(self.history_path, 'w', encoding='utf-8') as f:
+            with open(self.history_path, "w", encoding="utf-8") as f:
                 json.dump([msg.to_dict() for msg in self.conversation.messages], f, indent=2, default=str)
         except Exception as e:
             if self.debug:
                 print(f"Error saving history: {e}")
                 import traceback
+
                 traceback.print_exc()
 
     def _load_personas(self):
@@ -426,16 +443,16 @@ class ChatTerminal:
             name="assistant",
             description="Helpful AI assistant",
             system_prompt="You are a helpful AI assistant.",
-            rules=["Be helpful and concise.", "Always respond in markdown format."]
+            rules=["Be helpful and concise.", "Always respond in markdown format."],
         )
         self.personas[default_persona.name] = default_persona
 
         # Load custom personas
         if os.path.exists(self.personas_path):
             for filename in os.listdir(self.personas_path):
-                if filename.endswith(('.yaml', '.yml')):
+                if filename.endswith((".yaml", ".yml")):
                     try:
-                        with open(os.path.join(self.personas_path, filename), encoding='utf-8') as f:
+                        with open(os.path.join(self.personas_path, filename), encoding="utf-8") as f:
                             data = yaml.safe_load(f)
                             if data and isinstance(data, dict):
                                 persona = Persona.from_dict(data)
@@ -452,7 +469,7 @@ class ChatTerminal:
         rulebook_path = os.path.join(self.rulebooks_path, f"{name}.yaml")
         if os.path.exists(rulebook_path):
             try:
-                with open(rulebook_path, encoding='utf-8') as f:
+                with open(rulebook_path, encoding="utf-8") as f:
                     data = yaml.safe_load(f)
                     if isinstance(data, list):
                         return data
@@ -466,7 +483,7 @@ class ChatTerminal:
         """Load conversation history from file."""
         try:
             if os.path.exists(self.history_path):
-                with open(self.history_path, encoding='utf-8') as f:
+                with open(self.history_path, encoding="utf-8") as f:
                     history = json.load(f)
                     for msg in history:
                         try:
@@ -475,11 +492,13 @@ class ChatTerminal:
                             if self.debug:
                                 print(f"Error loading message: {e}")
                                 import traceback
+
                                 traceback.print_exc()
         except Exception as e:
             if self.debug:
                 print(f"Error loading history: {e}")
                 import traceback
+
                 traceback.print_exc()
 
     def _add_message(self, role: str, content: str):
@@ -561,7 +580,7 @@ class ChatTerminal:
                 model_id=self.model,
                 messages=messages,
                 temperature=self.config.get("temperature", 0.7),
-                max_tokens=self.config.get("max_tokens", 2000)
+                max_tokens=self.config.get("max_tokens", 2000),
             )
 
             # Add assistant response to history
@@ -583,7 +602,7 @@ class ChatTerminal:
         rulebooks = []
         if os.path.exists(self.rulebooks_path):
             for filename in os.listdir(self.rulebooks_path):
-                if filename.endswith(('.yaml', '.yml')):
+                if filename.endswith((".yaml", ".yml")):
                     rulebooks.append(os.path.splitext(filename)[0])
         return rulebooks
 
@@ -646,14 +665,15 @@ async def main():
                 continue
 
             # Handle commands
-            if user_input.startswith('/'):
+            if user_input.startswith("/"):
                 cmd = user_input[1:].lower().split()
 
                 if not cmd:
                     continue
 
-                if cmd[0] == 'help':
-                    print("""
+                if cmd[0] == "help":
+                    print(
+                        """
 Available commands:
   /help               - Show this help message
   /exit               - Exit the program
@@ -667,16 +687,17 @@ Available commands:
   /rules              - Show active rules
   /clear              - Clear chat history
   /save               - Save current configuration
-                    """.strip())
+                    """.strip()
+                    )
 
-                elif cmd[0] == 'exit':
+                elif cmd[0] == "exit":
                     print("Goodbye!")
                     break
 
-                elif cmd[0] == 'status':
+                elif cmd[0] == "status":
                     print("\n" + terminal.get_status())
 
-                elif cmd[0] == 'provider':
+                elif cmd[0] == "provider":
                     if len(cmd) > 1:
                         provider = cmd[1]
                         if terminal.set_provider(provider):
@@ -686,17 +707,17 @@ Available commands:
                     else:
                         print(f"Current provider: {terminal.config.get('provider', 'None')}")
 
-                elif cmd[0] == 'model':
+                elif cmd[0] == "model":
                     if len(cmd) > 1:
-                        model = ' '.join(cmd[1:])
+                        model = " ".join(cmd[1:])
                         terminal.set_model(model)
                         print(f"Model set to: {model}")
                     else:
                         print(f"Current model: {terminal.config.get('model', 'None')}")
 
-                elif cmd[0] == 'persona':
+                elif cmd[0] == "persona":
                     if len(cmd) > 1:
-                        persona = ' '.join(cmd[1:])
+                        persona = " ".join(cmd[1:])
                         if terminal.set_persona(persona):
                             print(f"Persona set to: {persona}")
                         else:
@@ -704,14 +725,14 @@ Available commands:
                     else:
                         print(f"Current persona: {terminal.active_persona.name if terminal.active_persona else 'None'}")
 
-                elif cmd[0] == 'personas':
+                elif cmd[0] == "personas":
                     print("\nAvailable personas:")
                     for i, persona in enumerate(terminal.list_personas(), 1):
                         print(f"  {i}. {persona}")
 
-                elif cmd[0] == 'rulebook':
+                elif cmd[0] == "rulebook":
                     if len(cmd) > 1:
-                        rulebook = ' '.join(cmd[1:])
+                        rulebook = " ".join(cmd[1:])
                         if terminal.load_rulebook(rulebook):
                             print(f"Loaded rulebook: {rulebook} ({len(terminal.rules)} rules)")
                         else:
@@ -719,7 +740,7 @@ Available commands:
                     else:
                         print("Please specify a rulebook name")
 
-                elif cmd[0] == 'rulebooks':
+                elif cmd[0] == "rulebooks":
                     rulebooks = terminal.list_rulebooks()
                     if rulebooks:
                         print("\nAvailable rulebooks:")
@@ -728,7 +749,7 @@ Available commands:
                     else:
                         print("No rulebooks found.")
 
-                elif cmd[0] == 'rules':
+                elif cmd[0] == "rules":
                     if terminal.rules:
                         print("\nActive rules:")
                         for i, rule in enumerate(terminal.rules, 1):
@@ -736,11 +757,11 @@ Available commands:
                     else:
                         print("No active rules. Use /rulebook to load a rulebook.")
 
-                elif cmd[0] == 'clear':
+                elif cmd[0] == "clear":
                     terminal.messages = []
                     print("Chat history cleared.")
 
-                elif cmd[0] == 'save':
+                elif cmd[0] == "save":
                     terminal.save_config()
                     print("Configuration saved.")
 
@@ -750,7 +771,7 @@ Available commands:
                 continue
 
             # Process regular message
-            print("\n\033[92mAssistant:\033[0m ", end='', flush=True)
+            print("\n\033[92mAssistant:\033[0m ", end="", flush=True)
 
             response = await terminal.chat(user_input)
             print(response)
@@ -761,4 +782,5 @@ Available commands:
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())

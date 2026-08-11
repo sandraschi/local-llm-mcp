@@ -23,8 +23,6 @@ try:
     STRUCTLOG_AVAILABLE = True
 except ImportError:
     STRUCTLOG_AVAILABLE = False
-    # Fallback to basic logging if structlog not available
-    import logging as structlog
 
 # SOTA Logging Configuration
 DEFAULT_LOG_DIR = Path.home() / ".llm_mcp" / "logs"

@@ -36,4 +36,4 @@ class LMStudioConfig(BaseProviderConfig):
         Returns:
             Dictionary representation of the config
         """
-        return self.dict(exclude_unset=True, exclude_none=True)
+        return self.model_dump(exclude_unset=True, exclude_none=True)

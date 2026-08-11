@@ -23,6 +23,18 @@ from enum import Enum
 from typing import Any, Union, get_args, get_origin
 
 
+async def _get_mcp_tools_dict(mcp: Any) -> dict[str, Any]:
+    """Return the MCP tool registry as a name -> tool dict.
+
+    FastMCP 3.x renamed ``get_tools()`` to ``list_tools()``; this helper
+    supports both so the help system works on any FastMCP version.
+    """
+    if hasattr(mcp, "get_tools"):
+        return await _get_mcp_tools_dict(mcp)
+    tools = await mcp.list_tools()
+    return {t.name: t for t in tools}
+
+
 class HelpLevel(Enum):
     """Help detail levels."""
 
@@ -453,7 +465,7 @@ async def _list_tools_impl(mcp: Any, detail: int = 1) -> dict[str, Any]:
     level = HelpLevel(min(max(detail, 0), 4))  # Clamp to valid range
     tools = {}
 
-    mcp_tools = await mcp.get_tools()
+    mcp_tools = await _get_mcp_tools_dict(mcp)
     for name, tool in mcp_tools.items():
         tools[name] = get_comprehensive_tool_info(tool, level)
 
@@ -495,7 +507,7 @@ async def _get_tool_help_impl(mcp: Any, tool_name: str, detail: int = 2) -> dict
         Comprehensive documentation for the tool
     """
     level = HelpLevel(min(max(detail, 0), 4))
-    mcp_tools = await mcp.get_tools()
+    mcp_tools = await _get_mcp_tools_dict(mcp)
 
     for name, tool in mcp_tools.items():
         if name == tool_name:
@@ -536,7 +548,7 @@ async def _search_tools_impl(mcp: Any, query: str, category: str | None = None) 
     matches = []
     search_metadata = {"query": query, "category_filter": category, "total_searched": 0, "matches_found": 0}
 
-    mcp_tools = await mcp.get_tools()
+    mcp_tools = await _get_mcp_tools_dict(mcp)
     search_metadata["total_searched"] = len(mcp_tools)
 
     for name, tool in mcp_tools.items():
@@ -606,7 +618,7 @@ async def _get_tool_signature_impl(mcp: Any, tool_name: str) -> dict[str, Any]:
     Returns:
         Dictionary with detailed tool signature information
     """
-    mcp_tools = await mcp.get_tools()
+    mcp_tools = await _get_mcp_tools_dict(mcp)
 
     for name, tool in mcp_tools.items():
         if name == tool_name:

@@ -121,6 +121,20 @@ Operations: `get_status`, `clear_memory`, `optimize`, `get_health`
 - `clear_memory` frees unused GPU allocations (RTX 4090 optimized)
 - `optimize` adjusts memory fragmentation
 
+### llm_engine — Engine supervision (Ollama + llama.cpp server)
+
+Operations: `status`, `start`, `stop`, `list_models`, `load_model`, `unload_model`
+
+- Supervises both local engines: the Ollama daemon (port 11434) and the native
+  llama.cpp server (server 11439, truncating proxy 11435 - Muse Glimmer 30B)
+- `status` reports processes, ports, health, loaded models, and per-engine VRAM
+- `start`/`stop` launch and kill engine processes (llama server + proxy, or Ollama)
+- `list_models`: Ollama catalog via `/api/tags`, llama server via `/v1/models`
+- `load_model`/`unload_model`: Ollama keep_alive control; for llama the server
+  holds one fixed model, so load = start, unload = stop
+- Process discovery uses PowerShell CIM (psutil enumeration hangs on this machine);
+  Windows-only for process operations
+
 ### llm_help — Tool discovery and documentation
 
 Operations: `list_tools`, `get_tool_help`, `search_tools`, `get_tool_signature`,
@@ -289,6 +303,8 @@ Tool-awareness prompts injected at IDE session start:
 | `llm_generation_tool` | MUTATING | Generates new content |
 | `llm_multimodal_tool` | MUTATING | Generates images |
 | `llm_ollama_tool` | MUTATING | pull/delete/load/unload models |
+| `llm_engine_control_tool` | MUTATING | start/stop engines, load/unload models |
+| `llm_engine_status_tool` | READ_ONLY | engine status: processes, ports, VRAM, loaded models |
 | `llm_lmstudio_tool` | MUTATING | load/unload/eject models |
 | `llm_vllm_tool` | MUTATING | start/stop servers |
 | `llm_huggingface_tool` | MUTATING | Download/cache management |
@@ -325,3 +341,21 @@ ML: torch>=2.4, transformers>=4.44, vllm>=0.8, accelerate, peft, bitsandbytes
 Gateway: openai>=1.35, anthropic>=0.31
 Web: React 19, Vite 6, TailwindCSS 3.4, Lucide React, Framer Motion
 Quality: ruff, biome, pytest, pre-commit
+
+## REST API Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| /health | GET | Liveness probe ({"status": "ok"}) |
+| /api/v1/health | GET | Fleet-standard health: uptime, providers, LM Link |
+| /api/v1/diagnostics | GET | CUA-NSIS diagnostics (tool count, providers, system) |
+| /api/v1/tools | GET | Live MCP tool catalog (dynamic, powers the Tools page) |
+| /api/v1/skills | GET | List server skills (skills/<name>/SKILL.md) |
+| /api/v1/skills/{name} | GET | Raw SKILL.md content |
+| /api/v1/models | GET | Model list from provider registry + direct probes |
+| /api/v1/providers | GET | Provider info |
+| /api/v1/generate | POST | Text generation |
+| /v1/chat/completions | POST | OpenAI-compatible gateway (28 providers) |
+| /v1/gateway/providers | GET | Gateway provider list |
+| /api/v1/config | GET/PATCH | Server configuration |
+| /api/logs | GET/DELETE | Activity log ring buffer (web backend) |

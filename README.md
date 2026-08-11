@@ -7,6 +7,27 @@ Ports:    10832 (dashboard frontend)  10833 (dashboard API + gateway)
 Stack:    FastMCP 3.4.4+  |  FastAPI  |  React 19 + Vite 6 + TailwindCSS
 ```
 
+## Muse Glimmer & Native Engines
+
+> **New to Glimmer?** Read **[docs/GLIMMER.md](docs/GLIMMER.md)** -- the complete
+> guide: what it is, how Meta trained it, benchmarks, DFlash speculative decoding,
+> and how it is operated in this fleet.
+
+The server supervises two local inference engines that share the GPU:
+
+| Port | Service | Notes |
+|------|---------|-------|
+| **11435** | Truncating proxy | Front door for everything (opencode, fleet servers). Trims oversized requests, pins the user message, whitelists tools |
+| **11439** | llama-server | **Muse Glimmer 30B** - Meta's agentic multimodal model (Apache 2.0, 131K ctx, DFlash speculative drafter, ~40 tok/s on RTX 4090) |
+| **11434** | Ollama | Classic stack (Qwen, Gemma, DeepSeek). Not running while Glimmer holds VRAM (~21 GB) |
+
+Why not Ollama for Glimmer: its `kquant` GGUF format is newer than any bundled llama.cpp.
+The fleet compiles llama.cpp from source and runs it natively (see
+`mcp-central-docs/patterns/LLAMA_CPP_NATIVE_MODEL_SERVING.md`).
+
+`config.yaml` declares the `local-llama` provider (OpenAI-compatible
+`http://127.0.0.1:11435/v1`, model `muse-glimmer-30b`, image input, 131K context).
+
 ## Quick Start
 
 ```powershell
@@ -14,9 +35,9 @@ just bootstrap    # install deps + pre-commit hooks
 just serve        # start MCP server (stdio mode)
 ```
 
-## Tool Surface (12 Portmanteau Tools)
+## Tool Surface (13 Portmanteau Tools)
 
-The server consolidates 30+ operations into 12 portmanteau tools:
+The server consolidates 30+ operations into 13 portmanteau tools:
 
 | Tool | Operations | Category |
 |------|-----------|----------|
@@ -31,9 +52,11 @@ The server consolidates 30+ operations into 12 portmanteau tools:
 | `llm_huggingface` | `list_models`, `search_models`, `download_model`, `get_model_details`, `list_datasets` | HuggingFace |
 | `llm_google_cloud` | `generate_text`, `list_models`, `generate_content`, `embed_text` | Cloud |
 | `llm_gpu` | `get_status`, `clear_memory`, `optimize`, `get_health` | GPU |
+| `llm_engine` | `status`, `start`, `stop`, `list_models`, `load_model`, `unload_model` | **Engine supervision** (Ollama + llama.cpp server; processes, ports, VRAM, loaded models) |
 | `llm_help` | `list_tools`, `get_tool_help`, `search_tools`, `get_tool_signature` | Help |
 
-All tools return `{success, message, data}` per the fleet dialogic return standard.
+All tools return `{success, message, data}` per the fleet dialogic return standard. A `show_status_app`
+Prefab card renders server/provider/engine status as a rich in-chat card (`@mcp.tool(app=True)`).
 
 ## AI Gateway (Lightport-compatible)
 
@@ -75,11 +98,13 @@ React 19 + Vite 6 app at `http://localhost:10832`:
 |------|-------|----------|
 | Dashboard | `/` | KPI cards, provider health, LM Link status, backend connection dot |
 | Chat | `/chat` | Skill-aware chat, 4+ personalities, export/clear, speech TTS/STT |
+| Tools | `/tools` | Live MCP tool catalog from `GET /api/v1/tools` (dynamic, never hardcoded) |
+| Skills | `/skills` | Server SKILL.md listing + renderer (`GET /api/v1/skills`) |
 | Performance | `/performance` | GPU VRAM, system RAM, latency telemetry |
 | Vision | `/vision` | Multimodal model inference |
 | Fleet | `/fleet` | MCP ecosystem app discovery |
 | Analytics | `/analytics` | Usage statistics and metrics |
-| Settings | `/settings` | Provider config, LLM detection, server settings |
+| Settings | `/settings` | Provider config, LLM engine glom-on (Ollama/LM Studio/vLLM auto-detect), server settings |
 | Help | `/help` | Architecture, ports, env vars, troubleshooting |
 
 ## LM Link Integration (Tailscale + LM Studio)

@@ -28,7 +28,7 @@ suppress_warnings()
 import asyncio
 import signal
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -189,11 +189,15 @@ async def create_mcp_server_sync() -> FastMCP | None:
             )
             async def health_check(verbose: bool = False) -> dict[str, Any]:
                 """Check the health of the MCP server."""
+                try:
+                    tool_names = [t.name for t in await mcp.list_tools()]
+                except Exception:
+                    tool_names = []
                 response = {
                     "status": "healthy",
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                     "server_version": "1.0.0",
-                    "registered_tools": list((await mcp.get_tools()).keys()),
+                    "registered_tools": tool_names,
                 }
 
                 if verbose:
@@ -209,8 +213,8 @@ async def create_mcp_server_sync() -> FastMCP | None:
                 mcp = register_all_tools(mcp)
 
                 # Log registered tools
-                tools = await mcp.get_tools()
-                tool_count = len([name for name in tools.keys() if not name.startswith("_")])
+                tools = await mcp.list_tools()
+                tool_count = len([t.name for t in tools if not t.name.startswith("_")])
                 logger.info(f"MCP server ready with {tool_count} tools")
 
                 logger.info("MCP server initialized successfully")
@@ -312,13 +316,11 @@ def cli():
 
     except KeyboardInterrupt:
         logger.info("=== SHUTDOWN BY USER (Ctrl+C) ===")
-        print("Shutdown by user", file=sys.stderr)
         sys.exit(0)
     except Exception as e:
         logger.critical("=== FATAL ERROR ===", exc_info=True)
         logger.critical(f"Error type: {type(e).__name__}")
         logger.critical(f"Error message: {e}")
-        print(f"FATAL ERROR: {e}", file=sys.stderr)
         sys.exit(1)
 
 

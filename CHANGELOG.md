@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.0.0] - 2026-08-12
+
+### Added
+- **MCPB prompts to fleet 3-4-100 bar**: system.md (3228 words), user.md (4145 words), examples.json (119 entries) - fully rewritten for the current 13-tool portmanteau surface.
+- **Real manifest.json**: proper author/repo/entry_point (run_server.py) and the current 13 portmanteau tool schemas; version aligned to 1.0.0.
+- **Prefab status card**: `show_status_app` in-chat dashboard card (PrefabApp) registered via `@mcp.tool(app=True)`.
+- **Webapp Tools page** (`/tools`): live dynamic tool catalog from new `GET /api/v1/tools` endpoint - never a hardcoded list.
+- **Webapp Skills page** (`/skills`): lists server skills and renders SKILL.md via new `GET /api/v1/skills` + `GET /api/v1/skills/{name}` endpoints.
+- **Local engine glom-on** in Settings: client-side Ollama/LM Studio/vLLM auto-detection with status dots, provider/model selects (`llm-provider-select`/`llm-model-select`), localStorage persistence (`llm_provider`/`llm_model`), GPU opportunity hint.
+- **Tool registration fixes**: gpu_manager (broken async body), moe_tools (dropped FastMCP 3.x-incompatible `stateful=` and `**kwargs`), qloraevolved (*args wrappers -> explicit signatures, removed double registration). 28 tools now register cleanly (was 20 with 3 silent failures).
+- **FastMCP 3.4.5 API fixes**: `get_tools()` -> `list_tools()` in main.py and help_tools (compat helper supports both).
+- **CORS on HTTP transport**: transport.py now serves via uvicorn.Server on `mcp.http_app()` with fleet CORS middleware (`run_http_async` dropped middleware).
+- **T20 print ban** enabled in ruff select; error-path prints in main.py converted to logger calls.
+- pyright and ty added to dev dependencies; pyproject description mojibake fixed; `ServerConfig.port` default corrected to 10833; Pydantic v1 `.dict()` calls migrated to `model_dump()`.
+- `.git/hooks/pre-commit` materialized; CI ruff gate fixed (tests I001); root junk and .bak dross removed; glama.json tool list refreshed to the 13 portmanteaus; `just mcpb-pack` version corrected to v1.0.0.
+
 ## [1.2.3] - 2026-07-29
 
 ### Added

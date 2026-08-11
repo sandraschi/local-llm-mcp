@@ -3,7 +3,7 @@
 import logging
 import os
 import platform
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import psutil
@@ -238,7 +238,7 @@ def register_system_tools(mcp):
         # Basic health check
         health = {
             "status": "healthy",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "system": {
                 "cpu_usage": sys_info["cpu"]["cpu_percent"],
                 "memory_usage": sys_info["memory"]["percent"],

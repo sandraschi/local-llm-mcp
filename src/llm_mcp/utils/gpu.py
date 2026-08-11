@@ -5,7 +5,7 @@ GPU and VRAM detection utilities ported from SongGeneration-Studio.
 
 import logging
 import subprocess
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -85,7 +85,7 @@ def get_gpu_info() -> dict[str, Any]:
                     "can_run_full": gpu["free_gb"] >= 23,
                     "can_run_balanced": gpu["free_gb"] >= 12,
                     "can_run_low": gpu["free_gb"] >= 6,
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
     except Exception as e:
         logger.error(f"GPU Telemetry error: {e}")

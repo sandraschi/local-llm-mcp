@@ -1,289 +1,65 @@
 {
   "$schema": "https://raw.githubusercontent.com/anthropics/dxt/main/dist/dxt-manifest.schema.json",
   "dxt_version": "0.1",
-  "name": "llm-mcp-server",
-  "display_name": "LLM MCP Server",
-  "version": "0.1.0",
-  "description": "Multi-provider LLM MCP server with support for local and cloud models",
-  "long_description": "A Model Control Protocol (MCP) server that provides a unified interface to multiple LLM providers including Ollama, Anthropic, and others. Supports model listing, text generation, and conversation management.",
+  "name": "local-llm-mcp",
+  "display_name": "Local LLM MCP",
+  "version": "1.0.0",
+  "description": "Unified local and cloud LLM control plane: Ollama, vLLM, LM Studio, HuggingFace, GPU management, plus an OpenAI-compatible gateway to 28 cloud providers.",
+  "long_description": "Local LLM MCP is a production-grade FastMCP 3.4+ server that manages local inference engines (Ollama, vLLM, LM Studio, llama.cpp) and routes to 28 cloud providers through a Lightport-compatible AI gateway. It ships 13 portmanteau tools covering model lifecycle, generation, multimodal inference, GPU supervision, engine process control, provider health with circuit breakers, and an LLM help catalog. A React/Vite dashboard (ports 10832/10833) provides KPIs, provider health with LM Link peer discovery over Tailscale, chat with personalities, GPU telemetry, and fleet discovery.",
   "author": {
-    "name": "Your Name",
-    "email": "your.email@example.com",
-    "url": "https://github.com/yourusername/llm-mcp"
+    "name": "Sandra Schipal",
+    "email": "sandraschipal@gmail.com",
+    "url": "https://github.com/sandraschi"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/llm-mcp"
+    "url": "https://github.com/sandraschi/local-llm-mcp"
   },
-  "homepage": "https://github.com/yourusername/llm-mcp",
-  "documentation": "https://github.com/yourusername/llm-mcp#readme",
-  "support": "https://github.com/yourusername/llm-mcp/issues",
-  "icon": "icon.png",
+  "homepage": "https://github.com/sandraschi/local-llm-mcp",
+  "documentation": "https://github.com/sandraschi/local-llm-mcp#readme",
+  "support": "https://github.com/sandraschi/local-llm-mcp/issues",
+  "icon": "assets/icon.png",
   "server": {
     "type": "python",
-    "entry_point": "server/main.py",
+    "entry_point": "run_server.py",
     "mcp_config": {
       "command": "python",
       "args": [
-        "${__dirname}/server/main.py"
+        "${__dirname}/run_server.py"
       ],
       "env": {
-        "PYTHONPATH": "${__dirname}/server"
+        "PYTHONPATH": "${__dirname}/src"
       }
     }
   },
   "tools": [
-    {
-      "name": "list_models",
-      "description": "List all available models from all providers.",
-      "parameters": {
-        "type": "object",
-        "properties": {},
-        "required": []
-      }
-    },
-    {
-      "name": "get_model",
-      "description": "Get details about a specific model.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "model_id": {
-            "type": "string",
-            "title": "Model Id"
-          }
-        },
-        "required": [
-          "model_id"
-        ]
-      }
-    },
-    {
-      "name": "generate_text",
-      "description": "Generate text using the specified model.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "model_id": {
-            "type": "string",
-            "title": "Model Id"
-          },
-          "prompt": {
-            "type": "string",
-            "title": "Prompt"
-          },
-          "max_tokens": {
-            "type": "number",
-            "default": 100,
-            "title": "Max Tokens"
-          },
-          "temperature": {
-            "type": "number",
-            "default": 0.7,
-            "title": "Temperature"
-          },
-          "top_p": {
-            "type": "number",
-            "default": 1.0,
-            "title": "Top P"
-          },
-          "frequency_penalty": {
-            "type": "number",
-            "default": 0.0,
-            "title": "Frequency Penalty"
-          },
-          "presence_penalty": {
-            "type": "number",
-            "default": 0.0,
-            "title": "Presence Penalty"
-          },
-          "stop": {
-            "type": "string",
-            "title": "Stop"
-          }
-        },
-        "required": [
-          "model_id",
-          "prompt"
-        ]
-      }
-    },
-    {
-      "name": "chat",
-      "description": "Generate a chat completion using the specified model.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "model_id": {
-            "type": "string",
-            "title": "Model Id"
-          },
-          "messages": {
-            "type": "string",
-            "title": "Messages"
-          },
-          "max_tokens": {
-            "type": "number",
-            "default": 100,
-            "title": "Max Tokens"
-          },
-          "temperature": {
-            "type": "number",
-            "default": 0.7,
-            "title": "Temperature"
-          },
-          "top_p": {
-            "type": "number",
-            "default": 1.0,
-            "title": "Top P"
-          },
-          "frequency_penalty": {
-            "type": "number",
-            "default": 0.0,
-            "title": "Frequency Penalty"
-          },
-          "presence_penalty": {
-            "type": "number",
-            "default": 0.0,
-            "title": "Presence Penalty"
-          },
-          "stop": {
-            "type": "string",
-            "title": "Stop"
-          }
-        },
-        "required": [
-          "model_id",
-          "messages"
-        ]
-      }
-    },
-    {
-      "name": "load_model",
-      "description": "Load a model into memory.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "model_id": {
-            "type": "string",
-            "title": "Model Id"
-          },
-          "device": {
-            "type": "string",
-            "title": "Device"
-          },
-          "num_gpu_layers": {
-            "type": "number",
-            "title": "Num Gpu Layers"
-          },
-          "context_length": {
-            "type": "number",
-            "title": "Context Length"
-          },
-          "gpu_memory_utilization": {
-            "type": "number",
-            "title": "Gpu Memory Utilization"
-          },
-          "max_model_len": {
-            "type": "number",
-            "title": "Max Model Len"
-          },
-          "quantization": {
-            "type": "string",
-            "title": "Quantization"
-          },
-          "trust_remote_code": {
-            "type": "boolean",
-            "default": false,
-            "title": "Trust Remote Code"
-          }
-        },
-        "required": [
-          "model_id"
-        ]
-      }
-    },
-    {
-      "name": "unload_model",
-      "description": "Unload a model from memory.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "model_id": {
-            "type": "string",
-            "title": "Model Id"
-          }
-        },
-        "required": [
-          "model_id"
-        ]
-      }
-    },
-    {
-      "name": "get_loaded_models",
-      "description": "Get a list of all currently loaded models.",
-      "parameters": {
-        "type": "object",
-        "properties": {},
-        "required": []
-      }
-    },
-    {
-      "name": "get_provider_status",
-      "description": "Get the status of a provider.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "provider_name": {
-            "type": "string",
-            "title": "Provider Name"
-          }
-        },
-        "required": [
-          "provider_name"
-        ]
-      }
-    },
-    {
-      "name": "load_provider",
-      "description": "Load and initialize a provider.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "provider_name": {
-            "type": "string",
-            "title": "Provider Name"
-          },
-          "auto_start": {
-            "type": "boolean",
-            "default": true,
-            "title": "Auto Start"
-          },
-          "wait_until_ready": {
-            "type": "boolean",
-            "default": true,
-            "title": "Wait Until Ready"
-          },
-          "timeout": {
-            "type": "number",
-            "default": 30,
-            "title": "Timeout"
-          }
-        },
-        "required": [
-          "provider_name"
-        ]
-      }
-    }
+    {"name": "llm_health", "description": "System and provider health, metrics, logging, tool catalog, graceful shutdown (11 operations)."},
+    {"name": "llm_models", "description": "Model registry: list, register, update, unregister, stats."},
+    {"name": "llm_generation", "description": "Text generation, chat completion, embeddings, streaming."},
+    {"name": "llm_multimodal", "description": "Image analysis, generation, and comparison."},
+    {"name": "llm_finetuning", "description": "LoRA adapter load/unload/list."},
+    {"name": "llm_ollama", "description": "Ollama engine: list, pull, delete, load, unload models."},
+    {"name": "llm_lmstudio", "description": "LM Studio + LM Link: model control and tailnet peer discovery."},
+    {"name": "llm_vllm", "description": "vLLM container lifecycle and serving configuration."},
+    {"name": "llm_huggingface", "description": "HuggingFace Hub: search, download, model details, datasets."},
+    {"name": "llm_google_cloud", "description": "Google Cloud AI: Gemini generation, models, embeddings."},
+    {"name": "llm_gpu", "description": "GPU supervision: status, memory, optimization, health."},
+    {"name": "llm_engine", "description": "Engine process supervision: Ollama + llama.cpp start/stop/status."},
+    {"name": "llm_help", "description": "Tool catalog: list, help, search, signatures."},
+    {"name": "show_status_app", "description": "Prefab in-chat dashboard card with server, provider, and engine status."}
   ],
   "keywords": [
     "llm",
     "mcp",
     "ai",
     "ollama",
+    "vllm",
+    "lm-studio",
+    "lm-link",
     "anthropic",
+    "gateway",
     "local-ai",
-    "qwen3.6",
+    "gpu",
     "agentic-coding",
     "moe"
   ],
@@ -297,7 +73,7 @@
       "linux"
     ],
     "runtimes": {
-      "python": ">=3.8.0 <4"
+      "python": ">=3.12 <4"
     }
   }
 }

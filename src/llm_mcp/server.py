@@ -6,6 +6,7 @@ Serves the API used by the web_sota frontend (health, models, MCP servers).
 import logging
 import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +14,32 @@ from fastapi.middleware.cors import CORSMiddleware
 logger = logging.getLogger(__name__)
 
 _START_TIME = time.time()
+
+_mcp_server_cache: object | None = None
+
+
+async def _get_mcp_tool_catalog() -> dict:
+    """Return the live MCP tool catalog from the registered server instance.
+
+    The first call lazily builds the FastMCP server (slow: imports torch);
+    subsequent calls reuse the cached instance. This keeps the Tools page
+    driven by real tool registration, never a hardcoded list.
+    """
+    global _mcp_server_cache
+    if _mcp_server_cache is None:
+        try:
+            from llm_mcp.main import create_mcp_server_sync
+
+            _mcp_server_cache = await create_mcp_server_sync()
+        except Exception as e:
+            logger.warning("Could not create MCP server for tool catalog: %s", e)
+            return {"tools": [], "total": 0, "error": str(e)}
+    if _mcp_server_cache is None:
+        return {"tools": [], "total": 0, "error": "MCP server unavailable"}
+
+    tools = await _mcp_server_cache.list_tools()
+    catalog = [{"name": t.name, "description": (getattr(t, "description", "") or "")[:400]} for t in tools]
+    return {"tools": catalog, "total": len(catalog)}
 
 
 @asynccontextmanager
@@ -168,6 +195,47 @@ async def api_diagnostics():
         response["providers"]["error"] = str(e)
 
     return response
+
+
+@app.get("/api/v1/tools")
+async def api_tools():
+    """Fleet-standard dynamic tool catalog for the Tools page.
+
+    Returns the live registered MCP tools (name + description). The first
+    call may take tens of seconds while the MCP server initializes.
+    """
+    return await _get_mcp_tool_catalog()
+
+
+_SKILLS_DIR = Path(__file__).resolve().parent / "skills"
+
+
+@app.get("/api/v1/skills")
+async def api_skills():
+    """List available skill directories (name + summary)."""
+    skills = []
+    if _SKILLS_DIR.is_dir():
+        for skill_dir in sorted(_SKILLS_DIR.iterdir()):
+            if not skill_dir.is_dir():
+                continue
+            skill_file = skill_dir / "SKILL.md"
+            if not skill_file.exists():
+                continue
+            text = skill_file.read_text(encoding="utf-8", errors="replace")
+            first_line = next((ln.strip().lstrip("#").strip() for ln in text.splitlines() if ln.strip()), "")
+            skills.append({"name": skill_dir.name, "title": first_line, "words": len(text.split())})
+    return {"skills": skills, "total": len(skills)}
+
+
+@app.get("/api/v1/skills/{skill_name}")
+async def api_skill_content(skill_name: str):
+    """Return the raw SKILL.md content for a skill."""
+    if not _SKILLS_DIR.is_dir():
+        return {"error": "no skills directory", "content": ""}
+    skill_file = _SKILLS_DIR / skill_name / "SKILL.md"
+    if not skill_file.exists():
+        return {"error": f"skill '{skill_name}' not found", "content": ""}
+    return {"name": skill_name, "content": skill_file.read_text(encoding="utf-8", errors="replace")}
 
 
 try:

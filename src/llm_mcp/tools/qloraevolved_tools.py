@@ -621,33 +621,134 @@ def register_qloraevolved_tools(mcp_server):
         mcp_server: The MCP server instance
     """
 
-    # Register tools with decorators
+    # Register tools with decorators (explicit signatures — FastMCP 3.x rejects *args)
     @mcp_server.tool()
-    async def qloraevolved_load_model_wrapper(*args, **kwargs):
-        return await qloraevolved_load_model(*args, **kwargs)
+    async def qloraevolved_load_model_wrapper(
+        model_name: str,
+        model_id: str | None = None,
+        max_length: int = 2048,
+        load_in_4bit: bool = True,
+        quant_type: str = "nf4",
+        use_double_quant: bool = True,
+        compute_dtype: str = "bfloat16",
+        lora_rank: int = 64,
+        lora_alpha: int = 16,
+        lora_dropout: float = 0.1,
+    ) -> dict[str, Any]:
+        """Load a model with QLoRA Evolved configuration.
+
+        Args:
+            model_name: Name or path of the base model.
+            model_id: Optional registry id for the loaded model.
+            max_length: Maximum sequence length.
+            load_in_4bit: Use 4-bit quantization.
+            quant_type: Quantization type (nf4 or fp4).
+            use_double_quant: Enable double quantization.
+            compute_dtype: Computation dtype (bfloat16, float16, float32).
+            lora_rank: LoRA rank.
+            lora_alpha: LoRA alpha.
+            lora_dropout: LoRA dropout.
+
+        ## Return Format
+        {"status": str, "model_id": str, "message": str}
+
+        ## Examples
+        qloraevolved_load_model_wrapper(model_name="Qwen/Qwen2.5-7B")
+        """
+        return await qloraevolved_load_model(
+            model_name=model_name,
+            model_id=model_id,
+            max_length=max_length,
+            load_in_4bit=load_in_4bit,
+            quant_type=quant_type,
+            use_double_quant=use_double_quant,
+            compute_dtype=compute_dtype,
+            lora_rank=lora_rank,
+            lora_alpha=lora_alpha,
+            lora_dropout=lora_dropout,
+        )
 
     @mcp_server.tool()
-    async def qloraevolved_prepare_for_training_wrapper(*args, **kwargs):
-        return await qloraevolved_prepare_for_training(*args, **kwargs)
+    async def qloraevolved_prepare_for_training_wrapper(
+        model_id: str,
+        output_dir: str | None = None,
+        learning_rate: float | None = None,
+        batch_size: int | None = None,
+        gradient_accumulation_steps: int | None = None,
+        num_train_epochs: int | None = None,
+        max_steps: int = -1,
+        warmup_ratio: float | None = None,
+        weight_decay: float | None = None,
+        optim: str | None = None,
+        lr_scheduler_type: str | None = None,
+        max_grad_norm: float | None = None,
+        logging_steps: int | None = None,
+    ) -> dict[str, Any]:
+        """Prepare a loaded QLoRA Evolved model for training.
+
+        Args:
+            model_id: Id of the loaded model.
+            output_dir: Directory for training artifacts.
+            learning_rate: Learning rate override.
+            batch_size: Batch size override.
+            gradient_accumulation_steps: Gradient accumulation override.
+            num_train_epochs: Epoch count override.
+            max_steps: Maximum training steps (-1 = unlimited).
+            warmup_ratio: Warmup ratio.
+            weight_decay: Weight decay.
+            optim: Optimizer name.
+            lr_scheduler_type: LR scheduler type.
+            max_grad_norm: Gradient clipping norm.
+            logging_steps: Logging interval.
+
+        ## Return Format
+        {"status": str, "message": str}
+
+        ## Examples
+        qloraevolved_prepare_for_training_wrapper(model_id="my-model")
+        """
+        return await qloraevolved_prepare_for_training(
+            model_id=model_id,
+            output_dir=output_dir,
+            learning_rate=learning_rate,
+            batch_size=batch_size,
+            gradient_accumulation_steps=gradient_accumulation_steps,
+            num_train_epochs=num_train_epochs,
+            max_steps=max_steps,
+            warmup_ratio=warmup_ratio,
+            weight_decay=weight_decay,
+            optim=optim,
+            lr_scheduler_type=lr_scheduler_type,
+            max_grad_norm=max_grad_norm,
+            logging_steps=logging_steps,
+        )
 
     @mcp_server.tool()
-    async def qloraevolved_train_wrapper(*args, **kwargs):
-        return await qloraevolved_train(*args, **kwargs)
+    async def qloraevolved_unload_model_wrapper(model_id: str) -> dict[str, Any]:
+        """Unload a QLoRA Evolved model and free VRAM.
+
+        Args:
+            model_id: Id of the loaded model.
+
+        ## Return Format
+        {"status": str, "message": str}
+
+        ## Examples
+        qloraevolved_unload_model_wrapper(model_id="my-model")
+        """
+        return await qloraevolved_unload_model(model_id=model_id)
 
     @mcp_server.tool()
-    async def qloraevolved_unload_model_wrapper(*args, **kwargs):
-        return await qloraevolved_unload_model(*args, **kwargs)
+    async def qloraevolved_list_models_wrapper() -> dict[str, Any]:
+        """List all QLoRA Evolved loaded models.
 
-    @mcp_server.tool()
-    async def qloraevolved_list_models_wrapper():
+        ## Return Format
+        {"status": str, "models": [str]}
+
+        ## Examples
+        qloraevolved_list_models_wrapper()
+        """
         return await qloraevolved_list_models()
-
-    # Register the wrapped functions
-    mcp_server.register_tool(qloraevolved_load_model_wrapper)
-    mcp_server.register_tool(qloraevolved_prepare_for_training_wrapper)
-    mcp_server.register_tool(qloraevolved_train_wrapper)
-    mcp_server.register_tool(qloraevolved_unload_model_wrapper)
-    mcp_server.register_tool(qloraevolved_list_models_wrapper)
 
     logger.info("Registered QLoRA Evolved tools with MCP server")
     return mcp_server

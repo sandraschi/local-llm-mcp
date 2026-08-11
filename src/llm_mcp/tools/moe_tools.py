@@ -261,24 +261,23 @@ def register_moe_tools(mcp):
     """
     tool = mcp.tool
 
-    @tool(stateful=True, state_ttl=300)  # 5-minute cache for model loading
+    @tool()
     async def moe_load_model(
         model_name: str,
         num_experts: int = 8,
         expert_capacity: int = 4,
         moe_layer_frequency: int = 2,
-        **kwargs,
     ) -> dict[str, Any]:
-        """Load a model and convert it to use MoE layers with stateful caching.
+        """Load a model and convert it to use MoE layers.
 
-        This tool caches loaded models to improve performance.
+        This tool loads a base model and re-architects it with Mixture of
+        Experts layers, caching the loaded model for reuse.
 
         Args:
             model_name: Name or path of the model to load
             num_experts: Number of expert networks
             expert_capacity: Maximum number of tokens each expert can process
             moe_layer_frequency: How often to place MoE layers (e.g., every N layers)
-            **kwargs: Additional arguments to pass to AutoModelForCausalLM
 
         Returns:
             Dictionary with model information and status
@@ -288,10 +287,9 @@ def register_moe_tools(mcp):
             num_experts=num_experts,
             expert_capacity=expert_capacity,
             moe_layer_frequency=moe_layer_frequency,
-            **kwargs,
         )
 
-    @tool(stateful=True, state_ttl=60)  # 1-minute cache for model info
+    @tool()
     async def moe_model_info(model_id: str) -> dict[str, Any]:
         """Get information about a loaded MoE model with stateful caching.
 
@@ -311,7 +309,7 @@ def register_moe_tools(mcp):
 
         return {"status": "success", "model_id": model_id, **model_info, "timestamp": time.time()}
 
-    @tool(stateful=False)  # No caching for training operations
+    @tool()  # Training operations
     async def moe_train(
         model_id: str,
         dataset: str,
@@ -319,11 +317,8 @@ def register_moe_tools(mcp):
         learning_rate: float = 5e-5,
         batch_size: int = 8,
         num_epochs: int = 3,
-        **kwargs,
     ) -> dict[str, Any]:
         """Fine-tune a MoE model on a dataset.
-
-        This tool does not use caching as it performs model training.
 
         Args:
             model_id: ID of the loaded MoE model
@@ -332,7 +327,6 @@ def register_moe_tools(mcp):
             learning_rate: Learning rate for training
             batch_size: Batch size for training
             num_epochs: Number of training epochs
-            **kwargs: Additional training arguments
 
         Returns:
             Dictionary with training results
@@ -356,16 +350,16 @@ def register_moe_tools(mcp):
             "timestamp": time.time(),
         }
 
-    @tool(stateful=True, state_ttl=30)  # Short cache for generation
+    @tool()  # Generation
     async def moe_generate(
         model_id: str,
         prompt: str,
         max_length: int = 100,
         temperature: float = 0.7,
         top_p: float = 0.9,
-        **kwargs,
+        repetition_penalty: float = 1.0,
     ) -> dict[str, Any]:
-        """Generate text using a MoE model with stateful caching.
+        """Generate text using a MoE model.
 
         Args:
             model_id: ID of the loaded MoE model
@@ -373,7 +367,7 @@ def register_moe_tools(mcp):
             max_length: Maximum length of generated text
             temperature: Sampling temperature
             top_p: Nucleus sampling parameter
-            **kwargs: Additional generation parameters
+            repetition_penalty: Penalty for repeating tokens
 
         Returns:
             Dictionary with generated text and metadata
@@ -391,7 +385,13 @@ def register_moe_tools(mcp):
 
         # Generate text
         with torch.no_grad():
-            outputs = model.generate(**inputs, max_length=max_length, temperature=temperature, top_p=top_p, **kwargs)
+            outputs = model.generate(
+                **inputs,
+                max_length=max_length,
+                temperature=temperature,
+                top_p=top_p,
+                repetition_penalty=repetition_penalty,
+            )
 
         # Decode and return
         generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)

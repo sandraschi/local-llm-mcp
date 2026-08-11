@@ -80,7 +80,7 @@ class ServerConfig(BaseModel):
     name: str = "Local LLM MCP Server"
     version: str = "1.0.0"
     host: str = "localhost"
-    port: int = 8000
+    port: int = 10833
     log_level: LogLevel = LogLevel.INFO
     log_file: Path = Path("logs/llm_mcp.log")
     log_rotation_size: str = "10MB"
@@ -119,6 +119,9 @@ class Config(BaseModel):
     # Runtime configuration
     config_path: Path | None = None
     environment_overrides: dict[str, Any] = Field(default_factory=dict)
+
+    # Extra provider registrations from config.yaml (e.g. local-llama llama.cpp servers)
+    providers: dict[str, Any] = Field(default_factory=dict)
 
     model_config = ConfigDict(env_prefix="LLM_MCP_", env_nested_delimiter="__")
 
@@ -215,7 +218,7 @@ class Config(BaseModel):
             config_path = Path(config_path)
 
         # Convert to dictionary and remove runtime fields
-        config_dict = self.dict(exclude={"config_path", "environment_overrides"})
+        config_dict = self.model_dump(exclude={"config_path", "environment_overrides"})
 
         # Convert Path objects to strings for YAML serialization
         def convert_paths(obj):

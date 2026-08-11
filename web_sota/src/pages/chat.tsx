@@ -13,6 +13,8 @@ import { SpeakButton } from "@/components/SpeakButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:10833";
+
 const REFINE_PROMPT_PREFIX =
   "Rewrite the following into a single clear, self-contained prompt for an LLM. Preserve the user's intent. Output only the rewritten prompt, no commentary.\n\n";
 
@@ -123,7 +125,7 @@ export function Chat() {
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch("/api/skills");
+        const r = await fetch(`${API_BASE}/api/v1/skills`);
         if (r.ok) {
           const data = await r.json();
           const skills = data?.skills ?? [];

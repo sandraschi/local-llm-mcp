@@ -326,54 +326,53 @@ def register_gpu_manager_tools(mcp, register_individual_tools: bool = True):
             Returns detailed information about GPU memory, utilization, temperature,
             and other vital statistics for monitoring and optimization.
             """
+            try:
+                gpu_statuses = await get_gpu_status()
 
-        try:
-            gpu_statuses = await get_gpu_status()
+                if not gpu_statuses:
+                    return {
+                        "success": False,
+                        "error": "No GPUs detected or GPU monitoring not available",
+                        "troubleshooting": [
+                            "Ensure NVIDIA drivers are installed",
+                            "Install GPU monitoring dependencies: pip install gputil torch",
+                            "Check GPU is properly connected and powered",
+                        ],
+                    }
 
-            if not gpu_statuses:
                 return {
-                    "success": False,
-                    "error": "No GPUs detected or GPU monitoring not available",
-                    "troubleshooting": [
-                        "Ensure NVIDIA drivers are installed",
-                        "Install GPU monitoring dependencies: pip install gputil torch",
-                        "Check GPU is properly connected and powered",
+                    "success": True,
+                    "gpu_count": len(gpu_statuses),
+                    "gpus": [
+                        {
+                            "id": gpu.id,
+                            "name": gpu.name,
+                            "memory": {
+                                "used_gb": round(gpu.memory_used / (1024**3), 2),
+                                "total_gb": round(gpu.memory_total / (1024**3), 2),
+                                "free_gb": round(gpu.memory_free / (1024**3), 2),
+                                "utilization_percent": round(gpu.memory_utilization, 1),
+                            },
+                            "utilization_percent": round(gpu.gpu_utilization, 1),
+                            "temperature_celsius": gpu.temperature,
+                            "fan_speed_percent": gpu.fan_speed,
+                            "power": {"usage_watts": gpu.power_usage, "limit_watts": gpu.power_limit}
+                            if gpu.power_usage and gpu.power_limit
+                            else None,
+                        }
+                        for gpu in gpu_statuses
                     ],
+                    "summary": {
+                        "total_memory_gb": sum(gpu.memory_total / (1024**3) for gpu in gpu_statuses),
+                        "used_memory_gb": sum(gpu.memory_used / (1024**3) for gpu in gpu_statuses),
+                        "average_utilization": sum(gpu.gpu_utilization for gpu in gpu_statuses) / len(gpu_statuses),
+                        "hottest_gpu_temp": max(gpu.temperature for gpu in gpu_statuses),
+                    },
                 }
 
-            return {
-                "success": True,
-                "gpu_count": len(gpu_statuses),
-                "gpus": [
-                    {
-                        "id": gpu.id,
-                        "name": gpu.name,
-                        "memory": {
-                            "used_gb": round(gpu.memory_used / (1024**3), 2),
-                            "total_gb": round(gpu.memory_total / (1024**3), 2),
-                            "free_gb": round(gpu.memory_free / (1024**3), 2),
-                            "utilization_percent": round(gpu.memory_utilization, 1),
-                        },
-                        "utilization_percent": round(gpu.gpu_utilization, 1),
-                        "temperature_celsius": gpu.temperature,
-                        "fan_speed_percent": gpu.fan_speed,
-                        "power": {"usage_watts": gpu.power_usage, "limit_watts": gpu.power_limit}
-                        if gpu.power_usage and gpu.power_limit
-                        else None,
-                    }
-                    for gpu in gpu_statuses
-                ],
-                "summary": {
-                    "total_memory_gb": sum(gpu.memory_total / (1024**3) for gpu in gpu_statuses),
-                    "used_memory_gb": sum(gpu.memory_used / (1024**3) for gpu in gpu_statuses),
-                    "average_utilization": sum(gpu.gpu_utilization for gpu in gpu_statuses) / len(gpu_statuses),
-                    "hottest_gpu_temp": max(gpu.temperature for gpu in gpu_statuses),
-                },
-            }
-
-        except Exception as e:
-            logger.error(f"Failed to get GPU status: {e}")
-            return {"error": f"Failed to get GPU status: {e!s}"}
+            except Exception as e:
+                logger.error(f"Failed to get GPU status: {e}")
+                return {"error": f"Failed to get GPU status: {e!s}"}
 
     # Register individual GPU tools conditionally
     if register_individual_tools:

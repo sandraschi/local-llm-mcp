@@ -328,3 +328,6 @@ ehthumbs.db
 Thumbs.db
 
 _dashboard/
+
+# MCPB pack staging copy (regenerated on pack)
+mcpb/src/

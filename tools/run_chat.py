@@ -49,15 +49,13 @@ class ChatApplication:
                 # Get user input
                 try:
                     user_input = await asyncio.get_event_loop().run_in_executor(
-                        None,
-                        lambda: input(f"{Colors.BLUE}You:{Colors.ENDC} ")
+                        None, lambda: input(f"{Colors.BLUE}You:{Colors.ENDC} ")
                     )
                 except (EOFError, KeyboardInterrupt):
                     print("\nUse /exit or press Ctrl+C again to quit.")
                     try:
                         user_input = await asyncio.get_event_loop().run_in_executor(
-                            None,
-                            lambda: input(f"{Colors.BLUE}You:{Colors.ENDC} ")
+                            None, lambda: input(f"{Colors.BLUE}You:{Colors.ENDC} ")
                         )
                     except (EOFError, KeyboardInterrupt):
                         print("\nGoodbye!")
@@ -77,8 +75,9 @@ class ChatApplication:
 
             except Exception as e:
                 print(f"{Colors.RED}Error: {e}{Colors.ENDC}")
-                if getattr(self.terminal, 'debug', False):
+                if getattr(self.terminal, "debug", False):
                     import traceback
+
                     traceback.print_exc()
 
     def _print_typing_indicator(self, active: bool = True):
@@ -156,6 +155,7 @@ class ChatApplication:
 
             if self.terminal.debug:
                 import traceback
+
                 traceback.print_exc()
 
         finally:

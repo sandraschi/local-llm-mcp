@@ -37,7 +37,7 @@ certify: lint test
 mcpb-pack:
     Set-Location '{{justfile_directory()}}'
     Write-Host "Building MCPB bundle..." -ForegroundColor Yellow
-    uv run mcpb pack . dist/local-llm-mcp-v1.2.2.mcpb
+    uv run mcpb pack . dist/local-llm-mcp-v1.0.0.mcpb
 
 check-sec:
     Set-Location '{{justfile_directory()}}'

@@ -51,7 +51,8 @@ async def logs_export(
     content = log.export(format=format, level=level, kind=kind, search=search)
     media = "text/csv" if format == "csv" else "application/json"
     filename = f"logs.{format}"
-    return Response(content=content, media_type=media, headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+    disposition = f'attachment; filename="{filename}"'
+    return Response(content=content, media_type=media, headers={"Content-Disposition": disposition})
 
 
 @router.delete("/api/logs")

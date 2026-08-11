@@ -4,6 +4,7 @@ Mixture of Experts (MoE) Example
 This script demonstrates how to use the Mixture of Experts (MoE) implementation
 with the LLM MCP server.
 """
+
 import asyncio
 
 from llm_mcp.tools.moe_tools import MoEConfig, moe_generate, moe_load_model, moe_train
@@ -12,12 +13,12 @@ from llm_mcp.tools.moe_tools import MoEConfig, moe_generate, moe_load_model, moe
 async def main():
     # Configure MoE
     moe_config = MoEConfig(
-        num_experts=8,                  # Number of expert networks
-        expert_capacity=4,               # Tokens per expert
-        router_jitter_noise=0.1,         # Noise for exploration
-        router_aux_loss_coef=0.01,       # Load balancing loss weight
-        moe_layer_frequency=2,           # Apply MoE every N layers
-        moe_layer_start=4,               # Start MoE layers at this depth
+        num_experts=8,  # Number of expert networks
+        expert_capacity=4,  # Tokens per expert
+        router_jitter_noise=0.1,  # Noise for exploration
+        router_aux_loss_coef=0.01,  # Load balancing loss weight
+        moe_layer_frequency=2,  # Apply MoE every N layers
+        moe_layer_start=4,  # Start MoE layers at this depth
     )
 
     # Load a model with MoE layers

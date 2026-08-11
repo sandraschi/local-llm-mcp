@@ -1,4 +1,5 @@
 """Syntax-check all gateway module files."""
+
 import ast
 import sys
 from pathlib import Path

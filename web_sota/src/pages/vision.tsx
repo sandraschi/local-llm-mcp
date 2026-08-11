@@ -1,8 +1,10 @@
+import { ImageIcon, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { listModels, type ModelInfo } from "@/api/client";
 import { getDefaults } from "@/api/defaults";
 import { ModelSelector } from "@/components/models/ModelSelector";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function Vision() {
   const [models, setModels] = useState<ModelInfo[]>([]);

@@ -95,6 +95,7 @@ def register_all_tools(mcp):
         ("portmanteau_huggingface", "register_llm_huggingface_tools"),
         ("portmanteau_google_cloud", "register_llm_google_cloud_tools"),
         ("portmanteau_gpu", "register_llm_gpu_tools"),
+        ("portmanteau_engine", "register_llm_engine_tools"),
     ]
 
     # Log portmanteau tool registration progress

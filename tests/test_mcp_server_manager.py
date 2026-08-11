@@ -167,7 +167,6 @@ class TestMCPServerManager:
 
 
 # Test the API endpoints
-@pytest.mark.asyncio
 def test_api_endpoints():
     """Test the MCP server management API endpoints."""
     # Create a test client with the FastAPI app

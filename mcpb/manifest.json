@@ -1,19 +1,79 @@
 {
-  "manifest_version": "0.1",
+  "$schema": "https://raw.githubusercontent.com/anthropics/dxt/main/dist/dxt-manifest.schema.json",
+  "dxt_version": "0.1",
   "name": "local-llm-mcp",
-  "version": "1.2.2-beta",
-  "description": "Production-ready MCP server for managing local and cloud Large Language Models",
-  "author": { "name": "Sandra Schipal" },
+  "display_name": "Local LLM MCP",
+  "version": "1.0.0",
+  "description": "Unified local and cloud LLM control plane: Ollama, vLLM, LM Studio, HuggingFace, GPU management, plus an OpenAI-compatible gateway to 28 cloud providers.",
+  "long_description": "Local LLM MCP is a production-grade FastMCP 3.4+ server that manages local inference engines (Ollama, vLLM, LM Studio, llama.cpp) and routes to 28 cloud providers through a Lightport-compatible AI gateway. It ships 13 portmanteau tools covering model lifecycle, generation, multimodal inference, GPU supervision, engine process control, provider health with circuit breakers, and an LLM help catalog. A React/Vite dashboard (ports 10832/10833) provides KPIs, provider health with LM Link peer discovery over Tailscale, chat with personalities, GPU telemetry, and fleet discovery.",
+  "author": {
+    "name": "Sandra Schipal",
+    "email": "sandraschipal@gmail.com",
+    "url": "https://github.com/sandraschi"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sandraschi/local-llm-mcp"
+  },
+  "homepage": "https://github.com/sandraschi/local-llm-mcp",
+  "documentation": "https://github.com/sandraschi/local-llm-mcp#readme",
+  "support": "https://github.com/sandraschi/local-llm-mcp/issues",
+  "icon": "assets/icon.png",
   "server": {
     "type": "python",
-    "entry_point": "src/llm_mcp/__main__.py",
+    "entry_point": "run_server.py",
     "mcp_config": {
       "command": "python",
-      "args": ["-m", "llm_mcp"],
+      "args": [
+        "${__dirname}/run_server.py"
+      ],
       "env": {
-        "PYTHONPATH": "${PWD}",
-        "PYTHONUNBUFFERED": "1"
+        "PYTHONPATH": "${__dirname}/src"
       }
+    }
+  },
+  "tools": [
+    {"name": "llm_health", "description": "System and provider health, metrics, logging, tool catalog, graceful shutdown (11 operations)."},
+    {"name": "llm_models", "description": "Model registry: list, register, update, unregister, stats."},
+    {"name": "llm_generation", "description": "Text generation, chat completion, embeddings, streaming."},
+    {"name": "llm_multimodal", "description": "Image analysis, generation, and comparison."},
+    {"name": "llm_finetuning", "description": "LoRA adapter load/unload/list."},
+    {"name": "llm_ollama", "description": "Ollama engine: list, pull, delete, load, unload models."},
+    {"name": "llm_lmstudio", "description": "LM Studio + LM Link: model control and tailnet peer discovery."},
+    {"name": "llm_vllm", "description": "vLLM container lifecycle and serving configuration."},
+    {"name": "llm_huggingface", "description": "HuggingFace Hub: search, download, model details, datasets."},
+    {"name": "llm_google_cloud", "description": "Google Cloud AI: Gemini generation, models, embeddings."},
+    {"name": "llm_gpu", "description": "GPU supervision: status, memory, optimization, health."},
+    {"name": "llm_engine", "description": "Engine process supervision: Ollama + llama.cpp start/stop/status."},
+    {"name": "llm_help", "description": "Tool catalog: list, help, search, signatures."},
+    {"name": "show_status_app", "description": "Prefab in-chat dashboard card with server, provider, and engine status."}
+  ],
+  "keywords": [
+    "llm",
+    "mcp",
+    "ai",
+    "ollama",
+    "vllm",
+    "lm-studio",
+    "lm-link",
+    "anthropic",
+    "gateway",
+    "local-ai",
+    "gpu",
+    "agentic-coding",
+    "moe"
+  ],
+  "license": "MIT",
+  "user_config": {},
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "python": ">=3.12 <4"
     }
   }
 }

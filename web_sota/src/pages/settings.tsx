@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { getConfig, listModels, type ModelInfo, updateConfig } from "@/api/client";
 import { getDefaults, setDefaults } from "@/api/defaults";
 import { cn } from "@/common/utils";
+import { LocalEngineDetection } from "@/components/LocalEngineDetection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -82,6 +83,8 @@ export function Settings() {
         <Loader2 className="animate-spin h-8 w-8 text-emerald-500" />
       </div>
     );
+
+  if (!config) return null;
 
   return (
     <div className="space-y-8 max-w-5xl">
@@ -182,6 +185,21 @@ export function Settings() {
 
         {activeTab === "providers" && (
           <div className="space-y-6">
+            <Card className="border-white/5 bg-white/[0.02] backdrop-blur-md">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Cpu className="h-5 w-5 text-emerald-500" />
+                  Local Engine Detection
+                </CardTitle>
+                <CardDescription>
+                  Auto-detected LLM engines on standard ports. Selection persists to localStorage.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <LocalEngineDetection />
+              </CardContent>
+            </Card>
+
             <Card className="border-white/5 bg-white/[0.02] backdrop-blur-md">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">

@@ -1,5 +1,6 @@
 import {
   Activity,
+  BookOpen,
   Bot,
   Brain,
   ChevronLeft,
@@ -10,6 +11,7 @@ import {
   LayoutDashboard,
   LayoutGrid,
   Settings,
+  Wrench,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/common/utils";
@@ -25,6 +27,8 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const navItems = [
     { href: "/", label: "Overview", icon: LayoutDashboard },
     { href: "/chat", label: "Chat", icon: Bot },
+    { href: "/tools", label: "Tools", icon: Wrench },
+    { href: "/skills", label: "Skills", icon: BookOpen },
     { href: "/help", label: "Help", icon: HelpCircle },
     { href: "/performance", label: "Performance", icon: Gauge },
     { href: "/vision", label: "Vision", icon: ImageIcon },

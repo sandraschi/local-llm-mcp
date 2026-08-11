@@ -30,6 +30,14 @@ except ImportError:
     logger.error("FastMCP not available - portmanteau tools require FastMCP >= 2.12.0")
     FASTMCP_AVAILABLE = False
 
+# Prefab UI for in-chat dashboard cards (optional at runtime)
+try:
+    from prefab_ui import PrefabApp
+
+    PREFAB_AVAILABLE = True
+except ImportError:
+    PREFAB_AVAILABLE = False
+
 # Global MCP instance (set during registration)
 _mcp = None
 
@@ -308,4 +316,107 @@ def register_llm_health_tools(mcp):
         )
 
     logger.info("Registered LLM Health portmanteau tool")
+
+    if PREFAB_AVAILABLE:
+
+        @mcp.tool(app=True)
+        async def show_status_app(include_gpu: bool = True) -> PrefabApp:
+            """Show server, provider, and engine status as a rich in-chat card.
+
+            Renders a Prefab dashboard card with server version, registered
+            tool count, provider reachability, engine processes, and system
+            state. Hosts that cannot render apps receive a plain summary.
+
+            Args:
+                include_gpu: Include system rows (default True).
+
+            ## Return Format
+            PrefabApp card.
+
+            ## Examples
+            show_status_app()
+            show_status_app(include_gpu=False)
+            """
+            from prefab_ui.components import (
+                Card,
+                CardContent,
+                Column,
+                Grid,
+                Heading,
+                Muted,
+                Separator,
+            )
+
+            with Column(gap=4, css_class="p-4") as view:
+                Heading("Local LLM MCP Status")
+                Separator()
+
+                try:
+                    tools = await mcp.list_tools()
+                    with Grid(columns=3, gap=3):
+                        with Card(), CardContent():
+                            Muted("Version")
+                            Heading("1.0.0")
+                        with Card(), CardContent():
+                            Muted("Tools")
+                            Heading(str(len(tools)))
+                        with Card(), CardContent():
+                            Muted("Transport")
+                            Heading(os.getenv("MCP_TRANSPORT", "stdio"))
+                except Exception as e:
+                    logger.warning("Prefab tool probe failed: %s", e)
+
+                try:
+                    health = await llm_health(operation="health_check")
+                    status = health.get("status", "unknown")
+                    Muted("Health")
+                    Heading(str(status))
+                except Exception as e:
+                    logger.warning("Prefab health probe failed: %s", e)
+
+                try:
+                    providers = await llm_health(operation="provider_check")
+                    provider_rows = providers.get("providers", providers)
+                    if isinstance(provider_rows, dict) and provider_rows:
+                        Heading("Providers")
+                        for pname, pinfo in list(provider_rows.items())[:8]:
+                            if isinstance(pinfo, dict):
+                                ok = pinfo.get("ok", pinfo.get("reachable", False))
+                                value = "ok" if ok else "down"
+                                latency = pinfo.get("latency_ms")
+                                if latency is not None:
+                                    value += f" ({latency}ms)"
+                                Muted(f"{pname}: {value}")
+                except Exception as e:
+                    logger.warning("Prefab provider probe failed: %s", e)
+
+                try:
+                    engines = await llm_health(operation="service_status")
+                    engine_rows = engines.get("engines", engines.get("services", []))
+                    if isinstance(engine_rows, list) and engine_rows:
+                        Heading("Engines")
+                        for eng in engine_rows[:6]:
+                            if isinstance(eng, dict):
+                                name = str(eng.get("name", "?"))
+                                state = "running" if eng.get("running") else "stopped"
+                                Muted(f"{name}: {state}")
+                except Exception as e:
+                    logger.warning("Prefab engine probe failed: %s", e)
+
+                if include_gpu:
+                    try:
+                        gpu = await llm_health(operation="system_info")
+                        Heading("System")
+                        Muted(f"Platform: {gpu.get('platform', '?')}")
+                        Muted(f"CPU Cores: {gpu.get('cpu_cores', '?')}")
+                        ram = gpu.get("ram_gb")
+                        if ram is not None:
+                            Muted(f"RAM (GB): {ram}")
+                    except Exception as e:
+                        logger.warning("Prefab system probe failed: %s", e)
+
+            return PrefabApp(view=view, title="Local LLM MCP Status")
+
+        logger.info("Registered show_status_app Prefab tool")
+
     return mcp

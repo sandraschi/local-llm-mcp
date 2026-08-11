@@ -7,6 +7,7 @@ This example demonstrates:
 3. Image editing with PIL/OpenCV
 4. Interactive components and layouts
 """
+
 import os
 import tempfile
 import time
@@ -24,6 +25,7 @@ try:
         StableDiffusionPipeline,
         StableVideoDiffusionPipeline,
     )
+
     DIFFUSERS_AVAILABLE = True
 except ImportError:
     DIFFUSERS_AVAILABLE = False
@@ -94,7 +96,7 @@ def apply_filter(image: Image.Image, filter_type: str, strength: float = 1.0) ->
     elif filter_type == "emboss":
         return image.filter(ImageFilter.EMBOSS)
     elif filter_type == "grayscale":
-        return image.convert('L')
+        return image.convert("L")
     return image
 
 
@@ -112,8 +114,9 @@ def adjust_image(image: Image.Image, brightness: float, contrast: float, saturat
     return image
 
 
-def add_text_to_image(image: Image.Image, text: str, position: tuple[int, int],
-                     font_size: int = 30, color: str = "white") -> Image.Image:
+def add_text_to_image(
+    image: Image.Image, text: str, position: tuple[int, int], font_size: int = 30, color: str = "white"
+) -> Image.Image:
     """Add text to an image."""
     draw = ImageDraw.Draw(image)
     try:
@@ -136,31 +139,24 @@ def generate_video(prompt: str, duration: int = 4, fps: int = 8) -> str:
 
     # Initialize the pipeline
     pipe = StableVideoDiffusionPipeline.from_pretrained(
-        "stabilityai/stable-video-diffusion-img2vid-xt",
-        torch_dtype=torch.float16,
-        variant="fp16"
+        "stabilityai/stable-video-diffusion-img2vid-xt", torch_dtype=torch.float16, variant="fp16"
     )
     pipe = pipe.to("cuda")
 
     # Generate image first
     image_pipe = StableDiffusionPipeline.from_pretrained(
-        "runwayml/stable-diffusion-v1-5",
-        torch_dtype=torch.float16
+        "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16
     ).to("cuda")
     image = image_pipe(prompt).images[0]
 
     # Generate video
     video_frames = pipe(
-        image,
-        num_frames=duration * fps,
-        decode_chunk_size=8,
-        motion_bucket_id=180,
-        noise_aug_strength=0.1
+        image, num_frames=duration * fps, decode_chunk_size=8, motion_bucket_id=180, noise_aug_strength=0.1
     ).frames[0]
 
     # Save video
     output_path = os.path.join(tempfile.gettempdir(), f"generated_video_{int(time.time())}.mp4")
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     height, width = video_frames[0].size
     out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
@@ -197,7 +193,7 @@ def create_advanced_interface():
                             filter_type = gr.Dropdown(
                                 ["None", "blur", "sharpen", "edge_enhance", "emboss", "grayscale"],
                                 label="Filter Type",
-                                value="None"
+                                value="None",
                             )
                             filter_strength = gr.Slider(0.1, 2.0, value=1.0, label="Filter Strength")
 
@@ -215,8 +211,19 @@ def create_advanced_interface():
                         download_btn = gr.Button("Download Image")
 
                 # Connect components
-                inputs = [image_input, brightness, contrast, saturation, filter_type, filter_strength,
-                         text_input, text_position_x, text_position_y, text_size, text_color]
+                inputs = [
+                    image_input,
+                    brightness,
+                    contrast,
+                    saturation,
+                    filter_type,
+                    filter_strength,
+                    text_input,
+                    text_position_x,
+                    text_position_y,
+                    text_size,
+                    text_color,
+                ]
 
                 def process_image(*args):
                     if args[0] is None:
@@ -233,27 +240,15 @@ def create_advanced_interface():
 
                     # Add text if provided
                     if args[6] and args[6].strip():
-                        img = add_text_to_image(
-                            img,
-                            args[6],
-                            (int(args[7]), int(args[8])),
-                            int(args[9]),
-                            args[10]
-                        )
+                        img = add_text_to_image(img, args[6], (int(args[7]), int(args[8])), int(args[9]), args[10])
 
                     return img
 
-                apply_btn.click(
-                    fn=process_image,
-                    inputs=inputs,
-                    outputs=image_output
-                )
+                apply_btn.click(fn=process_image, inputs=inputs, outputs=image_output)
 
                 # Download functionality
                 download_btn.click(
-                    fn=lambda img: img.save("edited_image.png") if img else None,
-                    inputs=image_output,
-                    outputs=None
+                    fn=lambda img: img.save("edited_image.png") if img else None, inputs=image_output, outputs=None
                 )
 
             # Tab 2: Video Generation (if diffusers is available)
@@ -262,8 +257,7 @@ def create_advanced_interface():
                     with gr.Row():
                         with gr.Column(scale=1):
                             video_prompt = gr.Textbox(
-                                label="Video Prompt",
-                                placeholder="A beautiful sunset over mountains..."
+                                label="Video Prompt", placeholder="A beautiful sunset over mountains..."
                             )
                             video_duration = gr.Slider(1, 10, value=4, step=1, label="Duration (seconds)")
                             video_fps = gr.Slider(4, 30, value=8, step=1, label="Frames per Second")
@@ -288,7 +282,7 @@ def create_advanced_interface():
                     generate_btn.click(
                         fn=generate_video_wrapper,
                         inputs=[video_prompt, video_duration, video_fps],
-                        outputs=[video_output, status]
+                        outputs=[video_output, status],
                     )
             else:
                 with gr.Tab("🎥 Video Generation (Not Available)", id="video_disabled"):
@@ -308,12 +302,10 @@ def create_advanced_interface():
                 with gr.Row():
                     with gr.Column(scale=1):
                         ai_prompt = gr.Textbox(
-                            label="Image Prompt",
-                            placeholder="A beautiful landscape with mountains and a lake..."
+                            label="Image Prompt", placeholder="A beautiful landscape with mountains and a lake..."
                         )
                         negative_prompt = gr.Textbox(
-                            label="Negative Prompt",
-                            placeholder="blurry, low quality, distorted..."
+                            label="Negative Prompt", placeholder="blurry, low quality, distorted..."
                         )
 
                         with gr.Row():
@@ -328,11 +320,7 @@ def create_advanced_interface():
 
                     with gr.Column(scale=1):
                         ai_output = gr.Gallery(
-                            label="Generated Images",
-                            show_label=True,
-                            elem_id="gallery",
-                            columns=2,
-                            height="auto"
+                            label="Generated Images", show_label=True, elem_id="gallery", columns=2, height="auto"
                         )
 
                 def generate_image(prompt, negative_prompt, width, height, num_images, guidance_scale, num_steps):
@@ -341,8 +329,7 @@ def create_advanced_interface():
 
                     try:
                         pipe = StableDiffusionPipeline.from_pretrained(
-                            "runwayml/stable-diffusion-v1-5",
-                            torch_dtype=torch.float16
+                            "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16
                         ).to("cuda")
 
                         images = []
@@ -353,7 +340,7 @@ def create_advanced_interface():
                                 width=int(width),
                                 height=int(height),
                                 num_inference_steps=int(num_steps),
-                                guidance_scale=guidance_scale
+                                guidance_scale=guidance_scale,
                             ).images[0]
                             images.append(image)
 
@@ -364,7 +351,7 @@ def create_advanced_interface():
                 generate_img_btn.click(
                     fn=generate_image,
                     inputs=[ai_prompt, negative_prompt, width, height, num_images, guidance_scale, num_steps],
-                    outputs=[ai_output, gr.Textbox(visible=False)]
+                    outputs=[ai_output, gr.Textbox(visible=False)],
                 )
 
         return demo
@@ -373,6 +360,7 @@ def create_advanced_interface():
 if __name__ == "__main__":
     # Check for CUDA
     import torch
+
     if not torch.cuda.is_available():
         print("Warning: CUDA is not available. Some features may be slow or unavailable.")
 

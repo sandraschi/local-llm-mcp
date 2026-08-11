@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Run the local-llm-mcp server with enhanced startup and monitoring."""
+
 import asyncio
 import signal
 import sys
@@ -12,6 +13,7 @@ sys.path.insert(0, str(project_root / "src"))
 
 def setup_signal_handlers():
     """Setup graceful shutdown handlers."""
+
     def signal_handler(signum, frame):
         print(f"\n🛑 Received signal {signum}, shutting down gracefully...")
         sys.exit(0)
@@ -27,6 +29,7 @@ async def main():
     try:
         # Import after path setup
         from llm_mcp.main import main as server_main
+
         await server_main()
     except KeyboardInterrupt:
         print("\n🛑 Server stopped by user")

@@ -20,23 +20,23 @@ from typing import Any
 
 # ANSI color codes for terminal output
 class Colors:
-    HEADER = '\033[95m'
-    BLUE = '\033[94m'
-    CYAN = '\033[96m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+    HEADER = "\033[95m"
+    BLUE = "\033[94m"
+    CYAN = "\033[96m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    RED = "\033[91m"
+    ENDC = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
 
 
 # Add the project root to the Python path
 sys.path.append(str(Path(__file__).parent.parent))
 
 # Import the LLM MCP components
-from llm_mcp.config import get_settings  # noqa: E402
-from llm_mcp.services.model_service import model_service  # noqa: E402
+from llm_mcp.config import get_settings
+from llm_mcp.services.model_service import model_service
 
 
 class MessageRole(StrEnum):
@@ -48,31 +48,20 @@ class MessageRole(StrEnum):
 class ChatMessage:
     """A single message in the conversation."""
 
-    def __init__(
-        self,
-        role: MessageRole,
-        content: str,
-        timestamp: datetime | None = None
-    ):
+    def __init__(self, role: MessageRole, content: str, timestamp: datetime | None = None):
         self.role = role
         self.content = content
         self.timestamp = timestamp or datetime.now()
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the message to a dictionary."""
-        return {
-            "role": self.role.value,
-            "content": self.content,
-            "timestamp": self.timestamp.isoformat()
-        }
+        return {"role": self.role.value, "content": self.content, "timestamp": self.timestamp.isoformat()}
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> 'ChatMessage':
+    def from_dict(cls, data: dict[str, Any]) -> "ChatMessage":
         """Create a message from a dictionary."""
         return cls(
-            role=MessageRole(data["role"]),
-            content=data["content"],
-            timestamp=datetime.fromisoformat(data["timestamp"])
+            role=MessageRole(data["role"]), content=data["content"], timestamp=datetime.fromisoformat(data["timestamp"])
         )
 
     def __str__(self) -> str:
@@ -80,16 +69,13 @@ class ChatMessage:
         role_colors = {
             MessageRole.USER: Colors.BLUE,
             MessageRole.ASSISTANT: Colors.GREEN,
-            MessageRole.SYSTEM: Colors.YELLOW
+            MessageRole.SYSTEM: Colors.YELLOW,
         }
 
         color = role_colors.get(self.role, Colors.ENDC)
         timestamp = self.timestamp.strftime("%H:%M:%S")
 
-        return (
-            f"{Colors.GRAY}[{timestamp}] {color}{self.role.upper()}:{Colors.ENDC} "
-            f"{self.content}"
-        )
+        return f"{Colors.GRAY}[{timestamp}] {color}{self.role.upper()}:{Colors.ENDC} {self.content}"
 
 
 class Conversation:
@@ -105,7 +91,7 @@ class Conversation:
 
         # Trim history if needed
         if len(self.messages) > self.max_history:
-            self.messages = self.messages[-self.max_history:]
+            self.messages = self.messages[-self.max_history :]
 
     def get_recent(self, count: int = 10) -> list[ChatMessage]:
         """Get the most recent messages."""
@@ -118,17 +104,17 @@ class Conversation:
     def save_to_file(self, file_path: str) -> None:
         """Save the conversation to a file."""
         data = [msg.to_dict() for msg in self.messages]
-        with open(file_path, 'w', encoding='utf-8') as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
     @classmethod
-    def load_from_file(cls, file_path: str) -> 'Conversation':
+    def load_from_file(cls, file_path: str) -> "Conversation":
         """Load a conversation from a file."""
         conv = cls()
 
         if os.path.exists(file_path):
             try:
-                with open(file_path, encoding='utf-8') as f:
+                with open(file_path, encoding="utf-8") as f:
                     data = json.load(f)
 
                 for msg_data in data:
@@ -177,6 +163,7 @@ class MCPChat:
             pass
 
         import atexit
+
         atexit.register(readline.write_history_file, histfile)
 
     def _load_history(self) -> None:
@@ -248,35 +235,35 @@ class MCPChat:
         """Process a chat command."""
         command = command.strip()
 
-        if not command.startswith('/'):
+        if not command.startswith("/"):
             return False
 
-        parts = command[1:].split(' ', 1)
+        parts = command[1:].split(" ", 1)
         cmd = parts[0].lower()
         args = parts[1] if len(parts) > 1 else ""
 
-        if cmd in ['exit', 'quit']:
+        if cmd in ["exit", "quit"]:
             self.running = False
             return True
 
-        elif cmd == 'help':
+        elif cmd == "help":
             self._show_help()
             return True
 
-        elif cmd == 'clear':
+        elif cmd == "clear":
             self.conversation.clear()
             print(f"{Colors.GREEN}Conversation cleared.{Colors.ENDC}")
             return True
 
-        elif cmd == 'providers':
+        elif cmd == "providers":
             await self._list_providers()
             return True
 
-        elif cmd == 'models':
+        elif cmd == "models":
             await self._list_models()
             return True
 
-        elif cmd == 'provider':
+        elif cmd == "provider":
             if not args:
                 if self.current_provider:
                     print(f"Current provider: {self.current_provider}")
@@ -293,7 +280,7 @@ class MCPChat:
                 print(f"{Colors.RED}Unknown provider: {provider_name}{Colors.ENDC}")
             return True
 
-        elif cmd == 'model':
+        elif cmd == "model":
             if not self.current_provider:
                 print(f"{Colors.RED}No provider selected. Use /provider first.{Colors.ENDC}")
                 return True
@@ -310,12 +297,12 @@ class MCPChat:
             print(f"{Colors.GREEN}Model set to: {model_name}{Colors.ENDC}")
             return True
 
-        elif cmd == 'pull':
+        elif cmd == "pull":
             if not args:
                 print("Usage: /pull <model_name> [provider]")
                 return True
 
-            parts = args.split(' ', 1)
+            parts = args.split(" ", 1)
             model_name = parts[0]
             provider = parts[1] if len(parts) > 1 else self.current_provider
 
@@ -368,7 +355,7 @@ class MCPChat:
                 provider=self.current_provider,
                 temperature=0.7,
                 max_tokens=2000,
-                stream=True
+                stream=True,
             ):
                 print(chunk, end="", flush=True)
                 response_text += chunk
@@ -402,7 +389,7 @@ class MCPChat:
                     continue
 
                 # Process commands
-                if user_input.startswith('/'):
+                if user_input.startswith("/"):
                     await self._process_command(user_input)
                     continue
 
@@ -412,6 +399,7 @@ class MCPChat:
             except Exception as e:
                 print(f"\n{Colors.RED}Error: {e}{Colors.ENDC}")
                 import traceback
+
                 traceback.print_exc()
 
         # Clean up
@@ -422,12 +410,7 @@ async def main():
     """Main entry point."""
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="LLM MCP Chat Terminal")
-    parser.add_argument(
-        "--config",
-        type=str,
-        default=None,
-        help="Path to configuration file"
-    )
+    parser.add_argument("--config", type=str, default=None, help="Path to configuration file")
 
     args = parser.parse_args()
 
@@ -444,5 +427,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n{Colors.RED}Fatal error: {e}{Colors.ENDC}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

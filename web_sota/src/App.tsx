@@ -7,6 +7,8 @@ import { Fleet } from "@/pages/fleet";
 import { Help } from "@/pages/help";
 import { Performance } from "@/pages/performance";
 import { Settings } from "@/pages/settings";
+import { Skills } from "@/pages/skills";
+import { Tools } from "@/pages/tools";
 import { Vision } from "@/pages/vision";
 
 function App() {
@@ -16,6 +18,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/chat" element={<Chat />} />
+          <Route path="/tools" element={<Tools />} />
+          <Route path="/skills" element={<Skills />} />
           <Route path="/performance" element={<Performance />} />
           <Route path="/vision" element={<Vision />} />
           <Route path="/fleet" element={<Fleet />} />

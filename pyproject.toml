@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "llm-mcp"
 version = "1.0.0"  # Production release with Pydantic V2 and enhanced logging
-description = "ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â¥ Production-ready FastMCP 3.1.0 server for managing local and cloud LLMs with vLLM 1.0 integration and Claude Desktop compatibility"
+description = "Production-ready FastMCP 3.4+ server for managing local and cloud LLMs with vLLM integration, GPU supervision, and Claude Desktop compatibility"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
@@ -96,11 +96,11 @@ full = [
     # Additional providers
     "openai>=1.35.0",
     "anthropic>=0.31.0",
-    
+
     # Advanced features
     "gradio>=4.38.0",
     "streamlit>=1.36.0",
-    
+
     # Additional ML tools
     "scikit-learn>=1.5.0",
     "matplotlib>=3.9.0",
@@ -153,12 +153,17 @@ markers = [
 [tool.ruff]
 line-length = 120
 target-version = "py312"
+extend-exclude = ["mcpb", ".cursor", ".windsurf", ".agents"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "S", "UP", "RUF"]
+select = ["E", "F", "W", "I", "B", "S", "UP", "RUF", "T20"]
 ignore = ["S101", "B008", "S101", "B008", "S110", "S106", "S112", "S101", "B008", "S101", "B008", "S110", "S106", "S112", "RUF012", "S603", "S607", "S324", "E402"]
 
 [tool.ruff.lint.per-file-ignores]
+"run_server.py" = ["T20"]
+"scripts/*.py" = ["S310", "E501", "E741", "F841", "T20"]
+"examples/*.py" = ["F401", "E722", "S104", "T20"]
+"tools/*.py" = ["F821", "T20"]
 "src/llm_mcp/main.py" = ["E402", "F401"]
 "src/llm_mcp/tools/*.py" = ["F401", "E501"]
 "src/llm_mcp/providers/huggingface/*.py" = ["F401"]
@@ -179,4 +184,10 @@ ignore = ["S101", "B008", "S101", "B008", "S110", "S106", "S112", "S101", "B008"
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+exclude = ["*.md"]
 
+[dependency-groups]
+dev = [
+    "pyright>=1.1.411",
+    "ty>=0.0.70",
+]
