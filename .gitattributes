@@ -3,7 +3,7 @@
 # picked up CRLF from editing tools, producing false 100%-file diffs and
 # occasionally corrupting git operations). git applies this on every
 # add/checkout -- no per-file discipline required.
-* text=auto eol=lf
+* text eol=lf
 
 # Binary -- never touch line endings
 *.png binary

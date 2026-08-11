@@ -146,6 +146,9 @@ extend-exclude = ["mcpb", ".cursor", ".windsurf", ".agents"]
 select = ["E", "F", "W", "I", "B", "S", "UP", "RUF", "T20"]
 ignore = ["S101", "B008", "S101", "B008", "S110", "S106", "S112", "S101", "B008", "S101", "B008", "S110", "S106", "S112", "RUF012", "S603", "S607", "S324", "E402"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["llm_mcp"]
+
 [tool.ruff.lint.per-file-ignores]
 "run_server.py" = ["T20"]
 "scripts/*.py" = ["S310", "E501", "E741", "F841", "T20"]
