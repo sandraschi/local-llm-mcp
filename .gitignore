@@ -49,7 +49,7 @@ ENV/
 *.log
 logs/
 data/
-models/
+/models/
 
 # Local development
 .local/
