@@ -176,11 +176,11 @@ Output (JSON only, no markdown code blocks):"""
             stats.update(
                 {
                     "engine_stats": {
-                        "num_running": engine_stats.num_running,
-                        "num_waiting": engine_stats.num_waiting,
-                        "num_swapped": engine_stats.num_swapped,
-                        "num_requests_finished": engine_stats.num_requests_finished,
-                        "total_processing_time": engine_stats.total_processing_time,
+                        "num_running": engine_stats.num_running,  # ty: ignore[unresolved-attribute]
+                        "num_waiting": engine_stats.num_waiting,  # ty: ignore[unresolved-attribute]
+                        "num_swapped": engine_stats.num_swapped,  # ty: ignore[unresolved-attribute]
+                        "num_requests_finished": engine_stats.num_requests_finished,  # ty: ignore[unresolved-attribute]
+                        "total_processing_time": engine_stats.total_processing_time,  # ty: ignore[unresolved-attribute]
                     }
                 }
             )

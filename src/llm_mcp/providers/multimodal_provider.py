@@ -29,7 +29,7 @@ try:
     from PIL import Image
     from transformers import (
         AutoModel,
-        AutoModelForVision2Seq,
+        AutoModelForVision2Seq,  # ty: ignore[unresolved-import]
         AutoProcessor,
         Blip2ForConditionalGeneration,
         Blip2Processor,
@@ -142,7 +142,7 @@ class MultimodalProvider(BaseProvider):
                 )
             elif model_key == "clip":
                 processor = CLIPProcessor.from_pretrained(model_name)
-                model = CLIPModel.from_pretrained(model_name).to(self.device)
+                model = CLIPModel.from_pretrained(model_name).to(self.device)  # ty: ignore[invalid-argument-type]
             elif model_key in ["blip", "blip2"]:
                 if model_key == "blip":
                     processor = BlipProcessor.from_pretrained(model_name)
@@ -154,7 +154,7 @@ class MultimodalProvider(BaseProvider):
                         torch_dtype=torch.float16 if self.device.type == "cuda" else torch.float32,
                         device_map="auto" if self.device.type == "cuda" else None,
                     )
-                model.to(self.device)
+                model.to(self.device)  # ty: ignore[invalid-argument-type]
 
             self.vision_models[model_key] = {
                 "model": model,
@@ -462,7 +462,7 @@ class MultimodalProvider(BaseProvider):
             torch.cuda.empty_cache()
 
     # Provider interface methods
-    async def generate(self, prompt: str, **kwargs) -> AsyncGenerator[str, None]:
+    async def generate(self, prompt: str, **kwargs) -> AsyncGenerator[str, None]:  # ty: ignore[invalid-method-override]
         """Generate text response (not used for multimodal)."""
         yield ""
 

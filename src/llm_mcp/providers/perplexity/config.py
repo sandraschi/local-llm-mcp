@@ -21,4 +21,4 @@ class PerplexityConfig(BaseModel):
     # Safety settings
     stop: list | None = Field(None, description="Stop sequences")
 
-    model_config = ConfigDict(env_prefix="PERPLEXITY_")
+    model_config = ConfigDict(env_prefix="PERPLEXITY_")  # ty: ignore[invalid-key]

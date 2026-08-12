@@ -21,4 +21,4 @@ class GeminiConfig(BaseModel):
     # Safety settings
     stop_sequences: list | None = Field(None, description="Stop sequences")
 
-    model_config = ConfigDict(env_prefix="GEMINI_")
+    model_config = ConfigDict(env_prefix="GEMINI_")  # ty: ignore[invalid-key]

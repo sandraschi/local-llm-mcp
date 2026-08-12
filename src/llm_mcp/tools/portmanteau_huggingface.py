@@ -33,7 +33,7 @@ class HuggingFaceConfig(BaseModel):
     # Download settings
     use_auth_token: bool = Field(True, description="Whether to use auth token for downloads")
 
-    model_config = ConfigDict(env_prefix="HUGGINGFACE_", populate_by_name=True, extra="ignore")
+    model_config = ConfigDict(env_prefix="HUGGINGFACE_", populate_by_name=True, extra="ignore")  # ty: ignore[invalid-key]
 
     @classmethod
     def from_env(cls) -> "HuggingFaceConfig":
@@ -247,14 +247,14 @@ async def llm_huggingface(
                         "likes": model_info.likes,
                         "tags": model_info.tags,
                         "pipeline_tag": model_info.pipeline_tag,
-                        "license": model_info.license,
-                        "description": model_info.description,
+                        "license": model_info.license,  # ty: ignore[unresolved-attribute]
+                        "description": model_info.description,  # ty: ignore[unresolved-attribute]
                         "card_data": model_info.card_data,
                         "created_at": model_info.created_at.isoformat() if model_info.created_at else None,
                         "last_modified": model_info.last_modified.isoformat() if model_info.last_modified else None,
                         "siblings": [
                             {"rfilename": sibling.rfilename, "size": sibling.size, "blob_id": sibling.blob_id}
-                            for sibling in model_info.siblings
+                            for sibling in model_info.siblings  # ty: ignore[not-iterable]
                         ],
                     },
                 }
@@ -371,7 +371,7 @@ async def llm_huggingface(
 
         elif operation == "list_user_repos":
             try:
-                repos = api.list_repos()
+                repos = api.list_repos()  # ty: ignore[unresolved-attribute]
                 return {
                     "success": True,
                     "repositories": [

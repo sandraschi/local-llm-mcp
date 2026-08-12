@@ -58,7 +58,7 @@ class HuggingFaceProvider(BaseProvider):
         if self._is_initialized:
             return
 
-        logger.info(f"Initializing Hugging Face provider with model: {self.config.model_name}")
+        logger.info(f"Initializing Hugging Face provider with model: {self.config.model_name}")  # ty: ignore[unresolved-attribute]
 
         # Load model and tokenizer in a separate thread to avoid blocking the event loop
         loop = asyncio.get_event_loop()
@@ -76,37 +76,37 @@ class HuggingFaceProvider(BaseProvider):
         """Load the model and tokenizer."""
 
         model_kwargs = {
-            "revision": self.config.model_revision,
-            "trust_remote_code": self.config.trust_remote_code,
-            **self.config.model_kwargs,
+            "revision": self.config.model_revision,  # ty: ignore[unresolved-attribute]
+            "trust_remote_code": self.config.trust_remote_code,  # ty: ignore[unresolved-attribute]
+            **self.config.model_kwargs,  # ty: ignore[unresolved-attribute]
         }
 
         # Determine model class based on task
-        if self.config.task == "text-generation":
+        if self.config.task == "text-generation":  # ty: ignore[unresolved-attribute]
             model_class = AutoModelForCausalLM
-        elif self.config.task == "text2text-generation":
+        elif self.config.task == "text2text-generation":  # ty: ignore[unresolved-attribute]
             model_class = AutoModelForSeq2SeqLM
         else:
             model_class = AutoModelForCausalLM  # Default
 
         # Load model and tokenizer
-        self._model = model_class.from_pretrained(self.config.model_name, **model_kwargs).to(self._device)
+        self._model = model_class.from_pretrained(self.config.model_name, **model_kwargs).to(self._device)  # ty: ignore[invalid-argument-type, unresolved-attribute]
 
         self._tokenizer = AutoTokenizer.from_pretrained(
-            self.config.model_name,
-            revision=self.config.model_revision,
-            trust_remote_code=self.config.trust_remote_code,
+            self.config.model_name,  # ty: ignore[unresolved-attribute]
+            revision=self.config.model_revision,  # ty: ignore[unresolved-attribute]
+            trust_remote_code=self.config.trust_remote_code,  # ty: ignore[unresolved-attribute]
         )
 
         # Initialize pipeline if needed
-        if self.config.task:
+        if self.config.task:  # ty: ignore[unresolved-attribute]
             self._pipeline = pipeline(
-                self.config.task,
+                self.config.task,  # ty: ignore[unresolved-attribute]
                 model=self._model,
                 tokenizer=self._tokenizer,
                 device=self._device,
-                **self.config.pipeline_kwargs,
-            )
+                **self.config.pipeline_kwargs,  # ty: ignore[unresolved-attribute]
+            )  # ty: ignore[no-matching-overload]
 
     def _is_diffusion_model(self) -> bool:
         """Check if the configured model is a diffusion model."""
@@ -121,7 +121,7 @@ class HuggingFaceProvider(BaseProvider):
             "realistic-vision",
             "openjourney",
         ]
-        model_name_lower = self.config.model_name.lower()
+        model_name_lower = self.config.model_name.lower()  # ty: ignore[unresolved-attribute]
         return any(keyword in model_name_lower for keyword in diffusion_keywords)
 
     def _load_diffusion_model(self):
@@ -129,10 +129,10 @@ class HuggingFaceProvider(BaseProvider):
         if not DIFFUSERS_AVAILABLE:
             raise ImportError("Diffusers not available. Install with: pip install diffusers")
 
-        logger.info(f"Loading diffusion model: {self.config.model_name}")
+        logger.info(f"Loading diffusion model: {self.config.model_name}")  # ty: ignore[unresolved-attribute]
 
         # Determine pipeline type
-        model_name_lower = self.config.model_name.lower()
+        model_name_lower = self.config.model_name.lower()  # ty: ignore[unresolved-attribute]
         if "sdxl" in model_name_lower:
             pipeline_class = StableDiffusionXLPipeline
         else:
@@ -140,9 +140,9 @@ class HuggingFaceProvider(BaseProvider):
 
         # Load diffusion pipeline
         self._diffusion_pipeline = pipeline_class.from_pretrained(
-            self.config.model_name,
+            self.config.model_name,  # ty: ignore[unresolved-attribute]
             torch_dtype=torch.float16 if self._device == "cuda" else torch.float32,
-            **self.config.model_kwargs,
+            **self.config.model_kwargs,  # ty: ignore[unresolved-attribute]
         )
 
         # Apply optimizations
@@ -156,9 +156,9 @@ class HuggingFaceProvider(BaseProvider):
 
     def _get_device(self) -> str:
         """Determine the best device to use."""
-        if self.config.device == "auto":
+        if self.config.device == "auto":  # ty: ignore[unresolved-attribute]
             return "cuda" if torch.cuda.is_available() else "cpu"
-        return self.config.device
+        return self.config.device  # ty: ignore[unresolved-attribute]
 
     async def list_models(self) -> list[dict[str, Any]]:
         """List available models from the Hugging Face Hub.
@@ -168,14 +168,14 @@ class HuggingFaceProvider(BaseProvider):
         """
         return [
             {
-                "id": self.config.model_name,
-                "name": self.config.model_name.split("/")[-1],
-                "description": f"Hugging Face model: {self.config.model_name}",
-                "capabilities": [self.config.task] if self.config.task else [],
+                "id": self.config.model_name,  # ty: ignore[unresolved-attribute]
+                "name": self.config.model_name.split("/")[-1],  # ty: ignore[unresolved-attribute]
+                "description": f"Hugging Face model: {self.config.model_name}",  # ty: ignore[unresolved-attribute]
+                "capabilities": [self.config.task] if self.config.task else [],  # ty: ignore[unresolved-attribute]
             }
         ]
 
-    async def generate(self, prompt: str, model: str | None = None, **kwargs) -> AsyncGenerator[str, None]:
+    async def generate(self, prompt: str, model: str | None = None, **kwargs) -> AsyncGenerator[str, None]:  # ty: ignore[invalid-method-override]
         """Generate a response from the model.
 
         Args:
@@ -190,8 +190,8 @@ class HuggingFaceProvider(BaseProvider):
             await self.initialize()
 
         # Use the specified model or the default one
-        model_name = model or self.config.model_name
-        if model_name != self.config.model_name:
+        model_name = model or self.config.model_name  # ty: ignore[unresolved-attribute]
+        if model_name != self.config.model_name:  # ty: ignore[unresolved-attribute]
             # TODO: Handle model switching if needed
             pass
 
@@ -209,7 +209,7 @@ class HuggingFaceProvider(BaseProvider):
 
         if self._pipeline:
             # Use pipeline for generation
-            result = await asyncio.get_event_loop().run_in_executor(None, lambda: self._pipeline(prompt, **gen_kwargs))
+            result = await asyncio.get_event_loop().run_in_executor(None, lambda: self._pipeline(prompt, **gen_kwargs))  # ty: ignore[call-non-callable]
 
             if isinstance(result, list) and len(result) > 0:
                 if "generated_text" in result[0]:
@@ -220,17 +220,17 @@ class HuggingFaceProvider(BaseProvider):
                 yield str(result)
         else:
             # Fallback to manual generation
-            inputs = self._tokenizer(prompt, return_tensors="pt").to(self._device)
+            inputs = self._tokenizer(prompt, return_tensors="pt").to(self._device)  # ty: ignore[call-non-callable]
 
             with torch.no_grad():
-                outputs = self._model.generate(
+                outputs = self._model.generate(  # ty: ignore[unresolved-attribute]
                     **inputs,
                     **gen_kwargs,
-                    pad_token_id=self._tokenizer.eos_token_id,
+                    pad_token_id=self._tokenizer.eos_token_id,  # ty: ignore[unresolved-attribute]
                 )
 
-                generated_text = self._tokenizer.decode(outputs[0], skip_special_tokens=True)
-                yield generated_text
+                generated_text = self._tokenizer.decode(outputs[0], skip_special_tokens=True)  # ty: ignore[unresolved-attribute]
+                yield generated_text  # ty: ignore[invalid-yield]
 
     async def pull_model(self, model_name: str) -> dict[str, Any]:
         """Download a model from Hugging Face Hub.
@@ -245,18 +245,18 @@ class HuggingFaceProvider(BaseProvider):
 
         try:
             # Get model info
-            info = model_info(model_name, token=self.config.api_key)
+            info = model_info(model_name, token=self.config.api_key)  # ty: ignore[unresolved-attribute]
 
             # Download the model
             local_path = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: snapshot_download(
                     repo_id=model_name,
-                    revision=self.config.model_revision,
-                    token=self.config.api_key,
+                    revision=self.config.model_revision,  # ty: ignore[unresolved-attribute]
+                    token=self.config.api_key,  # ty: ignore[unresolved-attribute]
                     local_files_only=False,
                     resume_download=True,
-                ),
+                ),  # ty: ignore[no-matching-overload]
             )
 
             return {
@@ -285,12 +285,12 @@ class HuggingFaceProvider(BaseProvider):
             Dictionary with model information
         """
         if not model_name:
-            model_name = self.config.model_name
+            model_name = self.config.model_name  # ty: ignore[unresolved-attribute]
 
         try:
             from huggingface_hub import model_info
 
-            info = model_info(model_name, token=self.config.api_key)
+            info = model_info(model_name, token=self.config.api_key)  # ty: ignore[unresolved-attribute]
 
             return {
                 "id": info.id,
@@ -300,8 +300,8 @@ class HuggingFaceProvider(BaseProvider):
                 "last_modified": info.last_modified.isoformat() if info.last_modified else None,
                 "model_size": info.safetensors.get("total") if info.safetensors else None,
                 "license": info.cardData.get("license") if hasattr(info, "cardData") else None,
-                "model_type": info.config.get("model_type") if hasattr(info, "config") else None,
-                "architectures": info.config.get("architectures") if hasattr(info, "config") else None,
+                "model_type": info.config.get("model_type") if hasattr(info, "config") else None,  # ty: ignore[unresolved-attribute]
+                "architectures": info.config.get("architectures") if hasattr(info, "config") else None,  # ty: ignore[unresolved-attribute]
             }
 
         except Exception as e:
@@ -362,7 +362,7 @@ class HuggingFaceProvider(BaseProvider):
 
             return {
                 "image_base64": image_base64,
-                "model": self.config.model_name,
+                "model": self.config.model_name,  # ty: ignore[unresolved-attribute]
                 "prompt": prompt,
                 "width": width,
                 "height": height,

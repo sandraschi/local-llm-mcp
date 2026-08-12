@@ -67,7 +67,7 @@ class MinimalServer:
 
             try:
                 if hasattr(self.server, "start"):
-                    await self.server.start()
+                    await self.server.start()  # ty: ignore[call-non-callable]
                     logger.info("Server started successfully, waiting for connections...")
 
                     # Keep the server running
@@ -94,7 +94,7 @@ class MinimalServer:
         if self.server is not None:
             logger.info("Stopping server...")
             if hasattr(self.server, "stop"):
-                await self.server.stop()
+                await self.server.stop()  # ty: ignore[call-non-callable]
             self.server = None
         logger.info("Server stopped")
 
@@ -150,7 +150,7 @@ async def main():
 if __name__ == "__main__":
     # Configure asyncio for Windows
     if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # ty: ignore[deprecated]
 
     try:
         exit_code = asyncio.run(main())

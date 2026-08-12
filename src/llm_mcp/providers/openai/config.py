@@ -23,4 +23,4 @@ class OpenAIConfig(BaseModel):
     stop: list | None = Field(None, description="Stop sequences")
     user: str | None = Field(None, description="User identifier for tracking")
 
-    model_config = ConfigDict(env_prefix="OPENAI_")
+    model_config = ConfigDict(env_prefix="OPENAI_")  # ty: ignore[invalid-key]

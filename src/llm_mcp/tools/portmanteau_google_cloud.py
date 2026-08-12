@@ -21,10 +21,10 @@ logger = get_logger(__name__)
 
 # Google Cloud dependencies
 try:
-    from google import genai
-    from google.auth import default
-    from google.cloud import aiplatform, storage
-    from vertexai.generative_models import GenerativeModel
+    from google import genai  # ty: ignore[unresolved-import]
+    from google.auth import default  # ty: ignore[unresolved-import]
+    from google.cloud import aiplatform, storage  # ty: ignore[unresolved-import]
+    from vertexai.generative_models import GenerativeModel  # ty: ignore[unresolved-import]
 
     GOOGLE_CLOUD_AVAILABLE = True
 except ImportError:
@@ -45,7 +45,7 @@ class GoogleCloudConfig(BaseModel):
     timeout: int = Field(30, description="Request timeout in seconds")
     max_retries: int = Field(3, description="Maximum number of retries")
 
-    model_config = ConfigDict(env_prefix="GOOGLE_CLOUD_", populate_by_name=True, extra="ignore")
+    model_config = ConfigDict(env_prefix="GOOGLE_CLOUD_", populate_by_name=True, extra="ignore")  # ty: ignore[invalid-key]
 
     @classmethod
     def from_env(cls) -> "GoogleCloudConfig":

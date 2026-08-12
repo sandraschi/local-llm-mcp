@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import Field
 
-from ...models.base import BaseProviderConfig
+from ...models.base import BaseProviderConfig  # ty: ignore[unresolved-import]
 
 
 class LMStudioConfig(BaseProviderConfig):

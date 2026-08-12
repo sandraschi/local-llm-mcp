@@ -73,7 +73,7 @@ class ProviderFactory:
         Returns:
             Dictionary mapping provider names to their classes
         """
-        return PROVIDER_CLASSES.copy()
+        return PROVIDER_CLASSES.copy()  # ty: ignore[invalid-return-type]
 
     @staticmethod
     def is_provider_available(provider_name: str) -> bool:

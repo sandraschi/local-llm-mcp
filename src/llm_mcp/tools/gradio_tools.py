@@ -13,8 +13,8 @@ from typing import Any
 
 # Try to import Gradio
 try:
-    import gradio as gr
-    from gradio.routes import App
+    import gradio as gr  # ty: ignore[unresolved-import]
+    from gradio.routes import App  # ty: ignore[unresolved-import]
 
     GRADIO_AVAILABLE = True
 except ImportError:

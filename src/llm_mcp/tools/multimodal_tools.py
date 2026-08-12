@@ -96,7 +96,7 @@ class MultimodalTools:
 
         # Load model if not already loaded
         if self.image_model is None or self.image_model.name_or_path != model_name:
-            self.image_model = pipeline("image-to-text", model=model_name, device=self.device)
+            self.image_model = pipeline("image-to-text", model=model_name, device=self.device)  # ty: ignore[no-matching-overload]
 
         # Process image
         pil_image = self.load_image(image)
@@ -174,8 +174,8 @@ class MultimodalTools:
         img2 = self.load_image(image2)
 
         # Get embeddings
-        embedding1 = model.encode([img1], convert_to_tensor=True)
-        embedding2 = model.encode([img2], convert_to_tensor=True)
+        embedding1 = model.encode([img1], convert_to_tensor=True)  # ty: ignore[no-matching-overload]
+        embedding2 = model.encode([img2], convert_to_tensor=True)  # ty: ignore[no-matching-overload]
 
         # Calculate cosine similarity
         similarity = util.pytorch_cos_sim(embedding1, embedding2)[0][0].item()

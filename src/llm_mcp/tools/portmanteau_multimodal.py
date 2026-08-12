@@ -133,7 +133,7 @@ async def llm_multimodal(
         elif operation == "compare_images":
             if not image1 or not image2:
                 return {"error": "image1 and image2 required for compare_images operation"}
-            return await image_similarity_impl(image1=image1, image2=image2, model_name=model_name or "clip-ViT-B-32")
+            return await image_similarity_impl(image1=image1, image2=image2, model_name=model_name or "clip-ViT-B-32")  # ty: ignore[invalid-return-type]
 
         else:
             return {

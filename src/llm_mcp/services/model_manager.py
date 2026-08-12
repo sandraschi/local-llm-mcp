@@ -90,8 +90,8 @@ class ModelManager:
         if provider:
             model = await provider.get_model(model_id)
             if model:
-                self._models_cache[model_id] = model
-                return model
+                self._models_cache[model_id] = model  # ty: ignore[invalid-assignment]
+                return model  # ty: ignore[invalid-return-type]
 
         return None
 
@@ -128,8 +128,8 @@ class ModelManager:
 
             # Update the cache
             if model:
-                self._models_cache[model_id] = model
-                return model
+                self._models_cache[model_id] = model  # ty: ignore[invalid-assignment]
+                return model  # ty: ignore[invalid-return-type]
 
             raise ValueError(f"Failed to load model: {model_id}")
         except Exception as e:

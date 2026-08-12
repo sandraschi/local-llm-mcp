@@ -69,10 +69,10 @@ async def llm_help_tool(
     try:
         # Import here to avoid circular imports
         from llm_mcp.tools.help_tools import (
-            _get_hardware_requirements,
-            _get_integration_guide_impl,
+            _get_hardware_requirements,  # ty: ignore[unresolved-import]
+            _get_integration_guide_impl,  # ty: ignore[unresolved-import]
             _get_performance_guide_impl,
-            _get_quick_reference_impl,
+            _get_quick_reference_impl,  # ty: ignore[unresolved-import]
             _get_tool_help_impl,
             _get_tool_signature_impl,
             _get_troubleshooting_guide_impl,

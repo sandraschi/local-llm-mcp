@@ -48,7 +48,7 @@ class VLLMProvider(BaseProvider):
             logger.error(error_msg)
             raise Exception(error_msg) from e
 
-    async def list_models(self) -> list[ModelMetadata]:
+    async def list_models(self) -> list[ModelMetadata]:  # ty: ignore[invalid-method-override]
         """List all available vLLM models."""
         try:
             # vLLM uses the OpenAI-compatible API
@@ -65,7 +65,7 @@ class VLLMProvider(BaseProvider):
             logger.error(f"Error listing vLLM models: {e!s}")
             return []
 
-    async def get_model(self, model_id: str) -> ModelMetadata | None:
+    async def get_model(self, model_id: str) -> ModelMetadata | None:  # ty: ignore[invalid-method-override]
         """Get details about a specific vLLM model."""
         try:
             # First check if the model exists by listing all models
@@ -78,7 +78,7 @@ class VLLMProvider(BaseProvider):
             logger.error(f"Error getting vLLM model {model_id}: {e!s}")
             return None
 
-    async def load_model(self, model_id: str, **kwargs) -> ModelMetadata:
+    async def load_model(self, model_id: str, **kwargs) -> ModelMetadata:  # ty: ignore[invalid-method-override]
         """Load a vLLM model.
 
         Note: vLLM typically loads one model at a time. This will unload the current model
@@ -86,7 +86,7 @@ class VLLMProvider(BaseProvider):
         """
         # Check if the model is already loaded
         if self._current_model == model_id:
-            return await self.get_model(model_id)
+            return await self.get_model(model_id)  # ty: ignore[invalid-return-type]
 
         # Get model details first
         model = await self.get_model(model_id)

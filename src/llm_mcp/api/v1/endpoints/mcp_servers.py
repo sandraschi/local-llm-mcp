@@ -81,15 +81,16 @@ async def create_mcp_server(server: MCPServerCreate) -> MCPServer:
         if server.enabled:
             await mcp_server_manager.start_server(server.name)
 
-        status = ServerStatus.RUNNING if server.enabled else ServerStatus.STOPPED
-        return MCPServer(**created.model_dump(), status=status)
+        server_status = ServerStatus.RUNNING if server.enabled else ServerStatus.STOPPED
+        return MCPServer(**created.model_dump(), status=server_status)
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Failed to create MCP server: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to create MCP server: {e!s}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create MCP server: {e!s}",
         ) from e
 
 

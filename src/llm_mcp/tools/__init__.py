@@ -257,11 +257,11 @@ def register_all_tools(mcp):
 
         # Try to register the tool with error isolation
         try:
-            register_func = safe_import_tool_module(module_name, func_name)
+            register_func = safe_import_tool_module(module_name, func_name)  # ty: ignore[invalid-argument-type]
             if register_func:
                 # Pass kwargs if specified in tool config
                 kwargs = tool_config.get("kwargs", {})
-                result = register_func(mcp, **kwargs)
+                result = register_func(mcp, **kwargs)  # ty: ignore[invalid-argument-type]
 
                 # Handle different return types from registration functions
                 if isinstance(result, dict):

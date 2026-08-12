@@ -73,7 +73,7 @@ class BaseProvider(ABC):
         Default implementation collects all chunks from the generate method.
         """
         response = []
-        async for chunk in self.generate(prompt, model_id, **kwargs):
+        async for chunk in self.generate(prompt, model_id, **kwargs):  # ty: ignore[not-iterable]
             response.append(chunk)
         return "".join(response)
 

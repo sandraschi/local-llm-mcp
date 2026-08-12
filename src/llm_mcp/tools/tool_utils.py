@@ -39,7 +39,7 @@ def register_tool[T](
     Returns:
         The decorated function
     """
-    tool_name = name or func.__name__
+    tool_name = name or func.__name__  # ty: ignore[unresolved-attribute]
 
     # Use provided description or extract from docstring
     if description is None:
@@ -121,7 +121,7 @@ def get_tool_metadata(func: Callable) -> dict[str, Any]:
     docstring = func.__doc__ or ""
 
     return {
-        "name": func.__name__,
+        "name": func.__name__,  # ty: ignore[unresolved-attribute]
         "docstring": docstring,
         "parameters": parameters,
         "return_type": return_type,

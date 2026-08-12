@@ -76,7 +76,7 @@ class GenerationManager:
         if not provider:
             model = model_manager.get_model(model_id)
             if model:
-                provider = self.provider_factory.get_provider(model.provider)
+                provider = self.provider_factory.get_provider(model.provider)  # ty: ignore[invalid-argument-type]
 
         if not provider:
             # Check if it was a model manager miss but maybe the factory knows it generally?
@@ -128,7 +128,7 @@ class GenerationManager:
         if not provider:
             model = model_manager.get_model(model_id)
             if model:
-                provider = self.provider_factory.get_provider(model.provider)
+                provider = self.provider_factory.get_provider(model.provider)  # ty: ignore[invalid-argument-type]
 
         if not provider:
             raise ValueError(f"No provider found for model {model_id}")

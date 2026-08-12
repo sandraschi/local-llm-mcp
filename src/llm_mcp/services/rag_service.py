@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 _rag_service: RAGService | None = None
 
 try:
-    import lancedb
+    import lancedb  # ty: ignore[unresolved-import]
     import pyarrow as pa
     from sentence_transformers import SentenceTransformer
 
@@ -29,8 +29,8 @@ try:
 except ImportError:
     _HAS_DEPS = False
     lancedb = None
-    pa = None
-    SentenceTransformer = None
+    pa = None  # ty: ignore[invalid-assignment]
+    SentenceTransformer = None  # ty: ignore[invalid-assignment]
 
 
 class RAGService:
@@ -50,7 +50,7 @@ class RAGService:
             raise RuntimeError("RAG dependencies not installed. Run: uv add lancedb pyarrow sentence-transformers")
 
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-        self._db = lancedb.connect(self.db_path)
+        self._db = lancedb.connect(self.db_path)  # ty: ignore[unresolved-attribute]
         logger.info("RAG service loading model %s ...", self.model_name)
         t0 = time.time()
         self._model = SentenceTransformer(self.model_name)
@@ -78,7 +78,7 @@ class RAGService:
         if not self._initialized:
             await self.initialize()
         vec = self._embed(text)
-        self._table.add(
+        self._table.add(  # ty: ignore[unresolved-attribute]
             [
                 {
                     "vector": vec,
@@ -89,7 +89,7 @@ class RAGService:
                 }
             ]
         )
-        count = self._table.count_rows()
+        count = self._table.count_rows()  # ty: ignore[unresolved-attribute]
         return {"success": True, "source": source, "total_docs": count}
 
     async def search(self, query: str, limit: int = 5) -> list[dict]:
@@ -97,7 +97,7 @@ class RAGService:
             await self.initialize()
         vec = self._embed(query)
         try:
-            results = self._table.search(vec).limit(limit).to_list()
+            results = self._table.search(vec).limit(limit).to_list()  # ty: ignore[unresolved-attribute]
         except Exception as e:
             logger.warning("RAG search failed: %s", e)
             return []

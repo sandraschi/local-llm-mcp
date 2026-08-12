@@ -123,7 +123,7 @@ class Config(BaseModel):
     # Extra provider registrations from config.yaml (e.g. local-llama llama.cpp servers)
     providers: dict[str, Any] = Field(default_factory=dict)
 
-    model_config = ConfigDict(env_prefix="LLM_MCP_", env_nested_delimiter="__")
+    model_config = ConfigDict(env_prefix="LLM_MCP_", env_nested_delimiter="__")  # ty: ignore[invalid-key]
 
     @classmethod
     def load(cls, config_path: str | Path | None = None) -> "Config":

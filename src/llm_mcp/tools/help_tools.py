@@ -72,11 +72,11 @@ def format_type(t: type) -> str:
     # Handle container types
     if hasattr(t, "__origin__"):
         if t.__origin__ is list:
-            item_type = format_type(t.__args__[0]) if t.__args__ else "any"
+            item_type = format_type(t.__args__[0]) if t.__args__ else "any"  # ty: ignore[unresolved-attribute]
             return f"List[{item_type}]"
         if t.__origin__ is dict:
-            key_type = format_type(t.__args__[0]) if t.__args__ else "any"
-            value_type = format_type(t.__args__[1]) if len(t.__args__) > 1 else "any"
+            key_type = format_type(t.__args__[0]) if t.__args__ else "any"  # ty: ignore[unresolved-attribute]
+            value_type = format_type(t.__args__[1]) if len(t.__args__) > 1 else "any"  # ty: ignore[unresolved-attribute]
             return f"Dict[{key_type}, {value_type}]"
 
     # Default case
@@ -227,7 +227,7 @@ def get_return_docs(func: Callable) -> dict[str, str]:
     except Exception:
         description = ""
 
-    return {"type": format_type(return_type), "description": description}
+    return {"type": format_type(return_type), "description": description}  # ty: ignore[invalid-argument-type]
 
 
 def get_tool_examples(tool_name: str) -> list[dict[str, Any]]:

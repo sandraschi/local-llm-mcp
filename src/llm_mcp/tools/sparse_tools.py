@@ -28,12 +28,12 @@ try:
     BNB_AVAILABLE = True
 except ImportError:
     try:
-        from transformers.integrations import BitsAndBytesConfig
+        from transformers.integrations import BitsAndBytesConfig  # ty: ignore[unresolved-import]
 
         BNB_AVAILABLE = True
     except ImportError:
         BNB_AVAILABLE = False
-        BitsAndBytesConfig = None
+        BitsAndBytesConfig = None  # ty: ignore[conflicting-declarations]
 import numpy as np
 from loguru import logger
 
@@ -106,7 +106,7 @@ class SparseLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Apply mask to weights
-        masked_weight = self.weight * self.mask
+        masked_weight = self.weight * self.mask  # ty: ignore[unsupported-operator]
         return F.linear(x, masked_weight, self.bias)
 
 
@@ -118,7 +118,7 @@ class SparseTrainer(Trainer):
         self.sparse_config = sparse_config or SparseConfig()
         self.steps_since_mask_update = 0
 
-    def training_step(self, model, inputs):
+    def training_step(self, model, inputs):  # ty: ignore[invalid-method-override]
         # Call parent training step
         loss = super().training_step(model, inputs)
 
@@ -132,7 +132,7 @@ class SparseTrainer(Trainer):
 
     def update_masks(self):
         """Update masks for all sparse layers."""
-        for module in self.model.modules():
+        for module in self.model.modules():  # ty: ignore[unresolved-attribute]
             if isinstance(module, SparseLinear):
                 module.update_mask()
 
@@ -249,7 +249,7 @@ async def sparse_load_model_impl(
                 bnb_4bit_compute_dtype={"float16": torch.float16, "bfloat16": torch.bfloat16, "float32": torch.float32}[
                     compute_dtype
                 ],
-            )
+            )  # ty: ignore[call-non-callable]
         elif use_4bit and quant_type != "none":
             logger.warning("BitsAndBytesConfig not available - skipping quantization")
             bnb_config = None
@@ -636,7 +636,7 @@ def register_sparse_tools(mcp):
             quant_type=quant_type,
             compute_dtype=compute_dtype,
             device_map=device_map,
-        )
+        )  # ty: ignore[invalid-return-type]
 
     # Register sparse model training
     @tool()
@@ -716,7 +716,7 @@ def register_sparse_tools(mcp):
             max_grad_norm=max_grad_norm,
             group_by_length=group_by_length,
             report_to=report_to or ["none"],
-        )
+        )  # ty: ignore[invalid-return-type]
 
     # Register sparse model unloading
     @tool()
@@ -729,7 +729,7 @@ def register_sparse_tools(mcp):
         Returns:
             Dictionary with unload status
         """
-        return sparse_unload_model_impl(model_id=model_id)
+        return sparse_unload_model_impl(model_id=model_id)  # ty: ignore[invalid-return-type]
 
     # Register sparse model listing
     @tool()
@@ -739,6 +739,6 @@ def register_sparse_tools(mcp):
         Returns:
             Dictionary with information about loaded models
         """
-        return sparse_list_models_impl()
+        return sparse_list_models_impl()  # ty: ignore[invalid-return-type]
 
     return mcp

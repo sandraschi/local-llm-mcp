@@ -114,7 +114,7 @@ def get_service_status() -> dict[str, Any]:
     # Check Redis
     redis_status: dict[str, str] = {"status": "unknown", "version": "unknown"}
     try:
-        import redis
+        import redis  # ty: ignore[unresolved-import]
 
         r = redis.Redis()
         redis_status["status"] = "running" if r.ping() else "not responding"

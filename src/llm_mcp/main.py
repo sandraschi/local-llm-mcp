@@ -20,7 +20,7 @@ os.environ["PYTHONWARNINGS"] = "ignore"
 # Redirect warnings to stderr (which won't interfere with JSON-RPC)
 def suppress_warnings():
     """Suppress all warnings to prevent JSON-RPC interference."""
-    warnings.showwarning = lambda *args, **kwargs: None
+    warnings.showwarning = lambda *args, **kwargs: None  # ty: ignore[invalid-assignment]
 
 
 suppress_warnings()

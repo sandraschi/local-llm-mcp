@@ -90,7 +90,7 @@ def tool_to_schema(tool_func: Callable) -> dict[str, Any]:
 
     # Create function schema
     function_schema = {
-        "name": tool_func.__name__,
+        "name": tool_func.__name__,  # ty: ignore[unresolved-attribute]
         "description": docstring.split("\n")[0] if docstring else "",
         "parameters": {"type": "object", "properties": properties, "required": required},
     }
@@ -114,7 +114,7 @@ class ToolCallingMixin:
         if not callable(func):
             raise ValueError(f"Expected callable, got {type(func)}")
 
-        tool_name = func.__name__
+        tool_name = func.__name__  # ty: ignore[unresolved-attribute]
         if tool_name in self._tools:
             logger.warning(f"Tool '{tool_name}' is already registered, overwriting")
 

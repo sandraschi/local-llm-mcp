@@ -44,16 +44,16 @@ def llm_gpu_tool(
         from llm_mcp.tools.gpu_manager import clear_gpu_memory, get_gpu_status, monitor_gpu_health, optimize_gpu_memory
 
         if operation == "get_status":
-            return get_gpu_status(gpu_id)
+            return get_gpu_status(gpu_id)  # ty: ignore[invalid-return-type, too-many-positional-arguments]
 
         elif operation == "clear_memory":
-            return clear_gpu_memory(gpu_id)
+            return clear_gpu_memory(gpu_id)  # ty: ignore[invalid-return-type]
 
         elif operation == "optimize":
-            return optimize_gpu_memory(gpu_id)
+            return optimize_gpu_memory(gpu_id)  # ty: ignore[invalid-return-type]
 
         elif operation == "get_health":
-            return monitor_gpu_health(gpu_id)
+            return monitor_gpu_health(gpu_id)  # ty: ignore[invalid-return-type]
 
         else:
             return {

@@ -60,12 +60,12 @@ try:
     BNB_AVAILABLE = True
 except ImportError:
     try:
-        from transformers.integrations import BitsAndBytesConfig
+        from transformers.integrations import BitsAndBytesConfig  # ty: ignore[unresolved-import]
 
         BNB_AVAILABLE = True
     except ImportError:
         BNB_AVAILABLE = False
-        BitsAndBytesConfig = None
+        BitsAndBytesConfig = None  # ty: ignore[conflicting-declarations]
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -161,7 +161,7 @@ class QLoRAEvolvedManager:
                 "bfloat16": torch.bfloat16,
                 "float32": torch.float32,
             }[config.bnb_4bit_compute_dtype],
-        )
+        )  # ty: ignore[call-non-callable]
 
     def _get_lora_config(self, config: QLoRAEvolvedConfig) -> LoraConfig:
         """Get LoRA configuration."""
@@ -226,8 +226,8 @@ class QLoRAEvolvedManager:
         )
 
         # Set pad token if not set
-        if tokenizer.pad_token is None:
-            tokenizer.pad_token = tokenizer.eos_token
+        if tokenizer.pad_token is None:  # ty: ignore[unresolved-attribute]
+            tokenizer.pad_token = tokenizer.eos_token  # ty: ignore[invalid-assignment, unresolved-attribute]
 
         # Save model and config
         self.models[model_id] = model
@@ -318,7 +318,7 @@ class QLoRAEvolvedManager:
             per_device_train_batch_size=config.batch_size,
             gradient_accumulation_steps=config.gradient_accumulation_steps,
             num_train_epochs=config.num_train_epochs,
-            max_steps=config.max_steps if config.max_steps > 0 else None,
+            max_steps=config.max_steps if config.max_steps > 0 else None,  # ty: ignore[invalid-argument-type]
             warmup_ratio=config.warmup_ratio,
             weight_decay=config.weight_decay,
             optim=config.optim,
@@ -401,7 +401,7 @@ class QLoRAEvolvedManager:
                 "device": str(next(model.parameters()).device),
             }
             for model_id, (model, config) in enumerate(zip(self.models.values(), self.configs.values(), strict=True))
-        }
+        }  # ty: ignore[invalid-return-type]
 
 
 # Global instance

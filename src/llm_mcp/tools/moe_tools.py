@@ -115,10 +115,10 @@ def convert_to_moe(
     Returns:
         The converted model with MoE layers
     """
-    from transformers.models.gpt2 import GPT2Block
-    from transformers.models.llama import LlamaDecoderLayer
+    from transformers.models.gpt2 import GPT2Block  # ty: ignore[unresolved-import]
+    from transformers.models.llama import LlamaDecoderLayer  # ty: ignore[unresolved-import]
 
-    for i, layer in enumerate(model.base_model.layers):
+    for i, layer in enumerate(model.base_model.layers):  # ty: ignore[invalid-argument-type, unresolved-attribute]
         # Skip layers outside the specified range
         if i < config.moe_layer_start or (config.moe_layer_end is not None and i > config.moe_layer_end):
             continue
@@ -381,7 +381,7 @@ def register_moe_tools(mcp):
 
         # Tokenize input
         tokenizer = AutoTokenizer.from_pretrained(model_info["config"]._name_or_path)
-        inputs = tokenizer(prompt, return_tensors="pt").to(device)
+        inputs = tokenizer(prompt, return_tensors="pt").to(device)  # ty: ignore[call-non-callable]
 
         # Generate text
         with torch.no_grad():
@@ -394,7 +394,7 @@ def register_moe_tools(mcp):
             )
 
         # Decode and return
-        generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)  # ty: ignore[unresolved-attribute]
 
         return {
             "status": "success",

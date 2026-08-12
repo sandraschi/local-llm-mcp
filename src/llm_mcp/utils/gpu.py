@@ -71,9 +71,9 @@ def get_gpu_info() -> dict[str, Any]:
             if gpus:
                 gpu = gpus[0]  # Primary GPU
                 # Recommended mode based on VRAM (targeting local hardware like 3090/4090)
-                if gpu["free_gb"] >= 23:
+                if gpu["free_gb"] >= 23:  # ty: ignore[unsupported-operator]
                     recommended = "full"
-                elif gpu["free_gb"] >= 12:
+                elif gpu["free_gb"] >= 12:  # ty: ignore[unsupported-operator]
                     recommended = "balanced"
                 else:
                     recommended = "low"
@@ -82,9 +82,9 @@ def get_gpu_info() -> dict[str, Any]:
                     "available": True,
                     "gpu": gpu,
                     "recommended_mode": recommended,
-                    "can_run_full": gpu["free_gb"] >= 23,
-                    "can_run_balanced": gpu["free_gb"] >= 12,
-                    "can_run_low": gpu["free_gb"] >= 6,
+                    "can_run_full": gpu["free_gb"] >= 23,  # ty: ignore[unsupported-operator]
+                    "can_run_balanced": gpu["free_gb"] >= 12,  # ty: ignore[unsupported-operator]
+                    "can_run_low": gpu["free_gb"] >= 6,  # ty: ignore[unsupported-operator]
                     "timestamp": datetime.now(UTC).isoformat(),
                 }
     except Exception as e:

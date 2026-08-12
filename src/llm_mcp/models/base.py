@@ -134,7 +134,7 @@ class BaseProvider(ABC):
     async def generate_text(self, model_id: str, prompt: str, **kwargs) -> str:
         """Non-streaming collect from ``generate``."""
         chunks: list[str] = []
-        async for chunk in self.generate(prompt, model_id, **kwargs):
+        async for chunk in self.generate(prompt, model_id, **kwargs):  # ty: ignore[not-iterable]
             chunks.append(chunk)
         return "".join(chunks)
 

@@ -45,7 +45,7 @@ class OllamaProvider(BaseProvider):
         except Exception as e:
             raise Exception(f"Failed to connect to Ollama API: {e!s}") from e
 
-    async def list_models(self) -> list[ModelMetadata]:
+    async def list_models(self) -> list[ModelMetadata]:  # ty: ignore[invalid-method-override]
         """List all available Ollama models."""
         try:
             response = await self._request("GET", "/api/tags")
@@ -62,7 +62,7 @@ class OllamaProvider(BaseProvider):
             logger.error(f"Error listing Ollama models: {e!s}")
             return []
 
-    async def get_model(self, model_id: str) -> ModelMetadata | None:
+    async def get_model(self, model_id: str) -> ModelMetadata | None:  # ty: ignore[invalid-method-override]
         """Get details about a specific Ollama model."""
         try:
             # First check if the model exists by listing all models
@@ -75,7 +75,7 @@ class OllamaProvider(BaseProvider):
             logger.error(f"Error getting Ollama model {model_id}: {e!s}")
             return None
 
-    async def load_model(self, model_id: str, **kwargs) -> ModelMetadata:
+    async def load_model(self, model_id: str, **kwargs) -> ModelMetadata:  # ty: ignore[invalid-method-override]
         """Load an Ollama model."""
         # In Ollama, models are loaded on first use, so we just need to check if it exists
         model = await self.get_model(model_id)
@@ -84,7 +84,7 @@ class OllamaProvider(BaseProvider):
             return await self.pull_model(model_id, **kwargs)
         return model
 
-    async def pull_model(self, model_id: str, **kwargs) -> ModelMetadata:
+    async def pull_model(self, model_id: str, **kwargs) -> ModelMetadata:  # ty: ignore[invalid-method-override]
         """Pull a model from the Ollama library."""
         try:
             # Start the pull operation
@@ -105,7 +105,7 @@ class OllamaProvider(BaseProvider):
                             continue
 
             # After successful pull, get the model details
-            return await self.get_model(model_id)
+            return await self.get_model(model_id)  # ty: ignore[invalid-return-type]
         except Exception as e:
             raise Exception(f"Failed to pull model {model_id}: {e!s}") from e
 

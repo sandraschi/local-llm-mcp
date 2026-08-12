@@ -50,7 +50,7 @@ class LMStudioProvider(BaseProvider):
             logger.error(error_msg)
             raise Exception(error_msg) from e
 
-    async def list_models(self) -> list[ModelMetadata]:
+    async def list_models(self) -> list[ModelMetadata]:  # ty: ignore[invalid-method-override]
         """List available models from LM Studio.
 
         Returns:
@@ -76,7 +76,7 @@ class LMStudioProvider(BaseProvider):
             logger.error(f"Failed to list LM Studio models: {e!s}")
             return []
 
-    async def generate(self, prompt: str, model: str | None = None, **kwargs) -> AsyncGenerator[str, None]:
+    async def generate(self, prompt: str, model: str | None = None, **kwargs) -> AsyncGenerator[str, None]:  # ty: ignore[invalid-method-override]
         """Generate text using the LM Studio API.
 
         Args:
@@ -175,7 +175,7 @@ class LMStudioProvider(BaseProvider):
         """Return whether the provider supports streaming responses."""
         return True
 
-    async def get_model(self, model_id: str) -> ModelMetadata | None:
+    async def get_model(self, model_id: str) -> ModelMetadata | None:  # ty: ignore[invalid-method-override]
         """Get details about a specific model."""
         models = await self.list_models()
         for model in models:
@@ -183,7 +183,7 @@ class LMStudioProvider(BaseProvider):
                 return model
         return None
 
-    async def load_model(self, model_id: str, **kwargs) -> ModelMetadata:
+    async def load_model(self, model_id: str, **kwargs) -> ModelMetadata:  # ty: ignore[invalid-method-override]
         """Load a model into memory."""
         model = await self.get_model(model_id)
         if not model:

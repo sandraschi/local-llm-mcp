@@ -270,12 +270,15 @@ export default function Logging() {
       </div>
 
       {showClear && (
-        <div
-          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+        <button
+          type="button"
+          aria-label="Close"
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 cursor-default"
           onClick={() => setShowClear(false)}
-          onKeyDown={() => {}}
         >
           <div
+            role="dialog"
+            aria-label="Clear all logs"
             className="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-sm"
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
@@ -301,7 +304,7 @@ export default function Logging() {
               </button>
             </div>
           </div>
-        </div>
+        </button>
       )}
     </div>
   );

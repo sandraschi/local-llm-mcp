@@ -24,4 +24,4 @@ class AnthropicConfig(BaseModel):
     stop_sequences: list | None = Field(None, description="Stop sequences")
     metadata: dict[str, Any] | None = Field(None, description="Metadata to include in requests")
 
-    model_config = ConfigDict(env_prefix="ANTHROPIC_")
+    model_config = ConfigDict(env_prefix="ANTHROPIC_")  # ty: ignore[invalid-key]

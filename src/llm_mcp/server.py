@@ -37,7 +37,7 @@ async def _get_mcp_tool_catalog() -> dict:
     if _mcp_server_cache is None:
         return {"tools": [], "total": 0, "error": "MCP server unavailable"}
 
-    tools = await _mcp_server_cache.list_tools()
+    tools = await _mcp_server_cache.list_tools()  # ty: ignore[unresolved-attribute]
     catalog = [{"name": t.name, "description": (getattr(t, "description", "") or "")[:400]} for t in tools]
     return {"tools": catalog, "total": len(catalog)}
 

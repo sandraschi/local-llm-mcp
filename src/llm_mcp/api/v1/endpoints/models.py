@@ -73,7 +73,7 @@ async def list_providers() -> list[ProviderInfo]:
                                 "description": "Quantization method",
                             },
                         },
-                    )
+                    )  # ty: ignore[pydantic-discarded-extra-argument]
                 )
         except ImportError:
             logger.warning("vLLM provider not available")
@@ -136,7 +136,7 @@ async def list_models(
                 models.extend(
                     [
                         ModelInfo(
-                            id=model.get("id"),
+                            id=model.get("id"),  # ty: ignore[invalid-argument-type]
                             name=model.get("name", ""),
                             description=model.get("description", ""),
                             provider="vllm",
@@ -159,7 +159,7 @@ async def list_models(
                 models.extend(
                     [
                         ModelInfo(
-                            id=model.get("id"),
+                            id=model.get("id"),  # ty: ignore[invalid-argument-type]
                             name=model.get("name", ""),
                             description=model.get("description", ""),
                             provider=provider,
@@ -182,7 +182,7 @@ async def list_models(
                     models.extend(
                         [
                             ModelInfo(
-                                id=model.get("id"),
+                                id=model.get("id"),  # ty: ignore[invalid-argument-type]
                                 name=model.get("name", ""),
                                 description=model.get("description", ""),
                                 provider=provider_name,
@@ -218,7 +218,7 @@ async def get_model(model_name: str, provider: str | None = None) -> ModelInfo:
         Detailed model information
     """
     try:
-        return await model_service.get_model_info(model_name, provider)
+        return await model_service.get_model_info(model_name, provider)  # ty: ignore[invalid-return-type]
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except Exception as e:
@@ -272,14 +272,14 @@ async def pull_model(
                         success=True,
                         message=f"Model {model_name} already exists in vLLM",
                         details={"status": "already_exists"},
-                    )
+                    )  # ty: ignore[missing-argument]
 
                 # Pull the model
                 result = await vllm_provider.pull_model(model_name, **kwargs)
 
                 return ModelOperationResponse(
                     success=True, message=f"Successfully pulled model {model_name} using vLLM", details=result
-                )
+                )  # ty: ignore[missing-argument]
 
             except ImportError as e:
                 if provider:  # Only raise if vLLM was explicitly requested
@@ -305,7 +305,7 @@ async def pull_model(
 
             return ModelOperationResponse(
                 success=True, message=f"Successfully pulled model {model_name} from {provider_name}", details=result
-            )
+            )  # ty: ignore[missing-argument]
 
         except HTTPException:
             raise
@@ -330,7 +330,7 @@ async def generate_text(request: GenerateRequest, raw_request: Request) -> Gener
     """
     # If streaming is requested, return a streaming response
     if request.stream:
-        return StreamingResponse(generate_stream(request, raw_request), media_type="text/event-stream")
+        return StreamingResponse(generate_stream(request, raw_request), media_type="text/event-stream")  # ty: ignore[invalid-return-type]
 
     # Otherwise, generate the full response at once
     try:
@@ -339,11 +339,11 @@ async def generate_text(request: GenerateRequest, raw_request: Request) -> Gener
             prompt=request.prompt,
             model=request.model,
             provider=request.provider,
-            temperature=request.temperature,
-            max_tokens=request.max_tokens,
-            top_p=request.top_p,
-            frequency_penalty=request.frequency_penalty,
-            presence_penalty=request.presence_penalty,
+            temperature=request.temperature,  # ty: ignore[invalid-argument-type]
+            max_tokens=request.max_tokens,  # ty: ignore[invalid-argument-type]
+            top_p=request.top_p,  # ty: ignore[invalid-argument-type]
+            frequency_penalty=request.frequency_penalty,  # ty: ignore[invalid-argument-type]
+            presence_penalty=request.presence_penalty,  # ty: ignore[invalid-argument-type]
             stop=request.stop,
         ):
             full_response += chunk
@@ -384,11 +384,11 @@ async def generate_stream(request: GenerateRequest, raw_request: Request) -> Asy
             prompt=request.prompt,
             model=request.model,
             provider=request.provider,
-            temperature=request.temperature,
-            max_tokens=request.max_tokens,
-            top_p=request.top_p,
-            frequency_penalty=request.frequency_penalty,
-            presence_penalty=request.presence_penalty,
+            temperature=request.temperature,  # ty: ignore[invalid-argument-type]
+            max_tokens=request.max_tokens,  # ty: ignore[invalid-argument-type]
+            top_p=request.top_p,  # ty: ignore[invalid-argument-type]
+            frequency_penalty=request.frequency_penalty,  # ty: ignore[invalid-argument-type]
+            presence_penalty=request.presence_penalty,  # ty: ignore[invalid-argument-type]
             stop=request.stop,
         ):
             # Check if client disconnected

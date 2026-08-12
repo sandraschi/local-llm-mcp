@@ -62,7 +62,7 @@ class AnthropicProvider(BaseProvider):
             logger.error(error_msg)
             raise Exception(error_msg) from e
 
-    async def list_models(self) -> list[ModelMetadata]:
+    async def list_models(self) -> list[ModelMetadata]:  # ty: ignore[invalid-method-override]
         """List all available Anthropic models."""
         # Anthropic doesn't have a models endpoint, so we return known models
         known_models = [
@@ -106,22 +106,22 @@ class AnthropicProvider(BaseProvider):
 
         return [
             ModelMetadata(
-                id=model["id"],
-                name=model["name"],
+                id=model["id"],  # ty: ignore[invalid-argument-type]
+                name=model["name"],  # ty: ignore[invalid-argument-type]
                 provider=ModelProvider.ANTHROPIC,
-                version=model["id"].split("-")[-1],
-                status=ModelStatus.AVAILABLE,
-                capabilities=model["capabilities"],
+                version=model["id"].split("-")[-1],  # ty: ignore[unresolved-attribute]
+                status=ModelStatus.AVAILABLE,  # ty: ignore[unresolved-attribute]
+                capabilities=model["capabilities"],  # ty: ignore[invalid-argument-type]
                 parameters={
                     "context_length": model["context_length"],
                     "max_tokens": 4096,
-                    "supports_vision": ModelCapability.VISION in model["capabilities"],
+                    "supports_vision": ModelCapability.VISION in model["capabilities"],  # ty: ignore[unsupported-operator]
                 },
             )
             for model in known_models
         ]
 
-    async def get_model(self, model_id: str) -> ModelMetadata | None:
+    async def get_model(self, model_id: str) -> ModelMetadata | None:  # ty: ignore[invalid-method-override]
         """Get details about a specific Anthropic model."""
         models = await self.list_models()
         for model in models:

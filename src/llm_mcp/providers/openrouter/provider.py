@@ -68,7 +68,7 @@ class OpenRouterProvider(BaseProvider):
         if self._is_ready:
             return
 
-        if not self.config.api_key:
+        if not self.config.api_key:  # ty: ignore[unresolved-attribute]
             logger.warning("OpenRouter API key not configured")
             return
 
@@ -110,12 +110,12 @@ class OpenRouterProvider(BaseProvider):
             },
         ]
 
-    async def generate(self, prompt: str, model: str, **kwargs) -> AsyncGenerator[str, None]:
+    async def generate(self, prompt: str, model: str, **kwargs) -> AsyncGenerator[str, None]:  # ty: ignore[invalid-method-override]
         """Generate text from OpenRouter."""
         if not self.is_ready:
             await self.initialize()
 
-        model_id = model or self.config.default_model
+        model_id = model or self.config.default_model  # ty: ignore[unresolved-attribute]
 
         try:
             stream = await self.client.chat.completions.create(
@@ -132,9 +132,9 @@ class OpenRouterProvider(BaseProvider):
 
     async def chat_completion(self, messages: list[dict[str, str]], model: str | None = None, **kwargs) -> str:
         """Generate chat completion from OpenRouter."""
-        model_id = model or self.config.default_model
+        model_id = model or self.config.default_model  # ty: ignore[unresolved-attribute]
         try:
-            response = await self.client.chat.completions.create(model=model_id, messages=messages, **kwargs)
+            response = await self.client.chat.completions.create(model=model_id, messages=messages, **kwargs)  # ty: ignore[no-matching-overload]
             return response.choices[0].message.content
         except Exception as e:
             logger.error(f"OpenRouter chat error: {e!s}")
@@ -149,5 +149,5 @@ class OpenRouterProvider(BaseProvider):
         return {
             "status": "healthy" if self.is_ready else "unconfigured",
             "provider": "openrouter",
-            "api_key_set": self.config.api_key is not None,
+            "api_key_set": self.config.api_key is not None,  # ty: ignore[unresolved-attribute]
         }

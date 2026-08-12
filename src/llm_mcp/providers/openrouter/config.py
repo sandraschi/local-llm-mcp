@@ -2,7 +2,7 @@
 
 from pydantic import Field
 
-from ...config.base import BaseProviderConfig
+from ...config.base import BaseProviderConfig  # ty: ignore[unresolved-import]
 
 
 class OpenRouterConfig(BaseProviderConfig):

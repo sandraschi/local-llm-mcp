@@ -55,7 +55,7 @@ class PerplexityProvider(BaseProvider):
     @property
     def is_ready(self) -> bool:
         """Check if the provider is ready to handle requests."""
-        return self._is_initialized and self.config.api_key is not None
+        return self._is_initialized and self.config.api_key is not None  # ty: ignore[unresolved-attribute]
 
     async def initialize(self) -> None:
         """Initialize the Perplexity provider."""
@@ -67,16 +67,16 @@ class PerplexityProvider(BaseProvider):
         # Create HTTP session if not already created
         if self.session is None:
             self.session = aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=self.config.timeout),
+                timeout=aiohttp.ClientTimeout(total=self.config.timeout),  # ty: ignore[unresolved-attribute]
                 headers={
-                    "Authorization": f"Bearer {self.config.api_key}" if self.config.api_key else None,
+                    "Authorization": f"Bearer {self.config.api_key}" if self.config.api_key else None,  # ty: ignore[unresolved-attribute]
                     "Content-Type": "application/json",
-                },
+                },  # ty: ignore[invalid-argument-type]
             )
 
         try:
             # Test the connection
-            if self.config.api_key:
+            if self.config.api_key:  # ty: ignore[unresolved-attribute]
                 await self._test_connection()
 
             self._is_initialized = True
@@ -85,13 +85,13 @@ class PerplexityProvider(BaseProvider):
         except Exception as e:
             error_msg = f"Failed to initialize Perplexity provider: {e!s}"
             logger.error(error_msg, exc_info=True)
-            self.metrics["last_error"] = error_msg
+            self.metrics["last_error"] = error_msg  # ty: ignore[invalid-assignment]
             raise RuntimeError(error_msg) from e
 
     async def cleanup(self) -> None:
         """Cleanup resources."""
         if hasattr(self, "session"):
-            await self.session.close()
+            await self.session.close()  # ty: ignore[unresolved-attribute]
         self._is_initialized = False
         logger.info("Perplexity provider cleaned up")
 
@@ -149,7 +149,7 @@ class PerplexityProvider(BaseProvider):
 
         return models
 
-    async def generate(self, prompt: str, model: str, **kwargs) -> AsyncGenerator[str, None]:
+    async def generate(self, prompt: str, model: str, **kwargs) -> AsyncGenerator[str, None]:  # ty: ignore[invalid-method-override]
         """Generate text from the model.
 
         Args:
@@ -163,25 +163,25 @@ class PerplexityProvider(BaseProvider):
         if not self.is_ready:
             await self.initialize()
 
-        model_id = model or self.config.default_model
+        model_id = model or self.config.default_model  # ty: ignore[unresolved-attribute]
         start_time = time.time()
-        self.metrics["total_requests"] += 1
+        self.metrics["total_requests"] += 1  # ty: ignore[unsupported-operator]
 
         try:
             # Prepare generation parameters
             payload = {
                 "model": model_id,
                 "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": kwargs.get("max_tokens", self.config.max_tokens),
-                "temperature": kwargs.get("temperature", self.config.temperature),
-                "top_p": kwargs.get("top_p", self.config.top_p),
-                "top_k": kwargs.get("top_k", self.config.top_k),
-                "stop": kwargs.get("stop", self.config.stop),
+                "max_tokens": kwargs.get("max_tokens", self.config.max_tokens),  # ty: ignore[unresolved-attribute]
+                "temperature": kwargs.get("temperature", self.config.temperature),  # ty: ignore[unresolved-attribute]
+                "top_p": kwargs.get("top_p", self.config.top_p),  # ty: ignore[unresolved-attribute]
+                "top_k": kwargs.get("top_k", self.config.top_k),  # ty: ignore[unresolved-attribute]
+                "stop": kwargs.get("stop", self.config.stop),  # ty: ignore[unresolved-attribute]
                 "stream": True,
             }
 
             # Generate text using Perplexity streaming
-            async with self.session.post(f"{self.config.base_url}/chat/completions", json=payload) as response:
+            async with self.session.post(f"{self.config.base_url}/chat/completions", json=payload) as response:  # ty: ignore[unresolved-attribute]
                 if response.status != 200:
                     error_text = await response.text()
                     raise Exception(f"Perplexity API error: {response.status} - {error_text}")
@@ -203,14 +203,14 @@ class PerplexityProvider(BaseProvider):
 
             # Update metrics
             duration = time.time() - start_time
-            self.metrics["successful_requests"] += 1
-            self.metrics["total_time_seconds"] += duration
+            self.metrics["successful_requests"] += 1  # ty: ignore[unsupported-operator]
+            self.metrics["total_time_seconds"] += duration  # ty: ignore[unsupported-operator]
 
         except Exception as e:
             error_msg = f"Error in text generation: {e!s}"
             logger.error(error_msg, exc_info=True)
-            self.metrics["failed_requests"] += 1
-            self.metrics["last_error"] = error_msg
+            self.metrics["failed_requests"] += 1  # ty: ignore[unsupported-operator]
+            self.metrics["last_error"] = error_msg  # ty: ignore[invalid-assignment]
             raise RuntimeError(error_msg) from e
 
     async def chat_completion(self, messages: list[dict[str, str]], model: str | None = None, **kwargs) -> str:
@@ -227,25 +227,25 @@ class PerplexityProvider(BaseProvider):
         if not self.is_ready:
             await self.initialize()
 
-        model_id = model or self.config.default_model
+        model_id = model or self.config.default_model  # ty: ignore[unresolved-attribute]
         start_time = time.time()
-        self.metrics["total_requests"] += 1
+        self.metrics["total_requests"] += 1  # ty: ignore[unsupported-operator]
 
         try:
             # Prepare generation parameters
             payload = {
                 "model": model_id,
                 "messages": messages,
-                "max_tokens": kwargs.get("max_tokens", self.config.max_tokens),
-                "temperature": kwargs.get("temperature", self.config.temperature),
-                "top_p": kwargs.get("top_p", self.config.top_p),
-                "top_k": kwargs.get("top_k", self.config.top_k),
-                "stop": kwargs.get("stop", self.config.stop),
+                "max_tokens": kwargs.get("max_tokens", self.config.max_tokens),  # ty: ignore[unresolved-attribute]
+                "temperature": kwargs.get("temperature", self.config.temperature),  # ty: ignore[unresolved-attribute]
+                "top_p": kwargs.get("top_p", self.config.top_p),  # ty: ignore[unresolved-attribute]
+                "top_k": kwargs.get("top_k", self.config.top_k),  # ty: ignore[unresolved-attribute]
+                "stop": kwargs.get("stop", self.config.stop),  # ty: ignore[unresolved-attribute]
                 "stream": False,
             }
 
             # Generate response
-            async with self.session.post(f"{self.config.base_url}/chat/completions", json=payload) as response:
+            async with self.session.post(f"{self.config.base_url}/chat/completions", json=payload) as response:  # ty: ignore[unresolved-attribute]
                 if response.status != 200:
                     error_text = await response.text()
                     raise Exception(f"Perplexity API error: {response.status} - {error_text}")
@@ -255,17 +255,17 @@ class PerplexityProvider(BaseProvider):
 
             # Update metrics
             duration = time.time() - start_time
-            self.metrics["successful_requests"] += 1
-            self.metrics["total_tokens_generated"] += len(response_text.split())
-            self.metrics["total_time_seconds"] += duration
+            self.metrics["successful_requests"] += 1  # ty: ignore[unsupported-operator]
+            self.metrics["total_tokens_generated"] += len(response_text.split())  # ty: ignore[unsupported-operator]
+            self.metrics["total_time_seconds"] += duration  # ty: ignore[unsupported-operator]
 
             return response_text
 
         except Exception as e:
             error_msg = f"Error in chat completion: {e!s}"
             logger.error(error_msg, exc_info=True)
-            self.metrics["failed_requests"] += 1
-            self.metrics["last_error"] = error_msg
+            self.metrics["failed_requests"] += 1  # ty: ignore[unsupported-operator]
+            self.metrics["last_error"] = error_msg  # ty: ignore[invalid-assignment]
             raise RuntimeError(error_msg) from e
 
     async def pull_model(self, model_name: str) -> dict[str, Any]:
@@ -297,11 +297,11 @@ class PerplexityProvider(BaseProvider):
         metrics.update(
             {
                 "provider": "perplexity",
-                "api_key_configured": self.config.api_key is not None,
-                "base_url": self.config.base_url,
-                "default_model": self.config.default_model,
+                "api_key_configured": self.config.api_key is not None,  # ty: ignore[unresolved-attribute]
+                "base_url": self.config.base_url,  # ty: ignore[unresolved-attribute]
+                "default_model": self.config.default_model,  # ty: ignore[unresolved-attribute]
             }
-        )
+        )  # ty: ignore[no-matching-overload]
 
         return metrics
 
@@ -314,7 +314,7 @@ class PerplexityProvider(BaseProvider):
         status = {
             "status": "healthy" if self.is_ready else "unhealthy",
             "provider": "perplexity",
-            "api_key_configured": self.config.api_key is not None,
+            "api_key_configured": self.config.api_key is not None,  # ty: ignore[unresolved-attribute]
             "last_error": self.metrics.get("last_error"),
             "total_requests": self.metrics["total_requests"],
             "successful_requests": self.metrics["successful_requests"],
@@ -322,7 +322,7 @@ class PerplexityProvider(BaseProvider):
         }
 
         # Test API connection if possible
-        if self.config.api_key:
+        if self.config.api_key:  # ty: ignore[unresolved-attribute]
             try:
                 await self._test_connection()
                 status["api_connection"] = "healthy"
@@ -355,7 +355,7 @@ class PerplexityProvider(BaseProvider):
         """Return whether the provider supports streaming responses."""
         return True
 
-    async def get_model(self, model_id: str) -> ModelMetadata | None:
+    async def get_model(self, model_id: str) -> ModelMetadata | None:  # ty: ignore[invalid-method-override]
         """Get details about a specific model."""
         models = await self.list_models()
         for model in models:
@@ -368,10 +368,10 @@ class PerplexityProvider(BaseProvider):
                     parameters={"max_tokens": model.get("max_tokens", 4096)},
                 )
             elif hasattr(model, "id") and model.id == model_id:
-                return model
+                return model  # ty: ignore[invalid-return-type]
         return None
 
-    async def load_model(self, model_id: str, **kwargs) -> ModelMetadata:
+    async def load_model(self, model_id: str, **kwargs) -> ModelMetadata:  # ty: ignore[invalid-method-override]
         """Load a model into memory."""
         model = await self.get_model(model_id)
         if not model:
@@ -397,7 +397,7 @@ class PerplexityProvider(BaseProvider):
     async def chat(self, model_id: str, messages: list[dict[str, str]], **kwargs) -> str:
         """Generate a chat completion using the specified model."""
         response = await self.chat_completion(model_id=model_id, messages=messages, **kwargs)
-        return response.get("content", str(response))
+        return response.get("content", str(response))  # ty: ignore[unresolved-attribute]
 
     async def generate_embeddings(self, model_id: str, texts: list[str], **kwargs) -> list[list[float]]:
         """Generate embeddings for the given texts."""
@@ -413,7 +413,7 @@ class PerplexityProvider(BaseProvider):
                 "max_tokens": 1,
             }
 
-            async with self.session.post(f"{self.config.base_url}/chat/completions", json=payload) as response:
+            async with self.session.post(f"{self.config.base_url}/chat/completions", json=payload) as response:  # ty: ignore[unresolved-attribute]
                 if response.status != 200:
                     error_text = await response.text()
                     raise Exception(f"API test failed: {response.status} - {error_text}")

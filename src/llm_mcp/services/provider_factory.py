@@ -23,7 +23,7 @@ PROVIDER_CLASSES: dict[ModelProvider, type[BaseProvider]] = {
     ModelProvider.GEMINI: GeminiProvider,
     ModelProvider.PERPLEXITY: PerplexityProvider,
     ModelProvider.HUGGINGFACE: HuggingFaceProvider,
-}
+}  # ty: ignore[invalid-assignment]
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +89,7 @@ class ProviderFactory:
                 # Check if the model exists with this provider
                 # This is a simple check and might be optimized
                 models = await provider.list_models()
-                if any(model.id == model_id or model.name == model_id for model in models):
+                if any(model.id == model_id or model.name == model_id for model in models):  # ty: ignore[unresolved-attribute]
                     return provider
             except Exception:
                 # Skip this provider and try the next one
@@ -120,7 +120,7 @@ class ProviderFactory:
         """Clean up resources used by providers."""
         for provider in self._providers.values():
             if hasattr(provider, "close"):
-                await provider.close()
+                await provider.close()  # ty: ignore[call-non-callable]
         self._providers.clear()
 
 

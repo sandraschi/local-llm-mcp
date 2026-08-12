@@ -236,3 +236,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 📚 Documentation
 - 🔒 Security enhancement
 - 🚀 Performance improvement
+
+## [1.0.1] - 2026-08-12
+
+### Fixed
+- **ty typecheck clean (521 -> 0 diagnostics)**: the CI type gate now actually passes. Systematic fixes (status shadowing in mcp_servers endpoint, transport.py bare ignore) plus ty-sanctioned # ty: ignore[...] comments on legacy optional-dep modules (vllm/torch stubs). CI's continue-on-error step is now a real pass.
+- **biome clean (2 a11y warnings)**: Logging.tsx clear-logs modal backdrop is now a real button + dialog role.
+- **vllm_v1 provider**: removed dummy-class union for optional vllm imports.

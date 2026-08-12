@@ -26,11 +26,11 @@ def setup_mcp(mcp: FastMCP) -> None:
 def register_handlers(app: FastAPI, mcp: FastMCP) -> None:
     """Register startup and shutdown event handlers."""
 
-    @app.on_event("startup")
+    @app.on_event("startup")  # ty: ignore[deprecated]
     async def startup():
         await startup_event(app)
         setup_mcp(mcp)
 
-    @app.on_event("shutdown")
+    @app.on_event("shutdown")  # ty: ignore[deprecated]
     async def shutdown():
         await shutdown_event(app)

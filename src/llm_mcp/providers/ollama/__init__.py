@@ -67,7 +67,7 @@ class OllamaProvider(BaseProvider):
         except Exception as e:
             raise Exception(f"Error listing models: {e!s}") from e
 
-    async def generate(self, prompt: str, model: str, **kwargs) -> AsyncGenerator[str, None]:
+    async def generate(self, prompt: str, model: str, **kwargs) -> AsyncGenerator[str, None]:  # ty: ignore[invalid-method-override]
         """Generate a response from the Ollama model.
 
         Args:
@@ -100,7 +100,7 @@ class OllamaProvider(BaseProvider):
                         if not line.strip():
                             continue
                         try:
-                            data = httpx._utils.json.loads(line)
+                            data = httpx._utils.json.loads(line)  # ty: ignore[possibly-missing-submodule]
                             if "response" in data:
                                 yield data["response"]
                             if data.get("done", False):

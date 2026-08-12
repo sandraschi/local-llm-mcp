@@ -14,10 +14,10 @@ from typing import Any
 # Try to import vLLM functions
 try:
     from llm_mcp.tools.vllm_tools import (
-        _vllm_get_status_impl,
+        _vllm_get_status_impl,  # ty: ignore[unresolved-import]
         _vllm_list_models_impl,
-        _vllm_load_model_impl,
-        _vllm_unload_model_impl,
+        _vllm_load_model_impl,  # ty: ignore[unresolved-import]
+        _vllm_unload_model_impl,  # ty: ignore[unresolved-import]
     )
 
     VLLM_FUNCTIONS_AVAILABLE = True

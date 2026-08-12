@@ -14,7 +14,7 @@ import torch
 
 # Try to import Unsloth
 try:
-    from unsloth import FastLanguageModel
+    from unsloth import FastLanguageModel  # ty: ignore[unresolved-import]
 
     UNLOTH_AVAILABLE = True
 except ImportError:
@@ -235,7 +235,7 @@ class UnslothManager:
             lr_scheduler_type=config.lr_scheduler_type,
             save_steps=config.save_steps,
             eval_steps=config.eval_steps,
-            evaluation_strategy=config.eval_strategy if eval_dataset is not None else "no",
+            evaluation_strategy=config.eval_strategy if eval_dataset is not None else "no",  # ty: ignore[unknown-argument]
             load_best_model_at_end=config.load_best_model_at_end if eval_dataset is not None else False,
             report_to=config.report_to,
             seed=config.seed,
@@ -247,7 +247,7 @@ class UnslothManager:
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             args=training_args,
-            tokenizer=model_info["tokenizer"],
+            tokenizer=model_info["tokenizer"],  # ty: ignore[unknown-argument]
         )
 
         # Train the model

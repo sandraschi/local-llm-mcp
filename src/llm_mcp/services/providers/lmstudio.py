@@ -47,7 +47,7 @@ class LMStudioProvider(BaseProvider):
             logger.error(error_msg)
             raise Exception(error_msg) from e
 
-    async def list_models(self) -> list[ModelMetadata]:
+    async def list_models(self) -> list[ModelMetadata]:  # ty: ignore[invalid-method-override]
         """List all available LM Studio models."""
         try:
             # LM Studio uses the OpenAI-compatible API
@@ -64,7 +64,7 @@ class LMStudioProvider(BaseProvider):
             logger.error(f"Error listing LM Studio models: {e!s}")
             return []
 
-    async def get_model(self, model_id: str) -> ModelMetadata | None:
+    async def get_model(self, model_id: str) -> ModelMetadata | None:  # ty: ignore[invalid-method-override]
         """Get details about a specific LM Studio model."""
         try:
             # First check if the model exists by listing all models
@@ -77,7 +77,7 @@ class LMStudioProvider(BaseProvider):
             logger.error(f"Error getting LM Studio model {model_id}: {e!s}")
             return None
 
-    async def load_model(self, model_id: str, **kwargs) -> ModelMetadata:
+    async def load_model(self, model_id: str, **kwargs) -> ModelMetadata:  # ty: ignore[invalid-method-override]
         """Load an LM Studio model.
 
         In LM Studio, models are loaded on first use, so we just need to check

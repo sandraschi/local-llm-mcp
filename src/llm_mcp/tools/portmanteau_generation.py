@@ -78,7 +78,7 @@ async def llm_generation(
                 model=model,
                 prompt=prompt,
                 temperature=temperature,
-                max_tokens=max_tokens,
+                max_tokens=max_tokens,  # ty: ignore[invalid-argument-type]
                 top_p=top_p,
                 stream=stream,
                 frequency_penalty=frequency_penalty,
@@ -93,7 +93,7 @@ async def llm_generation(
                 model=model,
                 messages=messages,
                 temperature=temperature,
-                max_tokens=max_tokens,
+                max_tokens=max_tokens,  # ty: ignore[invalid-argument-type]
                 top_p=top_p,
                 stream=stream,
                 frequency_penalty=frequency_penalty,

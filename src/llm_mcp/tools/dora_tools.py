@@ -31,12 +31,12 @@ try:
     BNB_AVAILABLE = True
 except ImportError:
     try:
-        from transformers.integrations import BitsAndBytesConfig
+        from transformers.integrations import BitsAndBytesConfig  # ty: ignore[unresolved-import]
 
         BNB_AVAILABLE = True
     except ImportError:
         BNB_AVAILABLE = False
-        BitsAndBytesConfig = None
+        BitsAndBytesConfig = None  # ty: ignore[conflicting-declarations]
 from transformers.utils import is_torch_bf16_gpu_available, is_torch_tf32_available
 
 # Get logger instance (configured in main.py)
@@ -102,7 +102,7 @@ async def dora_load_model_impl(
                 bnb_4bit_compute_dtype={"float16": torch.float16, "bfloat16": torch.bfloat16, "float32": torch.float32}[
                     compute_dtype
                 ],
-            )
+            )  # ty: ignore[call-non-callable]
         elif quant_type != "none":
             logger.warning("BitsAndBytesConfig not available - skipping quantization")
             bnb_config = None
@@ -620,7 +620,7 @@ def register_dora_tools(mcp):
                         "bfloat16": torch.bfloat16,
                         "float32": torch.float32,
                     }[compute_dtype],
-                )
+                )  # ty: ignore[call-non-callable]
             elif quant_type != "none":
                 logger.warning("BitsAndBytesConfig not available - skipping quantization")
                 bnb_config = None

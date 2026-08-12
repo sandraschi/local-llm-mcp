@@ -17,7 +17,7 @@ class VLLMDockerManager:
     """Manage vLLM v0.9.5 Docker containers with RTX 4090 optimization."""
 
     def __init__(self):
-        self.docker_client = docker.from_env()
+        self.docker_client = docker.from_env()  # ty: ignore[unresolved-attribute]
         self.container_name = "local-llm-mcp-vllm-v10"
         self.container = None
         self.base_url = "http://localhost:8000"
@@ -68,7 +68,7 @@ class VLLMDockerManager:
             "environment": environment,
             "ports": {8000: port},
             "detach": True,
-            "device_requests": [docker.types.DeviceRequest(count=1, capabilities=[["gpu"]])],
+            "device_requests": [docker.types.DeviceRequest(count=1, capabilities=[["gpu"]])],  # ty: ignore[unresolved-attribute]
             "ipc_mode": "host",  # Required for shared memory optimization
             "volumes": {
                 str(Path.home() / ".cache" / "huggingface"): {"bind": "/root/.cache/huggingface", "mode": "rw"}
@@ -159,7 +159,7 @@ class VLLMDockerManager:
             # Calculate GPU memory usage if available
             gpu_usage = None
             try:
-                import pynvml
+                import pynvml  # ty: ignore[unresolved-import]
 
                 pynvml.nvmlInit()
                 handle = pynvml.nvmlDeviceGetHandleByIndex(0)
@@ -267,7 +267,7 @@ class VLLMDockerManager:
         """Get existing container by name."""
         try:
             return self.docker_client.containers.get(self.container_name)
-        except docker.errors.NotFound:
+        except docker.errors.NotFound:  # ty: ignore[unresolved-attribute]
             return None
 
     async def _wait_for_health_check(self, timeout: int = 300):
