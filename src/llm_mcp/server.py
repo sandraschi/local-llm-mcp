@@ -280,6 +280,38 @@ async def api_engine_restart(engine_name: str):
         return {"success": False, "error": str(e)}
 
 
+@app.post("/api/v1/engines/llama/start")
+async def api_llama_start():
+    """Start Glimmer, evicting GPU tenants first.
+
+    Ollama models hold VRAM (gemma4:12b etc.) that the 17 GB Glimmer GGUF
+    needs. Unload every loaded Ollama model (keep_alive=0) before spawning
+    llama-server so it does not OOM or CPU-offload.
+    """
+    try:
+        from llm_mcp.tools.portmanteau_engine import _ollama_state, _start_llama, _unload_model
+
+        evicted: list[str] = []
+        try:
+            ollama = await _ollama_state()
+            for model_name in ollama.get("loaded_models") or []:
+                result = await _unload_model("ollama", model_name)
+                if result.get("success"):
+                    evicted.append(model_name)
+        except Exception as e:
+            logger.warning("Ollama eviction probe failed: %s", e)
+
+        start = await _start_llama()
+        return {
+            "success": start.get("success", False),
+            "evicted_ollama_models": evicted,
+            "start": start,
+        }
+    except Exception as e:
+        logger.warning("Glimmer start failed: %s", e, exc_info=True)
+        return {"success": False, "error": str(e)}
+
+
 try:
     from llm_mcp.api.v1.router import api_router
 

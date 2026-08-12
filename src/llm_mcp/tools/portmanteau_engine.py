@@ -271,8 +271,11 @@ async def _stop_ollama() -> dict:
 
 
 async def _start_llama() -> dict:
-    if _port_open(LLAMA_PROXY_PORT):
+    if _port_open(LLAMA_PORT):
         return {"success": True, "message": "llama server already running", "state": await _llama_state()}
+    if _port_open(LLAMA_PROXY_PORT):
+        # Zombie proxy with no backend: kill it so a fresh one attaches to the new server
+        await _stop_llama()
     gguf = os.path.join(LLAMA_MODEL_DIR, "meta", "muse-glimmer-30B-kquant-17gb.gguf")
     mmproj = os.path.join(LLAMA_MODEL_DIR, "meta", "mmproj-kquant.gguf")
     drafter = os.path.join(LLAMA_MODEL_DIR, "meta", "dflash-kquant.gguf")

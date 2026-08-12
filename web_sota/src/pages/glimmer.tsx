@@ -109,6 +109,30 @@ export function Glimmer() {
     [load],
   );
 
+  const startGlimmer = useCallback(async () => {
+    setRestarting(true);
+    setRestartMsg(null);
+    try {
+      const r = await fetch(`${API_BASE}/api/v1/engines/llama/start`, { method: "POST" });
+      const data = (await r.json()) as {
+        success: boolean;
+        error?: string;
+        evicted_ollama_models?: string[];
+      };
+      const evicted = (data.evicted_ollama_models ?? []).join(", ");
+      if (data.success) {
+        setRestartMsg(evicted ? `Started. Evicted Ollama tenants: ${evicted}.` : "Started.");
+      } else {
+        setRestartMsg(`Start failed: ${data.error ?? "unknown error"}`);
+      }
+      await load();
+    } catch (e) {
+      setRestartMsg(`Start failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setRestarting(false);
+    }
+  }, [load]);
+
   const llama = engines?.engines?.llama;
   const ollama = engines?.engines?.ollama;
   const vram = (llama?.gpu_vram ?? {}) as { used_gb?: number; total_gb?: number; free_gb?: number };
@@ -331,26 +355,47 @@ export function Glimmer() {
                 Engine Control
               </CardTitle>
               <CardDescription className="text-slate-400 text-sm">
-                Restarting llama-server reloads ~21 GB into VRAM and takes a few minutes. Ollama is
-                normally stopped while Glimmer runs.
+                Starting Glimmer evicts any Ollama tenants (keep_alive=0) so the ~17 GB model fits
+                the 4090, then loads llama-server (takes a few minutes). Restarting reloads the
+                model the same way.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => void restart("llama")}
-                disabled={restarting}
-                className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50 transition-colors"
-                data-testid="restart-llama"
-              >
-                {restarting ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Restarting...
-                  </span>
-                ) : (
-                  "Restart llama-server"
-                )}
-              </button>
+              {llama?.server_port_open || llama?.proxy_port_open ? (
+                <button
+                  type="button"
+                  onClick={() => void restart("llama")}
+                  disabled={restarting}
+                  className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50 transition-colors"
+                  data-testid="restart-llama"
+                >
+                  {restarting ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Restarting...
+                    </span>
+                  ) : (
+                    "Restart llama-server"
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void startGlimmer()}
+                  disabled={restarting}
+                  className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50 transition-colors"
+                  data-testid="start-glimmer"
+                >
+                  {restarting ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Starting...
+                    </span>
+                  ) : ollama?.running ? (
+                    "Start Glimmer (evicts Ollama)"
+                  ) : (
+                    "Start Glimmer"
+                  )}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => void restart("ollama")}
