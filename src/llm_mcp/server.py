@@ -208,6 +208,9 @@ async def api_tools():
 
 
 _SKILLS_DIR = Path(__file__).resolve().parent / "skills"
+if not _SKILLS_DIR.is_dir():
+    # Source layout: skills live at the repo root, not inside the package
+    _SKILLS_DIR = Path(__file__).resolve().parents[2] / "skills"
 
 
 @app.get("/api/v1/skills")
