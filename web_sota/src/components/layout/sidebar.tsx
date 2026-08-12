@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   LayoutGrid,
   Settings,
+  Sparkles,
   Wrench,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
@@ -32,6 +33,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { href: "/help", label: "Help", icon: HelpCircle },
     { href: "/performance", label: "Performance", icon: Gauge },
     { href: "/vision", label: "Vision", icon: ImageIcon },
+    { href: "/glimmer", label: "Glimmer", icon: Sparkles },
     { href: "/fleet", label: "Fleet", icon: LayoutGrid },
     { href: "/analytics", label: "Analytics", icon: Activity },
     { href: "/settings", label: "Settings", icon: Settings },

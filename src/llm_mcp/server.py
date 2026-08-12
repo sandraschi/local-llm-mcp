@@ -241,6 +241,45 @@ async def api_skill_content(skill_name: str):
     return {"name": skill_name, "content": skill_file.read_text(encoding="utf-8", errors="replace")}
 
 
+@app.get("/api/v1/engines")
+async def api_engines():
+    """Engine supervision status for the Glimmer page.
+
+    Returns live state for the llama.cpp server (11439), its truncating
+    proxy (11435), and Ollama (11434): port reachability, processes, VRAM,
+    loaded models, and GPU totals.
+    """
+    try:
+        from llm_mcp.tools.portmanteau_engine import _engine_state
+
+        llama = await _engine_state("llama")
+        ollama = await _engine_state("ollama")
+        return {"engines": {"llama": llama, "ollama": ollama}}
+    except Exception as e:
+        logger.warning("Engine status probe failed: %s", e, exc_info=True)
+        return {"engines": {}, "error": str(e)}
+
+
+@app.post("/api/v1/engines/{engine_name}/restart")
+async def api_engine_restart(engine_name: str):
+    """Restart a supervised inference engine (llama or ollama)."""
+    if engine_name not in ("llama", "ollama"):
+        return {"success": False, "error": f"unknown engine: {engine_name}"}
+    try:
+        from llm_mcp.tools.portmanteau_engine import _start_llama, _start_ollama, _stop_llama, _stop_ollama
+
+        if engine_name == "ollama":
+            stop = await _stop_ollama()
+            start = await _start_ollama()
+        else:
+            stop = await _stop_llama()
+            start = await _start_llama()
+        return {"success": start.get("success", False), "stop": stop, "start": start}
+    except Exception as e:
+        logger.warning("Engine restart failed: %s", e, exc_info=True)
+        return {"success": False, "error": str(e)}
+
+
 try:
     from llm_mcp.api.v1.router import api_router
 

@@ -4,6 +4,7 @@ import { Analytics } from "@/pages/analytics";
 import { Chat } from "@/pages/chat";
 import { Dashboard } from "@/pages/dashboard";
 import { Fleet } from "@/pages/fleet";
+import { Glimmer } from "@/pages/glimmer";
 import { Help } from "@/pages/help";
 import { Performance } from "@/pages/performance";
 import { Settings } from "@/pages/settings";
@@ -22,6 +23,7 @@ function App() {
           <Route path="/skills" element={<Skills />} />
           <Route path="/performance" element={<Performance />} />
           <Route path="/vision" element={<Vision />} />
+          <Route path="/glimmer" element={<Glimmer />} />
           <Route path="/fleet" element={<Fleet />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />

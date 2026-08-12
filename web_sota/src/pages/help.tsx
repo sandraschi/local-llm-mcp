@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  ArrowRight,
   BookOpen,
   Bot,
   Boxes,
@@ -321,6 +322,24 @@ function GlimmerTab() {
             </tbody>
           </table>
         </div>
+      </Section>
+      <Section title="Live status and controls">
+        <p>
+          The <strong className="text-white">Glimmer</strong> page shows live engine state
+          (llama-server, proxy, Ollama, GPU VRAM, loaded models) and can restart the engine:
+        </p>
+        <p className="mt-2">
+          <a
+            href="/glimmer"
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+          >
+            Open Glimmer status page <ArrowRight className="h-4 w-4" />
+          </a>
+        </p>
+        <p className="mt-2 text-sm text-gray-400">
+          Restarting llama-server reloads roughly 21 GB into VRAM and takes minutes; Ollama is
+          stopped while Glimmer holds the card.
+        </p>
       </Section>
     </div>
   );
