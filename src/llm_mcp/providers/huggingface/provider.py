@@ -1,9 +1,15 @@
-"""Hugging Face provider implementation for LLM MCP."""
+"""Hugging Face provider implementation for LLM MCP.
+
+pyright: diffusers lazily exports DiffusionPipeline/StableDiffusion* at runtime
+(verified: diffusers 0.36.0 hasattr == True) without stubs.
+"""
+
+# pyright: reportPrivateImportUsage=false
 
 import asyncio
 import logging
 from collections.abc import AsyncGenerator
-from typing import Any
+from typing import Any, cast
 
 import torch
 from transformers import (
@@ -24,6 +30,9 @@ try:
     DIFFUSERS_AVAILABLE = True
 except (ImportError, RuntimeError):
     DIFFUSERS_AVAILABLE = False
+    DiffusionPipeline = None
+    StableDiffusionPipeline = None
+    StableDiffusionXLPipeline = None
 
 from ..base import BaseProvider
 from .config import HuggingFaceConfig
@@ -46,10 +55,10 @@ class HuggingFaceProvider(BaseProvider):
         """
         super().__init__(config)
         self.config = HuggingFaceConfig(**config)
-        self._model = None
-        self._tokenizer = None
-        self._pipeline = None
-        self._diffusion_pipeline = None  # For diffusion models
+        self._model: Any = None
+        self._tokenizer: Any = None
+        self._pipeline: Any = None
+        self._diffusion_pipeline: Any = None  # For diffusion models
         self._device = self._get_device()
         self._is_initialized = False
 
@@ -90,7 +99,7 @@ class HuggingFaceProvider(BaseProvider):
             model_class = AutoModelForCausalLM  # Default
 
         # Load model and tokenizer
-        self._model = model_class.from_pretrained(self.config.model_name, **model_kwargs).to(self._device)  # ty: ignore[invalid-argument-type, unresolved-attribute]
+        self._model = model_class.from_pretrained(self.config.model_name, **model_kwargs).to(self._device)  # pyright: ignore[reportArgumentType]  # transformers stub resolves .to() against __call__
 
         self._tokenizer = AutoTokenizer.from_pretrained(
             self.config.model_name,  # ty: ignore[unresolved-attribute]
@@ -101,12 +110,12 @@ class HuggingFaceProvider(BaseProvider):
         # Initialize pipeline if needed
         if self.config.task:  # ty: ignore[unresolved-attribute]
             self._pipeline = pipeline(
-                self.config.task,  # ty: ignore[unresolved-attribute]
+                cast(Any, self.config.task),
                 model=self._model,
                 tokenizer=self._tokenizer,
                 device=self._device,
                 **self.config.pipeline_kwargs,  # ty: ignore[unresolved-attribute]
-            )  # ty: ignore[no-matching-overload]
+            )
 
     def _is_diffusion_model(self) -> bool:
         """Check if the configured model is a diffusion model."""
@@ -134,7 +143,7 @@ class HuggingFaceProvider(BaseProvider):
         # Determine pipeline type
         model_name_lower = self.config.model_name.lower()  # ty: ignore[unresolved-attribute]
         if "sdxl" in model_name_lower:
-            pipeline_class = StableDiffusionXLPipeline
+            pipeline_class: Any = StableDiffusionXLPipeline
         else:
             pipeline_class = StableDiffusionPipeline
 
@@ -256,7 +265,7 @@ class HuggingFaceProvider(BaseProvider):
                     token=self.config.api_key,  # ty: ignore[unresolved-attribute]
                     local_files_only=False,
                     resume_download=True,
-                ),  # ty: ignore[no-matching-overload]
+                ),  # pyright: ignore[reportCallIssue]  # huggingface_hub snapshot_download typing
             )
 
             return {
@@ -300,8 +309,8 @@ class HuggingFaceProvider(BaseProvider):
                 "last_modified": info.last_modified.isoformat() if info.last_modified else None,
                 "model_size": info.safetensors.get("total") if info.safetensors else None,
                 "license": info.cardData.get("license") if hasattr(info, "cardData") else None,
-                "model_type": info.config.get("model_type") if hasattr(info, "config") else None,  # ty: ignore[unresolved-attribute]
-                "architectures": info.config.get("architectures") if hasattr(info, "config") else None,  # ty: ignore[unresolved-attribute]
+                "model_type": info.config.get("model_type") if info.config else None,
+                "architectures": info.config.get("architectures") if info.config else None,
             }
 
         except Exception as e:

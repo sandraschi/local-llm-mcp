@@ -1,5 +1,6 @@
 """Anthropic provider implementation."""
 
+import importlib
 import logging
 import time
 from collections.abc import AsyncGenerator
@@ -9,14 +10,16 @@ from llm_mcp.models.base import BaseProvider, ModelCapability, ModelMetadata, Mo
 
 logger = logging.getLogger(__name__)
 
-# Try to import anthropic, but make it optional
-try:
-    import anthropic
+# Anthropic SDK is optional — importlib keeps the name bound (Any) when absent.
+anthropic: Any
 
+try:
+    anthropic = importlib.import_module("anthropic")
     ANTHROPIC_AVAILABLE = True
 except ImportError:
     logger.warning("Anthropic not installed. Install with: pip install anthropic")
     ANTHROPIC_AVAILABLE = False
+    anthropic = None
 
 
 class AnthropicProvider(BaseProvider):
@@ -43,8 +46,8 @@ class AnthropicProvider(BaseProvider):
 
         self.config = AnthropicConfig(**(config or {}))
 
-        # Initialize Anthropic client
-        self.client = anthropic.Anthropic(
+        # Initialize Anthropic client (async client — generate/chat are async)
+        self.client = anthropic.AsyncAnthropic(
             api_key=self.config.api_key,
             base_url=self.config.base_url,
             timeout=self.config.timeout,
@@ -71,6 +74,14 @@ class AnthropicProvider(BaseProvider):
     def is_ready(self) -> bool:
         """Check if the provider is ready to handle requests."""
         return self._is_initialized and self.config.api_key is not None  # ty: ignore[unresolved-attribute]
+
+    async def _test_connection(self) -> None:
+        """Probe the Anthropic API with a minimal call (max_tokens=1)."""
+        await self.client.messages.create(
+            model=self.config.default_model,
+            max_tokens=1,
+            messages=[{"role": "user", "content": "ping"}],
+        )
 
     async def initialize(self) -> None:
         """Initialize the Anthropic provider."""
@@ -231,7 +242,7 @@ class AnthropicProvider(BaseProvider):
                 max_tokens=generation_params["max_tokens"],
                 temperature=generation_params["temperature"],
                 top_p=generation_params["top_p"],
-                messages=messages,  # ty: ignore[invalid-argument-type]
+                messages=[{"role": m.get("role", "user"), "content": m.get("content", "")} for m in messages],
             )
 
             # Update metrics
@@ -263,8 +274,8 @@ class AnthropicProvider(BaseProvider):
         # Return model info from available models
         models = await self.list_models()
         for model in models:
-            if model["id"] == model_name:  # ty: ignore[not-subscriptable]
-                return model  # ty: ignore[invalid-return-type]
+            if model.id == model_name:
+                return model.model_dump()
 
         raise ValueError(f"Model {model_name} not found in available Anthropic models")
 
@@ -326,8 +337,8 @@ class AnthropicProvider(BaseProvider):
         """
         models = await self.list_models()
         for model in models:
-            if model["id"] == model_name:  # ty: ignore[not-subscriptable]
-                return model  # ty: ignore[invalid-return-type]
+            if model.id == model_name:
+                return model.model_dump()
 
         raise ValueError(f"Model {model_name} not found in available Anthropic models")
 
@@ -428,7 +439,7 @@ class AnthropicProvider(BaseProvider):
             model_id=model_id, messages=anthropic_messages, system=system_message, **kwargs
         )
 
-        return response["content"]  # ty: ignore[invalid-argument-type]
+        return response
 
     async def generate_embeddings(self, model_id: str, texts: list[str], **kwargs) -> list[list[float]]:
         """Generate embeddings for the given texts.

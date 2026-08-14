@@ -98,25 +98,29 @@ class BaseProvider(ABC):
 
     # ── Model discovery ───────────────────────────────────────────────────
 
+    # ModelMetadata | dict unions: richer providers return ModelMetadata
+    # objects, legacy providers return plain dicts.
     @abstractmethod
-    async def list_models(self) -> list[dict[str, Any]]:
-        """List available models - each dict must include at least ``id``."""
+    async def list_models(self) -> list[dict[str, Any]] | list["ModelMetadata"]:
+        """List available models - each item must include at least ``id``."""
 
-    async def get_model(self, model_id: str) -> dict[str, Any] | None:
+    async def get_model(self, model_id: str) -> dict[str, Any] | "ModelMetadata" | None:
         """Resolve a single model by id via linear scan of ``list_models``."""
         for m in await self.list_models():
-            if m.get("id") == model_id:
+            if (m.get("id") if isinstance(m, dict) else m.id) == model_id:
                 return m
         return None
 
     async def get_model_info(self, model_name: str) -> dict[str, Any]:
         """Alias kept for backward compat; delegates to ``get_model``."""
         result = await self.get_model(model_name)
-        return result or {}
+        if isinstance(result, dict):
+            return result
+        return result.model_dump() if result is not None else {}
 
     # ── Model lifecycle (override for stateful providers) ─────────────────
 
-    async def load_model(self, model_id: str, **kwargs) -> dict[str, Any]:
+    async def load_model(self, model_id: str, **kwargs) -> dict[str, Any] | "ModelMetadata":
         raise NotImplementedError(f"{type(self).__name__} does not support load_model")
 
     async def unload_model(self, model_id: str) -> bool:
