@@ -19,16 +19,32 @@ from llm_mcp.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Google Cloud dependencies
-try:
-    from google import genai  # ty: ignore[unresolved-import]
-    from google.auth import default  # ty: ignore[unresolved-import]
-    from google.cloud import aiplatform, storage  # ty: ignore[unresolved-import]
-    from vertexai.generative_models import GenerativeModel  # ty: ignore[unresolved-import]
+# Google Cloud dependencies (optional — importlib keeps names bound when absent)
+import importlib
 
+genai: Any
+_auth_default: Any
+aiplatform: Any
+storage: Any
+GenerativeModel: Any
+
+try:
+    genai = importlib.import_module("google.genai")
+    _auth = importlib.import_module("google.auth")
+    _auth_default = _auth.default
+    _cloud = importlib.import_module("google.cloud")
+    aiplatform = _cloud.aiplatform
+    storage = _cloud.storage
+    _vertex = importlib.import_module("vertexai.generative_models")
+    GenerativeModel = _vertex.GenerativeModel
     GOOGLE_CLOUD_AVAILABLE = True
 except ImportError:
     GOOGLE_CLOUD_AVAILABLE = False
+    genai = None
+    _auth_default = None
+    aiplatform = None
+    storage = None
+    GenerativeModel = None
     logger.warning(
         "Google Cloud AI not available. Install with: pip install google-cloud-aiplatform google-cloud-storage google-generativeai vertexai"
     )
@@ -45,7 +61,7 @@ class GoogleCloudConfig(BaseModel):
     timeout: int = Field(30, description="Request timeout in seconds")
     max_retries: int = Field(3, description="Maximum number of retries")
 
-    model_config = ConfigDict(env_prefix="GOOGLE_CLOUD_", populate_by_name=True, extra="ignore")  # ty: ignore[invalid-key]
+    model_config = ConfigDict(env_prefix="GOOGLE_CLOUD_", populate_by_name=True, extra="ignore")  # pyright: ignore[reportCallIssue]  # pydantic 2.12 ConfigDict typing
 
     @classmethod
     def from_env(cls) -> "GoogleCloudConfig":
@@ -53,7 +69,7 @@ class GoogleCloudConfig(BaseModel):
         # Check for both GOOGLE_CLOUD_TOKEN and GEMINI_API_KEY
         token = os.getenv("GOOGLE_CLOUD_TOKEN") or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_AI_API_KEY")
 
-        config_data = {"api_key": token} if token else {}
+        config_data: dict[str, Any] = {"api_key": token} if token else {}
 
         # Add other environment variables
         if os.getenv("GOOGLE_CLOUD_PROJECT"):

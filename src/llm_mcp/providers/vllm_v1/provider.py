@@ -1,5 +1,6 @@
 """vLLM V1 Provider with v1.0.0+ support and enhanced performance."""
 
+import importlib
 import logging
 import time
 from collections.abc import AsyncGenerator
@@ -15,30 +16,33 @@ from .config import VLLMv1Config
 
 logger = logging.getLogger(__name__)
 
-# Try to import vLLM, but make it optional
-try:
-    from vllm import LLM, SamplingParams
-    from vllm.engine.arg_utils import AsyncEngineArgs
-    from vllm.outputs import RequestOutput
-    from vllm.utils import random_uuid
+# vLLM is an optional dependency. Import via importlib so the names stay
+# bound (Any) whether or not it is importable — no try/except redeclaration.
+LLM: Any
+SamplingParams: Any
+AsyncEngineArgs: Any
+RequestOutput: Any
+random_uuid: Any
 
+try:
+    _vllm = importlib.import_module("vllm")
+    LLM = _vllm.LLM
+    SamplingParams = _vllm.SamplingParams
+    _arg_utils = importlib.import_module("vllm.engine.arg_utils")
+    AsyncEngineArgs = _arg_utils.AsyncEngineArgs
+    _outputs = importlib.import_module("vllm.outputs")
+    RequestOutput = _outputs.RequestOutput
+    _utils = importlib.import_module("vllm.utils")
+    random_uuid = _utils.random_uuid
     VLLM_AVAILABLE = True
 except ImportError:
     logger.warning("vLLM not installed. Install with: pip install vllm")
     VLLM_AVAILABLE = False
-
-    # Define dummy classes for type hints and initialization
-    class LLM:
-        pass
-
-    class SamplingParams:
-        def __init__(self, **kwargs):
-            pass
-
-        __annotations__ = {}
-
-    class AsyncEngineArgs:
-        pass
+    LLM = None
+    SamplingParams = None
+    AsyncEngineArgs = None
+    RequestOutput = None
+    random_uuid = None
 
 
 @dataclass
@@ -50,7 +54,7 @@ class VLLMGenerationResult:
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
-    metrics: dict[str, Any] = None  # ty: ignore[invalid-assignment]
+    metrics: dict[str, Any] | None = None
 
 
 class VLLMv1Provider(BaseProvider):
@@ -76,7 +80,7 @@ class VLLMv1Provider(BaseProvider):
             raise ImportError("vLLM is not installed. Please install it with: pip install vllm")
 
         self.config = VLLMv1Config(**(config or {}))
-        self.llm: LLM | None = None
+        self.llm: Any = None  # vLLM LLM instance (Any: optional-dependency type)
         self.sampling_params = SamplingParams()
         self._is_initialized = False
         self._model_loaded = False
@@ -142,7 +146,7 @@ class VLLMv1Provider(BaseProvider):
             logger.error(error_msg, exc_info=True)
             self.metrics["last_error"] = error_msg  # ty: ignore[invalid-assignment]
             raise RuntimeError(error_msg) from e
-        await self._load_supported_models()  # ty: ignore[invalid-await]
+        self._load_supported_models()
         logger.info("vLLM V1 provider initialized")
 
     async def cleanup(self) -> None:
@@ -253,7 +257,9 @@ class VLLMv1Provider(BaseProvider):
 
         # If the model is already loaded, return its info
         if self._model_loaded and self.config.model == model_name:  # ty: ignore[unresolved-attribute]
-            return await self.list_models()[0]  # ty: ignore[not-subscriptable]
+            models = await self.list_models()
+            if models:
+                return models[0]
 
         # Clean up existing model if any
         if self.llm is not None:
@@ -278,8 +284,11 @@ class VLLMv1Provider(BaseProvider):
             self.metrics["last_error"] = error_msg  # ty: ignore[invalid-assignment]
             raise RuntimeError(error_msg) from e
 
-    def _get_sampling_params(self, **kwargs) -> SamplingParams:
-        """Create SamplingParams from kwargs."""
+    def _get_sampling_params(self, **kwargs) -> Any:
+        """Create SamplingParams from kwargs.
+
+        Returns Any: SamplingParams is an optional-dependency type.
+        """
         # Default values
         params = {
             "temperature": 0.7,
