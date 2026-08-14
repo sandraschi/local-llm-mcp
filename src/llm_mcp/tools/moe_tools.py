@@ -115,10 +115,15 @@ def convert_to_moe(
     Returns:
         The converted model with MoE layers
     """
-    from transformers.models.gpt2 import GPT2Block  # ty: ignore[unresolved-import]
-    from transformers.models.llama import LlamaDecoderLayer  # ty: ignore[unresolved-import]
+    from transformers.models.gpt2.modeling_gpt2 import GPT2Block
+    from transformers.models.llama.modeling_llama import LlamaDecoderLayer
 
-    for i, layer in enumerate(model.base_model.layers):  # ty: ignore[invalid-argument-type, unresolved-attribute]
+    base_model = getattr(model, "base_model", None)
+    layers = getattr(base_model, "layers", None)
+    if layers is None:
+        raise ValueError("Model has no base_model.layers to convert to MoE")
+
+    for i, layer in enumerate(layers):
         # Skip layers outside the specified range
         if i < config.moe_layer_start or (config.moe_layer_end is not None and i > config.moe_layer_end):
             continue
@@ -130,8 +135,8 @@ def convert_to_moe(
         if isinstance(layer, (GPT2Block, LlamaDecoderLayer)):
             # Replace the MLP with an MoE MLP
             if hasattr(layer, "mlp"):
-                original_mlp = layer.mlp
-                layer.mlp = MoEMLP(
+                original_mlp: Any = layer.mlp
+                layer.mlp = MoEMLP(  # pyright: ignore[reportAttributeAccessIssue]  # transformers model attributes are not in stubs
                     config=config,
                     hidden_size=original_mlp.hidden_size,
                     intermediate_size=original_mlp.intermediate_size,

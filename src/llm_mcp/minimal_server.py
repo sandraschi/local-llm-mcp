@@ -66,17 +66,9 @@ class MinimalServer:
             logger.info("Starting minimal MCP server...")
 
             try:
-                if hasattr(self.server, "start"):
-                    await self.server.start()  # ty: ignore[call-non-callable]
-                    logger.info("Server started successfully, waiting for connections...")
-
-                    # Keep the server running
-                    while not self.shutdown_event.is_set():
-                        await asyncio.sleep(0.1)
-                else:
-                    logger.error("FastMCP instance has no 'start' method")
-                    return
-
+                # FastMCP 3.x runs via run_stdio_async — no start()/stop() API
+                await self.server.run_stdio_async()
+                logger.info("Server exited")
             except asyncio.CancelledError:
                 logger.info("Server shutdown requested")
             except Exception as e:
@@ -90,12 +82,8 @@ class MinimalServer:
             await self.stop()
 
     async def stop(self):
-        """Stop the server."""
-        if self.server is not None:
-            logger.info("Stopping server...")
-            if hasattr(self.server, "stop"):
-                await self.server.stop()  # ty: ignore[call-non-callable]
-            self.server = None
+        """Stop the server (no-op — run_stdio_async returns on shutdown)."""
+        self.server = None
         logger.info("Server stopped")
 
 

@@ -43,7 +43,14 @@ LoggingConfig.initialize(log_level="ERROR")  # Only show errors
 logger = get_logger(__name__)
 
 # Import FastMCP after logging is configured
-# Try to import FastMCP with version check
+# Try to import FastMCP with version check — pre-declared so pyright sees the
+# names as bound whether or not the dependency resolves.
+FastMCP: Any
+fastmcp_version_installed: Any
+create_proxy: Any
+Tool: Any
+Version: Any
+
 try:
     from fastmcp import FastMCP
     from fastmcp import __version__ as fastmcp_version_installed
@@ -97,7 +104,7 @@ class GracefulShutdown:
 
         try:
             # Cleanup state manager if it exists
-            if "state_manager" in globals() and hasattr(state_manager, "cleanup"):
+            if state_manager is not None and hasattr(state_manager, "cleanup"):
                 await state_manager.cleanup()
 
             # Add any additional cleanup logic here
@@ -111,10 +118,8 @@ class GracefulShutdown:
     async def shutdown(self, signal_received=None):
         """Handle graceful shutdown."""
         if signal_received:
-            logger.info(
-                "Shutdown signal received",
-                signal=signal_received.name if hasattr(signal_received, "name") else str(signal_received),
-            )
+            sig_name = signal_received.name if hasattr(signal_received, "name") else str(signal_received)
+            logger.info(f"Shutdown signal received: {sig_name}")
         else:
             logger.info("Shutdown requested")
 
@@ -143,13 +148,13 @@ def setup_signal_handlers():
 
 
 # Global state manager
-state_manager = None
+state_manager: Any = None
 
 # Global server instance
 server = None
 
 
-async def create_mcp_server_sync() -> FastMCP | None:
+async def create_mcp_server_sync() -> Any:
     """Create and configure the MCP server with all tools for FastMCP 2.12+ (synchronous version).
 
     Returns:

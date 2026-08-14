@@ -17,7 +17,7 @@ from llm_mcp.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
-def llm_gpu_tool(
+async def llm_gpu_tool(
     operation: str,
     # GPU identification
     gpu_id: int = 0,
@@ -44,16 +44,17 @@ def llm_gpu_tool(
         from llm_mcp.tools.gpu_manager import clear_gpu_memory, get_gpu_status, monitor_gpu_health, optimize_gpu_memory
 
         if operation == "get_status":
-            return get_gpu_status(gpu_id)  # ty: ignore[invalid-return-type, too-many-positional-arguments]
+            status = await get_gpu_status()
+            return {"gpus": [s.__dict__ for s in status], "count": len(status)}
 
         elif operation == "clear_memory":
-            return clear_gpu_memory(gpu_id)  # ty: ignore[invalid-return-type]
+            return await clear_gpu_memory(gpu_id)
 
         elif operation == "optimize":
-            return optimize_gpu_memory(gpu_id)  # ty: ignore[invalid-return-type]
+            return await optimize_gpu_memory(gpu_id)
 
         elif operation == "get_health":
-            return monitor_gpu_health(gpu_id)  # ty: ignore[invalid-return-type]
+            return await monitor_gpu_health(gpu_id)
 
         else:
             return {
