@@ -8,6 +8,10 @@ import asyncio
 from dataclasses import dataclass
 from typing import Any
 
+import GPUtil
+import psutil
+import torch
+
 from llm_mcp.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -22,16 +26,7 @@ except ImportError:
     logger.error("FastMCP not available - GPU manager requires FastMCP >= 2.12.0")
     FASTMCP_AVAILABLE = False
 
-# GPU monitoring dependencies
-try:
-    import GPUtil
-    import psutil
-    import torch
-
-    GPU_DEPS_AVAILABLE = True
-except ImportError:
-    GPU_DEPS_AVAILABLE = False
-    logger.warning("GPU monitoring dependencies not available. Install with: pip install gputil torch psutil")
+GPU_DEPS_AVAILABLE = True
 
 
 @dataclass

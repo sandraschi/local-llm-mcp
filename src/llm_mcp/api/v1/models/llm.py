@@ -12,6 +12,9 @@ class ProviderInfo(BaseModel):
     name: str = Field(..., description="Name of the provider")
     description: str = Field(..., description="Description of the provider")
     capabilities: list[str] = Field(default_factory=list, description="List of capabilities supported by the provider")
+    parameters: dict[str, Any] | None = Field(
+        default=None, description="Provider-specific parameters and their descriptions"
+    )
 
 
 class ModelIntelligence(BaseModel):
@@ -35,10 +38,14 @@ class ModelInfo(BaseModel):
     id: str = Field(..., description="Unique identifier for the model")
     name: str = Field(..., description="Name of the model")
     provider: str = Field(..., description="Name of the provider")
-    description: str | None = Field(None, description="Description of the model")
+    description: str | None = Field(default=None, description="Description of the model")
     capabilities: list[str] = Field(default_factory=list, description="List of capabilities supported by the model")
-    parameters: dict[str, Any] | None = Field(None, description="Model-specific parameters and their descriptions")
-    intelligence: ModelIntelligence | None = Field(None, description="Rich intelligence and metadata about the model")
+    parameters: dict[str, Any] | None = Field(
+        default=None, description="Model-specific parameters and their descriptions"
+    )
+    intelligence: ModelIntelligence | None = Field(
+        default=None, description="Rich intelligence and metadata about the model"
+    )
 
 
 class GenerateRequest(BaseModel):

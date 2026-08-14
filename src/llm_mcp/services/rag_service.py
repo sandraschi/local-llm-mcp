@@ -11,26 +11,31 @@ Usage:
 
 from __future__ import annotations
 
+import importlib
 import logging
 import os
 import time
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
-_rag_service: RAGService | None = None
+# Optional RAG deps — importlib keeps names bound (Any) when not installed.
+lancedb: Any
+pa: Any
+SentenceTransformer: Any
 
 try:
-    import lancedb  # ty: ignore[unresolved-import]
-    import pyarrow as pa
-    from sentence_transformers import SentenceTransformer
-
+    lancedb = importlib.import_module("lancedb")
+    pa = importlib.import_module("pyarrow")
+    _st = importlib.import_module("sentence_transformers")
+    SentenceTransformer = _st.SentenceTransformer
     _HAS_DEPS = True
 except ImportError:
     _HAS_DEPS = False
     lancedb = None
-    pa = None  # ty: ignore[invalid-assignment]
-    SentenceTransformer = None  # ty: ignore[invalid-assignment]
+    pa = None
+    SentenceTransformer = None
 
 
 class RAGService:
@@ -39,8 +44,8 @@ class RAGService:
     def __init__(self, db_path: str | None = None, model_name: str = "all-MiniLM-L6-v2"):
         self.db_path = db_path or str(Path(os.getcwd()) / "data" / "rag" / "lancedb")
         self.model_name = model_name
-        self._model: SentenceTransformer | None = None
-        self._table = None
+        self._model: Any = None
+        self._table: Any = None  # LanceDB table (optional dep)
         self._initialized = False
 
     async def initialize(self):
@@ -131,6 +136,8 @@ class RAGService:
 
 
 import json
+
+_rag_service: RAGService | None = None
 
 
 def get_rag() -> RAGService:

@@ -10,7 +10,14 @@ from fastapi.responses import StreamingResponse
 
 from ....config import get_settings
 from ....services.model_service import model_service
-from ..models import GenerateRequest, GenerateResponse, ModelInfo, ModelOperationResponse, ProviderInfo
+from ..models import (
+    GenerateRequest,
+    GenerateResponse,
+    ModelInfo,
+    ModelOperationResponse,
+    ModelStatus,
+    ProviderInfo,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -136,7 +143,7 @@ async def list_models(
                 models.extend(
                     [
                         ModelInfo(
-                            id=model.get("id"),  # ty: ignore[invalid-argument-type]
+                            id=str(model.get("id") or ""),
                             name=model.get("name", ""),
                             description=model.get("description", ""),
                             provider="vllm",
@@ -159,7 +166,7 @@ async def list_models(
                 models.extend(
                     [
                         ModelInfo(
-                            id=model.get("id"),  # ty: ignore[invalid-argument-type]
+                            id=str(model.get("id") or ""),
                             name=model.get("name", ""),
                             description=model.get("description", ""),
                             provider=provider,
@@ -182,7 +189,7 @@ async def list_models(
                     models.extend(
                         [
                             ModelInfo(
-                                id=model.get("id"),  # ty: ignore[invalid-argument-type]
+                                id=str(model.get("id") or ""),
                                 name=model.get("name", ""),
                                 description=model.get("description", ""),
                                 provider=provider_name,
@@ -218,7 +225,8 @@ async def get_model(model_name: str, provider: str | None = None) -> ModelInfo:
         Detailed model information
     """
     try:
-        return await model_service.get_model_info(model_name, provider)  # ty: ignore[invalid-return-type]
+        model_info = await model_service.get_model_info(model_name, provider)
+        return ModelInfo(**model_info)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except Exception as e:
@@ -269,17 +277,23 @@ async def pull_model(
 
                 if model_exists and not force:
                     return ModelOperationResponse(
-                        success=True,
+                        model=model_name,
+                        provider="vllm",
+                        status=ModelStatus.READY,
                         message=f"Model {model_name} already exists in vLLM",
                         details={"status": "already_exists"},
-                    )  # ty: ignore[missing-argument]
+                    )
 
                 # Pull the model
                 result = await vllm_provider.pull_model(model_name, **kwargs)
 
                 return ModelOperationResponse(
-                    success=True, message=f"Successfully pulled model {model_name} using vLLM", details=result
-                )  # ty: ignore[missing-argument]
+                    model=model_name,
+                    provider="vllm",
+                    status=ModelStatus.READY,
+                    message=f"Successfully pulled model {model_name} using vLLM",
+                    details=result,
+                )
 
             except ImportError as e:
                 if provider:  # Only raise if vLLM was explicitly requested
@@ -304,8 +318,12 @@ async def pull_model(
             result = await provider_instance.pull_model(model_name, **kwargs)
 
             return ModelOperationResponse(
-                success=True, message=f"Successfully pulled model {model_name} from {provider_name}", details=result
-            )  # ty: ignore[missing-argument]
+                model=model_name,
+                provider=provider_name,
+                status=ModelStatus.READY,
+                message=f"Successfully pulled model {model_name} from {provider_name}",
+                details=result,
+            )
 
         except HTTPException:
             raise
@@ -318,33 +336,40 @@ async def pull_model(
         ) from e
 
 
-@router.post("/generate", response_model=GenerateResponse)
-async def generate_text(request: GenerateRequest, raw_request: Request) -> GenerateResponse:
+@router.post("/generate")
+async def generate_text(request: GenerateRequest, raw_request: Request) -> GenerateResponse | StreamingResponse:
     """Generate text using the specified model.
 
     Args:
         request: Generate text request
 
     Returns:
-        Generated text response
+        Generated text response (streaming SSE when stream=True)
     """
     # If streaming is requested, return a streaming response
     if request.stream:
-        return StreamingResponse(generate_stream(request, raw_request), media_type="text/event-stream")  # ty: ignore[invalid-return-type]
+        return StreamingResponse(generate_stream(request, raw_request), media_type="text/event-stream")
 
     # Otherwise, generate the full response at once
     try:
         full_response = ""
+        gen_kwargs = {
+            k: v
+            for k, v in {
+                "temperature": request.temperature,
+                "max_tokens": request.max_tokens,
+                "top_p": request.top_p,
+                "frequency_penalty": request.frequency_penalty,
+                "presence_penalty": request.presence_penalty,
+                "stop": request.stop,
+            }.items()
+            if v is not None
+        }
         async for chunk in model_service.generate(
             prompt=request.prompt,
             model=request.model,
             provider=request.provider,
-            temperature=request.temperature,  # ty: ignore[invalid-argument-type]
-            max_tokens=request.max_tokens,  # ty: ignore[invalid-argument-type]
-            top_p=request.top_p,  # ty: ignore[invalid-argument-type]
-            frequency_penalty=request.frequency_penalty,  # ty: ignore[invalid-argument-type]
-            presence_penalty=request.presence_penalty,  # ty: ignore[invalid-argument-type]
-            stop=request.stop,
+            **gen_kwargs,
         ):
             full_response += chunk
 
@@ -380,16 +405,23 @@ async def generate_stream(request: GenerateRequest, raw_request: Request) -> Asy
     try:
         buffer = ""
 
+        gen_kwargs = {
+            k: v
+            for k, v in {
+                "temperature": request.temperature,
+                "max_tokens": request.max_tokens,
+                "top_p": request.top_p,
+                "frequency_penalty": request.frequency_penalty,
+                "presence_penalty": request.presence_penalty,
+                "stop": request.stop,
+            }.items()
+            if v is not None
+        }
         async for chunk in model_service.generate(
             prompt=request.prompt,
             model=request.model,
             provider=request.provider,
-            temperature=request.temperature,  # ty: ignore[invalid-argument-type]
-            max_tokens=request.max_tokens,  # ty: ignore[invalid-argument-type]
-            top_p=request.top_p,  # ty: ignore[invalid-argument-type]
-            frequency_penalty=request.frequency_penalty,  # ty: ignore[invalid-argument-type]
-            presence_penalty=request.presence_penalty,  # ty: ignore[invalid-argument-type]
-            stop=request.stop,
+            **gen_kwargs,
         ):
             # Check if client disconnected
             if await raw_request.is_disconnected():
