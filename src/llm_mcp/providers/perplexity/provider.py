@@ -35,7 +35,7 @@ class PerplexityProvider(BaseProvider):
         self.config = PerplexityConfig(**(config or {}))
 
         # Don't create session in __init__ to avoid event loop issues
-        self.session = None
+        self.session: Any = None
         self._is_initialized = False
 
         # Initialize metrics
@@ -66,12 +66,12 @@ class PerplexityProvider(BaseProvider):
 
         # Create HTTP session if not already created
         if self.session is None:
+            headers: dict[str, str] = {"Content-Type": "application/json"}
+            if self.config.api_key:  # ty: ignore[unresolved-attribute]
+                headers["Authorization"] = f"Bearer {self.config.api_key}"
             self.session = aiohttp.ClientSession(
                 timeout=aiohttp.ClientTimeout(total=self.config.timeout),  # ty: ignore[unresolved-attribute]
-                headers={
-                    "Authorization": f"Bearer {self.config.api_key}" if self.config.api_key else None,  # ty: ignore[unresolved-attribute]
-                    "Content-Type": "application/json",
-                },  # ty: ignore[invalid-argument-type]
+                headers=headers,
             )
 
         try:
@@ -91,7 +91,7 @@ class PerplexityProvider(BaseProvider):
     async def cleanup(self) -> None:
         """Cleanup resources."""
         if hasattr(self, "session"):
-            await self.session.close()  # ty: ignore[unresolved-attribute]
+            await self.session.close()
         self._is_initialized = False
         logger.info("Perplexity provider cleaned up")
 
@@ -367,8 +367,8 @@ class PerplexityProvider(BaseProvider):
                     capabilities=[ModelCapability.TEXT_GENERATION, ModelCapability.CHAT],
                     parameters={"max_tokens": model.get("max_tokens", 4096)},
                 )
-            elif hasattr(model, "id") and model.id == model_id:
-                return model  # ty: ignore[invalid-return-type]
+            elif isinstance(model, ModelMetadata) and model.id == model_id:
+                return model
         return None
 
     async def load_model(self, model_id: str, **kwargs) -> ModelMetadata:  # ty: ignore[invalid-method-override]
@@ -397,7 +397,7 @@ class PerplexityProvider(BaseProvider):
     async def chat(self, model_id: str, messages: list[dict[str, str]], **kwargs) -> str:
         """Generate a chat completion using the specified model."""
         response = await self.chat_completion(model_id=model_id, messages=messages, **kwargs)
-        return response.get("content", str(response))  # ty: ignore[unresolved-attribute]
+        return response
 
     async def generate_embeddings(self, model_id: str, texts: list[str], **kwargs) -> list[list[float]]:
         """Generate embeddings for the given texts."""

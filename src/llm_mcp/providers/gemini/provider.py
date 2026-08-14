@@ -1,5 +1,6 @@
 """Gemini provider implementation."""
 
+import importlib
 import logging
 import time
 from collections.abc import AsyncGenerator
@@ -9,14 +10,16 @@ from llm_mcp.models.base import BaseProvider, ModelCapability, ModelMetadata, Mo
 
 logger = logging.getLogger(__name__)
 
-# Try to import google.generativeai, but make it optional
-try:
-    import google.generativeai as genai  # ty: ignore[unresolved-import]
+# google.generativeai is optional — importlib keeps the name bound (Any).
+genai: Any
 
+try:
+    genai = importlib.import_module("google.generativeai")
     GEMINI_AVAILABLE = True
 except ImportError:
     logger.warning("Google Generative AI not installed. Install with: pip install google-generativeai")
     GEMINI_AVAILABLE = False
+    genai = None
 
 
 class GeminiProvider(BaseProvider):
@@ -350,8 +353,8 @@ class GeminiProvider(BaseProvider):
                     capabilities=[ModelCapability.TEXT_GENERATION, ModelCapability.CHAT],
                     parameters={"max_tokens": model.get("max_tokens", 4096)},
                 )
-            elif hasattr(model, "id") and model.id == model_id:
-                return model  # ty: ignore[invalid-return-type]
+            elif isinstance(model, ModelMetadata) and model.id == model_id:
+                return model
         return None
 
     async def load_model(self, model_id: str, **kwargs) -> ModelMetadata:  # ty: ignore[invalid-method-override]
@@ -380,7 +383,7 @@ class GeminiProvider(BaseProvider):
     async def chat(self, model_id: str, messages: list[dict[str, str]], **kwargs) -> str:
         """Generate a chat completion using the specified model."""
         response = await self.chat_completion(model_id=model_id, messages=messages, **kwargs)
-        return response.get("content", str(response))  # ty: ignore[unresolved-attribute]
+        return response
 
     async def generate_embeddings(self, model_id: str, texts: list[str], **kwargs) -> list[list[float]]:
         """Generate embeddings for the given texts."""

@@ -15,14 +15,19 @@ import logging
 import logging.handlers
 import sys
 from pathlib import Path
+from typing import Any
 
-# SOTA: Use structlog for structured logging
+# SOTA: Use structlog for structured logging. Importlib keeps the name bound
+# (Any) when the optional dependency is absent.
+structlog: Any
+
 try:
     import structlog
 
     STRUCTLOG_AVAILABLE = True
 except ImportError:
     STRUCTLOG_AVAILABLE = False
+    structlog = None
 
 # SOTA Logging Configuration
 DEFAULT_LOG_DIR = Path.home() / ".llm_mcp" / "logs"
