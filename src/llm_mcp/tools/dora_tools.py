@@ -13,6 +13,11 @@ Key Features:
 - Seamless integration with existing training pipelines
 """
 
+# pyright: reportAttributeAccessIssue=false
+# pyright: reportPrivateImportUsage=false
+# transformers/diffusers lazily export these names at runtime (verified:
+# transformers 5.2.0, diffusers 0.36.0) without stub coverage.
+
 import asyncio
 import logging
 import os
@@ -24,6 +29,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from transformers import AutoModelForCausalLM, Trainer, TrainingArguments
 
+# transformers lazily exports these at runtime (verified: transformers 5.2.0)
+# without stub coverage — treat them as Any.
+BitsAndBytesConfig: Any
+is_torch_bf16_gpu_available: Any
+is_torch_tf32_available: Any
+
 # Try to import BitsAndBytesConfig (may not be available in all transformers versions)
 try:
     from transformers import BitsAndBytesConfig
@@ -31,12 +42,12 @@ try:
     BNB_AVAILABLE = True
 except ImportError:
     try:
-        from transformers.integrations import BitsAndBytesConfig  # ty: ignore[unresolved-import]
+        from transformers.integrations import BitsAndBytesConfig
 
         BNB_AVAILABLE = True
     except ImportError:
         BNB_AVAILABLE = False
-        BitsAndBytesConfig = None  # ty: ignore[conflicting-declarations]
+        BitsAndBytesConfig = None
 from transformers.utils import is_torch_bf16_gpu_available, is_torch_tf32_available
 
 # Get logger instance (configured in main.py)

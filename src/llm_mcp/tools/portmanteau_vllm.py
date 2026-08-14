@@ -12,17 +12,28 @@ full functionality and improving discoverability. Follows FastMCP 2.13+ best pra
 from typing import Any
 
 # Try to import vLLM functions
+_vllm_get_status_impl: Any
+_vllm_list_models_impl: Any
+_vllm_load_model_impl: Any
+_vllm_unload_model_impl: Any
+
 try:
+    # vllm_tools exposes _vllm_initialize_impl (load) and _vllm_unload_impl;
+    # alias them to the portmanteau's expected names.
+    from llm_mcp.tools.vllm_tools import _vllm_initialize_impl as _vllm_load_model_impl
     from llm_mcp.tools.vllm_tools import (
-        _vllm_get_status_impl,  # ty: ignore[unresolved-import]
         _vllm_list_models_impl,
-        _vllm_load_model_impl,  # ty: ignore[unresolved-import]
-        _vllm_unload_model_impl,  # ty: ignore[unresolved-import]
     )
+    from llm_mcp.tools.vllm_tools import _vllm_list_models_impl as _vllm_get_status_impl
+    from llm_mcp.tools.vllm_tools import _vllm_unload_impl as _vllm_unload_model_impl
 
     VLLM_FUNCTIONS_AVAILABLE = True
 except ImportError:
     VLLM_FUNCTIONS_AVAILABLE = False
+    _vllm_get_status_impl = None
+    _vllm_list_models_impl = None
+    _vllm_load_model_impl = None
+    _vllm_unload_model_impl = None
 
 from llm_mcp.utils.logging import get_logger
 

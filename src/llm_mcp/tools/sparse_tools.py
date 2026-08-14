@@ -5,7 +5,13 @@ This module provides tools for sparse fine-tuning of language models, including:
 - Movement Pruning: Dynamic sparsity during training
 - Top-K Masking: Sparse attention patterns
 - Sparse Fine-Tuning with RigL: Dynamic sparse training
+
+pyright: transformers lazily exports BitsAndBytesConfig at runtime (verified:
+transformers 5.2.0) without stub coverage.
 """
+
+# pyright: reportAttributeAccessIssue=false
+# pyright: reportPrivateImportUsage=false
 
 from dataclasses import dataclass
 from typing import Any
@@ -21,6 +27,8 @@ from transformers import (
     TrainingArguments,
 )
 
+BitsAndBytesConfig: Any
+
 # Try to import BitsAndBytesConfig (may not be available in all transformers versions)
 try:
     from transformers import BitsAndBytesConfig
@@ -28,12 +36,12 @@ try:
     BNB_AVAILABLE = True
 except ImportError:
     try:
-        from transformers.integrations import BitsAndBytesConfig  # ty: ignore[unresolved-import]
+        from transformers.integrations import BitsAndBytesConfig
 
         BNB_AVAILABLE = True
     except ImportError:
         BNB_AVAILABLE = False
-        BitsAndBytesConfig = None  # ty: ignore[conflicting-declarations]
+        BitsAndBytesConfig = None
 import numpy as np
 from loguru import logger
 
@@ -106,7 +114,7 @@ class SparseLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Apply mask to weights
-        masked_weight = self.weight * self.mask  # ty: ignore[unsupported-operator]
+        masked_weight = self.weight * self.mask.to(self.weight.dtype)  # pyright: ignore[reportOperatorIssue]  # Parameter * Tensor mask
         return F.linear(x, masked_weight, self.bias)
 
 
@@ -118,7 +126,7 @@ class SparseTrainer(Trainer):
         self.sparse_config = sparse_config or SparseConfig()
         self.steps_since_mask_update = 0
 
-    def training_step(self, model, inputs):  # ty: ignore[invalid-method-override]
+    def training_step(self, model, inputs):  # pyright: ignore[reportIncompatibleMethodOverride]  # sparse trainer override
         # Call parent training step
         loss = super().training_step(model, inputs)
 
@@ -132,7 +140,7 @@ class SparseTrainer(Trainer):
 
     def update_masks(self):
         """Update masks for all sparse layers."""
-        for module in self.model.modules():  # ty: ignore[unresolved-attribute]
+        for module in self.model.modules() if self.model is not None else []:
             if isinstance(module, SparseLinear):
                 module.update_mask()
 
@@ -626,7 +634,7 @@ def register_sparse_tools(mcp):
         Returns:
             Dictionary with model information
         """
-        return sparse_load_model_impl(
+        return await sparse_load_model_impl(
             model_name=model_name,
             model_id=model_id,
             sparsity_ratio=sparsity_ratio,
@@ -693,7 +701,7 @@ def register_sparse_tools(mcp):
         Returns:
             Dictionary with training results
         """
-        return sparse_train_impl(
+        return await sparse_train_impl(
             model_id=model_id,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
@@ -729,7 +737,7 @@ def register_sparse_tools(mcp):
         Returns:
             Dictionary with unload status
         """
-        return sparse_unload_model_impl(model_id=model_id)  # ty: ignore[invalid-return-type]
+        return await sparse_unload_model_impl(model_id=model_id)
 
     # Register sparse model listing
     @tool()
@@ -739,6 +747,6 @@ def register_sparse_tools(mcp):
         Returns:
             Dictionary with information about loaded models
         """
-        return sparse_list_models_impl()  # ty: ignore[invalid-return-type]
+        return await sparse_list_models_impl()
 
     return mcp

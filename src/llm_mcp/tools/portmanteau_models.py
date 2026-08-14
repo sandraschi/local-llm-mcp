@@ -91,7 +91,8 @@ async def llm_models(
     """
     try:
         if operation == "list_models":
-            return await _list_models_impl(provider)  # ty: ignore[invalid-return-type]
+            models = await _list_models_impl(provider)
+            return {"models": models, "count": len(models)}
 
         elif operation == "get_model_info":
             if not model_id:
@@ -102,12 +103,12 @@ async def llm_models(
             if not all([name, context_length is not None, max_tokens is not None]):
                 return {"error": "name, context_length, and max_tokens required for register_model operation"}
             return await _register_model_impl(
-                model_id=model_id or f"custom_{name.lower().replace(' ', '_')}",  # ty: ignore[unresolved-attribute]
-                name=name,  # ty: ignore[invalid-argument-type]
+                model_id=model_id or f"custom_{(name or '').lower().replace(' ', '_')}",
+                name=name or "",
                 provider=provider or "custom",
-                context_length=context_length,  # ty: ignore[invalid-argument-type]
-                max_tokens=max_tokens,  # ty: ignore[invalid-argument-type]
-                description=description,  # ty: ignore[invalid-argument-type]
+                context_length=context_length or 0,
+                max_tokens=max_tokens or 0,
+                description=description or "",
                 parameters=parameters or {},
             )
 
@@ -130,7 +131,9 @@ async def llm_models(
             return await _ollama_load_model_impl(model_id)
 
         elif operation == "ollama_unload":
-            return await _ollama_unload_model_impl()  # ty: ignore[missing-argument]
+            if not model_id:
+                return {"error": "model_id required for ollama_unload operation (use as model_name)"}
+            return await _ollama_unload_model_impl(model_id)
 
         elif operation == "lmstudio_list":
             return await _lmstudio_list_models_impl()
