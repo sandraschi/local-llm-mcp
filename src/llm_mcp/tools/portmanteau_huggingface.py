@@ -33,14 +33,14 @@ class HuggingFaceConfig(BaseModel):
     # Download settings
     use_auth_token: bool = Field(True, description="Whether to use auth token for downloads")
 
-    model_config = ConfigDict(env_prefix="HUGGINGFACE_", populate_by_name=True, extra="ignore")  # ty: ignore[invalid-key]
+    model_config = ConfigDict(env_prefix="HUGGINGFACE_", populate_by_name=True, extra="ignore")  # pyright: ignore[reportCallIssue]  # pydantic 2.12 ConfigDict typing
 
     @classmethod
     def from_env(cls) -> "HuggingFaceConfig":
         """Load configuration from environment variables."""
         # Check for both HF_TOKEN and HUGGINGFACE_TOKEN
         token = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_TOKEN")
-        config_data = {"api_token": token} if token else {}
+        config_data: dict[str, Any] = {"api_token": token} if token else {}
 
         # Load other config from environment
         return cls(**config_data)
@@ -57,14 +57,29 @@ except ImportError:
     FASTMCP_AVAILABLE = False
 
 # Hugging Face dependencies
+huggingface_hub: Any
+HfApi: Any
+HfFolder: Any
+login: Any
+logout: Any
+whoami: Any
+HfHubHTTPError: Any
+
 try:
     import huggingface_hub
     from huggingface_hub import HfApi, HfFolder, login, logout, whoami
-    from huggingface_hub.utils import HfHubHTTPError
+    from huggingface_hub.errors import HfHubHTTPError
 
     HF_AVAILABLE = True
 except ImportError:
     HF_AVAILABLE = False
+    huggingface_hub = None
+    HfApi = None
+    HfFolder = None
+    login = None
+    logout = None
+    whoami = None
+    HfHubHTTPError = None
     logger.warning("Hugging Face Hub not available. Install with: pip install huggingface-hub")
 
 
@@ -223,7 +238,8 @@ async def llm_huggingface(
                             "downloads": dataset.downloads,
                             "likes": dataset.likes,
                             "tags": dataset.tags,
-                            "description": dataset.description,
+                            "description": getattr(dataset, "description", None)
+                            or (dataset.card_data.get("description") if getattr(dataset, "card_data", None) else None),
                             "created_at": dataset.created_at.isoformat() if dataset.created_at else None,
                         }
                         for dataset in datasets
@@ -247,14 +263,16 @@ async def llm_huggingface(
                         "likes": model_info.likes,
                         "tags": model_info.tags,
                         "pipeline_tag": model_info.pipeline_tag,
-                        "license": model_info.license,  # ty: ignore[unresolved-attribute]
-                        "description": model_info.description,  # ty: ignore[unresolved-attribute]
+                        "license": getattr(model_info, "license", None)
+                        or (model_info.card_data.get("license") if model_info.card_data else None),
+                        "description": getattr(model_info, "description", None)
+                        or (model_info.card_data.get("description") if model_info.card_data else None),
                         "card_data": model_info.card_data,
                         "created_at": model_info.created_at.isoformat() if model_info.created_at else None,
                         "last_modified": model_info.last_modified.isoformat() if model_info.last_modified else None,
                         "siblings": [
                             {"rfilename": sibling.rfilename, "size": sibling.size, "blob_id": sibling.blob_id}
-                            for sibling in model_info.siblings  # ty: ignore[not-iterable]
+                            for sibling in (model_info.siblings or [])
                         ],
                     },
                 }
@@ -371,21 +389,32 @@ async def llm_huggingface(
 
         elif operation == "list_user_repos":
             try:
-                repos = api.list_repos()  # ty: ignore[unresolved-attribute]
+                author = config.default_author
+                repos: list[dict[str, Any]] = []
+                for repo_type, list_fn in (
+                    ("model", api.list_models),
+                    ("dataset", api.list_datasets),
+                    ("space", api.list_spaces),
+                ):
+                    try:
+                        items = list_fn(author=author, limit=20) if author else list_fn(limit=20)
+                    except Exception:
+                        continue
+                    for repo in items:
+                        repos.append(
+                            {
+                                "id": repo.id,
+                                "type": repo_type,
+                                "private": repo.private,
+                                "downloads": repo.downloads,
+                                "likes": repo.likes,
+                                "created_at": repo.created_at.isoformat() if repo.created_at else None,
+                            }
+                        )
                 return {
                     "success": True,
-                    "repositories": [
-                        {
-                            "id": repo.id,
-                            "type": repo.type,
-                            "private": repo.private,
-                            "downloads": repo.downloads,
-                            "likes": repo.likes,
-                            "created_at": repo.created_at.isoformat() if repo.created_at else None,
-                        }
-                        for repo in repos
-                    ],
-                    "count": len(list(repos)),
+                    "repositories": repos,
+                    "count": len(repos),
                 }
             except Exception as e:
                 return {"error": f"Failed to list user repositories: {e!s}"}
@@ -429,7 +458,14 @@ async def llm_huggingface(
                             "downloads": dataset.downloads,
                             "likes": dataset.likes,
                             "tags": dataset.tags[:5] if dataset.tags else [],
-                            "description": dataset.description[:200] if dataset.description else None,
+                            "description": (
+                                (getattr(dataset, "description", None) or "")[:200]
+                                or (
+                                    dataset.card_data.get("description")
+                                    if getattr(dataset, "card_data", None)
+                                    else None
+                                )
+                            ),
                         }
                         for dataset in datasets
                     ],

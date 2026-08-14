@@ -5,30 +5,28 @@ This module provides tools for working with multimodal models, including:
 - Image generation from text prompts
 - Image similarity search
 - Basic image processing
+
+pyright: diffusers lazily exports StableDiffusionPipeline at runtime
+(verified: diffusers 0.36.0 hasattr == True) without stubs.
 """
+
+# pyright: reportPrivateImportUsage=false
 
 import base64
 import io
 import logging
-from typing import Any, Union
+from typing import Any, Union, cast
 
+import torch
+from diffusers import StableDiffusionPipeline
 from PIL import Image
 from pydantic import BaseModel, Field
+from sentence_transformers import SentenceTransformer, util
+from transformers import pipeline
 
 logger = logging.getLogger(__name__)
 
-# Try to import optional dependencies
-try:
-    import torch
-    from sentence_transformers import SentenceTransformer, util
-    from transformers import pipeline
-
-    HAS_MM_DEPS = True
-except ImportError:
-    HAS_MM_DEPS = False
-    logger.warning(
-        "Multimodal dependencies not installed. Install with 'pip install transformers sentence-transformers Pillow'"
-    )
+HAS_MM_DEPS = True
 
 # Type aliases
 ImageInput = Union[str, bytes, Image.Image]
@@ -54,8 +52,8 @@ class MultimodalTools:
     """Tools for working with multimodal models."""
 
     def __init__(self):
-        self.image_model = None
-        self.text_to_image_model = None
+        self.image_model: Any = None
+        self.text_to_image_model: Any = None
         self.device = "cuda" if HAS_MM_DEPS and torch.cuda.is_available() else "cpu"
 
     def load_image(self, image_input: ImageInput) -> Image.Image:
@@ -95,8 +93,8 @@ class MultimodalTools:
             )
 
         # Load model if not already loaded
-        if self.image_model is None or self.image_model.name_or_path != model_name:
-            self.image_model = pipeline("image-to-text", model=model_name, device=self.device)  # ty: ignore[no-matching-overload]
+        if self.image_model is None or getattr(self.image_model, "name_or_path", None) != model_name:
+            self.image_model = pipeline(cast(Any, "image-to-text"), model=model_name, device=self.device)
 
         # Process image
         pil_image = self.load_image(image)
@@ -134,7 +132,6 @@ class MultimodalTools:
             )
 
         import torch
-        from diffusers import StableDiffusionPipeline
 
         # Load model if not already loaded
         if self.text_to_image_model is None or self.text_to_image_model.name_or_path != model_name:
@@ -148,7 +145,9 @@ class MultimodalTools:
 
         # Convert to bytes
         img_byte_arr = io.BytesIO()
-        result.images[0].save(img_byte_arr, format="PNG")
+        images_out = result.images
+        if images_out:
+            images_out[0].save(img_byte_arr, format="PNG")
 
         return GeneratedImage(
             image_data=img_byte_arr.getvalue(),
@@ -167,15 +166,15 @@ class MultimodalTools:
             raise ImportError("Multimodal dependencies not installed. Install with 'pip install sentence-transformers")
 
         # Load model
-        model = SentenceTransformer(f"clip-{model_name}")
+        model: Any = SentenceTransformer(f"clip-{model_name}")
 
         # Process images
         img1 = self.load_image(image1)
         img2 = self.load_image(image2)
 
         # Get embeddings
-        embedding1 = model.encode([img1], convert_to_tensor=True)  # ty: ignore[no-matching-overload]
-        embedding2 = model.encode([img2], convert_to_tensor=True)  # ty: ignore[no-matching-overload]
+        embedding1 = model.encode([img1], convert_to_tensor=True)
+        embedding2 = model.encode([img2], convert_to_tensor=True)
 
         # Calculate cosine similarity
         similarity = util.pytorch_cos_sim(embedding1, embedding2)[0][0].item()

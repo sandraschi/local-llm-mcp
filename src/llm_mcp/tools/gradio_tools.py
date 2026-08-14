@@ -5,20 +5,26 @@ This module provides tools for creating and managing Gradio interfaces
 for interacting with language models and their tools.
 """
 
+import importlib
 import logging
 import threading
 import webbrowser
 from collections.abc import Callable
 from typing import Any
 
-# Try to import Gradio
-try:
-    import gradio as gr  # ty: ignore[unresolved-import]
-    from gradio.routes import App  # ty: ignore[unresolved-import]
+# Gradio is an optional dependency — importlib keeps names bound (Any) when absent.
+gr: Any
+App: Any
 
+try:
+    gr = importlib.import_module("gradio")
+    _routes = importlib.import_module("gradio.routes")
+    App = _routes.App
     GRADIO_AVAILABLE = True
 except ImportError:
     GRADIO_AVAILABLE = False
+    gr = None
+    App = None
 
 logger = logging.getLogger(__name__)
 
@@ -152,6 +158,7 @@ class GradioManager:
         # Create the interface in a separate thread
         def run_interface():
             try:
+                demo: Any = None
                 if config["type"] == "chat":
                     # Create chat interface
                     with gr.Blocks(title=config["title"], theme=config["theme"]) as demo:
@@ -200,6 +207,9 @@ class GradioManager:
                     )
 
                 # Launch the interface
+                if demo is None:
+                    logger.error(f"Gradio interface {name}: unknown type '{config.get('type')}'")
+                    return
                 server = demo.launch(
                     server_name=config.get("server_name", "0.0.0.0"),
                     server_port=config.get("server_port", 7860),
