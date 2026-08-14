@@ -336,7 +336,7 @@ async def pull_model(
         ) from e
 
 
-@router.post("/generate")
+@router.post("/generate", response_model=None)
 async def generate_text(request: GenerateRequest, raw_request: Request) -> GenerateResponse | StreamingResponse:
     """Generate text using the specified model.
 
