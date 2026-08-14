@@ -10,22 +10,27 @@ Key Features:
 - FlashAttention 2 optimization
 """
 
+import importlib
 import json
 from dataclasses import dataclass
 from typing import Any
 
 import structlog
 
-# vLLM imports
-try:
-    from vllm import LLM, SamplingParams
+# vLLM imports (optional — importlib keeps names bound when absent)
+LLM: Any
+SamplingParams: Any
 
+try:
+    LLM = importlib.import_module("vllm").LLM
+    SamplingParams = importlib.import_module("vllm").SamplingParams
     VLLM_AVAILABLE = True
-    # Multimodal support check (can be expanded later)
     MULTIMODAL_AVAILABLE = False
 except ImportError:
     VLLM_AVAILABLE = False
     MULTIMODAL_AVAILABLE = False
+    LLM = None
+    SamplingParams = None
 
 logger = structlog.get_logger(__name__)
 if VLLM_AVAILABLE:
@@ -53,7 +58,7 @@ class VLLMManager:
     """Manager for vLLM 0.9.5 models."""
 
     def __init__(self):
-        self.llm: LLM | None = None
+        self.llm: Any = None  # vLLM LLM instance (optional dependency type)
         self.current_model: str | None = None
         self.model_config: VLLMModelConfig | None = None
         self.sampling_params = SamplingParams() if VLLM_AVAILABLE else None

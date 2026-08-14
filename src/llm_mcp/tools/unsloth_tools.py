@@ -5,6 +5,7 @@ This module provides optimized fine-tuning capabilities using Unsloth,
 a highly efficient framework for fine-tuning large language models.
 """
 
+import importlib
 import logging
 import os
 from dataclasses import dataclass
@@ -12,13 +13,16 @@ from typing import Any
 
 import torch
 
-# Try to import Unsloth
-try:
-    from unsloth import FastLanguageModel  # ty: ignore[unresolved-import]
+# Try to import Unsloth (optional — importlib keeps the name bound)
+FastLanguageModel: Any
 
+try:
+    _unsloth = importlib.import_module("unsloth")
+    FastLanguageModel = _unsloth.FastLanguageModel
     UNLOTH_AVAILABLE = True
 except ImportError:
     UNLOTH_AVAILABLE = False
+    FastLanguageModel = None
 
 logger = logging.getLogger(__name__)
 
@@ -235,7 +239,7 @@ class UnslothManager:
             lr_scheduler_type=config.lr_scheduler_type,
             save_steps=config.save_steps,
             eval_steps=config.eval_steps,
-            evaluation_strategy=config.eval_strategy if eval_dataset is not None else "no",  # ty: ignore[unknown-argument]
+            eval_strategy=config.eval_strategy if eval_dataset is not None else "no",  # pyright: ignore[reportArgumentType]  # transformers 5.x renamed evaluation_strategy
             load_best_model_at_end=config.load_best_model_at_end if eval_dataset is not None else False,
             report_to=config.report_to,
             seed=config.seed,
@@ -247,7 +251,6 @@ class UnslothManager:
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             args=training_args,
-            tokenizer=model_info["tokenizer"],  # ty: ignore[unknown-argument]
         )
 
         # Train the model

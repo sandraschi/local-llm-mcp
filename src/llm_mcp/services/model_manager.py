@@ -89,9 +89,10 @@ class ModelManager:
         provider = await self.provider_factory.get_provider_for_model(model_id)
         if provider:
             model = await provider.get_model(model_id)
-            if model:
-                self._models_cache[model_id] = model  # ty: ignore[invalid-assignment]
-                return model  # ty: ignore[invalid-return-type]
+            if model is not None:
+                model_meta = model if isinstance(model, ModelMetadata) else ModelMetadata(**model)
+                self._models_cache[model_id] = model_meta
+                return model_meta
 
         return None
 
@@ -127,9 +128,10 @@ class ModelManager:
             model = await provider.load_model(model_id, **kwargs)
 
             # Update the cache
-            if model:
-                self._models_cache[model_id] = model  # ty: ignore[invalid-assignment]
-                return model  # ty: ignore[invalid-return-type]
+            if model is not None:
+                model_meta = model if isinstance(model, ModelMetadata) else ModelMetadata(**model)
+                self._models_cache[model_id] = model_meta
+                return model_meta
 
             raise ValueError(f"Failed to load model: {model_id}")
         except Exception as e:

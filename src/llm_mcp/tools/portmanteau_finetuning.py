@@ -157,7 +157,8 @@ async def llm_finetuning(
     try:
         # LoRA operations
         if operation == "lora_list_adapters":
-            return await _lora_list_adapters_impl(adapter_dir)  # ty: ignore[invalid-return-type]
+            adapters = await _lora_list_adapters_impl(adapter_dir)
+            return {"adapters": adapters, "count": len(adapters)}
 
         elif operation == "lora_load_adapter":
             if not adapter_name:
@@ -197,7 +198,7 @@ async def llm_finetuning(
                 learning_rate=learning_rate,
                 batch_size=batch_size,
                 gradient_accumulation_steps=gradient_accumulation_steps,
-                num_train_epochs=num_train_epochs,  # ty: ignore[unknown-argument]
+                num_train_epochs=num_train_epochs,
                 max_steps=max_steps,
                 warmup_ratio=warmup_ratio,
                 weight_decay=weight_decay,
@@ -207,7 +208,7 @@ async def llm_finetuning(
                 logging_steps=logging_steps,
                 save_steps=save_steps,
                 save_total_limit=save_total_limit,
-                report_to=report_to,  # ty: ignore[invalid-argument-type]
+                report_to=report_to or "tensorboard",
                 use_gradient_checkpointing=use_gradient_checkpointing,
                 use_flash_attention_2=use_flash_attention_2,
                 use_cpu_offload=use_cpu_offload,
@@ -238,7 +239,7 @@ async def llm_finetuning(
                 bf16=(compute_dtype == "bfloat16"),
                 max_grad_norm=max_grad_norm,
                 group_by_length=True,
-                report_to=report_to,  # ty: ignore[invalid-argument-type]
+                report_to=[report_to] if report_to else None,
             )
 
         elif operation == "sparse_unload_model":
@@ -285,7 +286,7 @@ async def llm_finetuning(
                 logging_steps=logging_steps,
                 save_steps=save_steps,
                 save_total_limit=save_total_limit,
-                report_to=report_to,  # ty: ignore[invalid-argument-type]
+                report_to=report_to or "tensorboard",
                 use_gradient_checkpointing=use_gradient_checkpointing,
                 use_flash_attention_2=use_flash_attention_2,
                 use_cpu_offload=use_cpu_offload,

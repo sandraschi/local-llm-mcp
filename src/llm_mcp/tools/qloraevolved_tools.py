@@ -28,7 +28,12 @@ Usage:
     # - qloraevolved_list_models
 
 For detailed documentation, see docs/qlora_evolved.md
+
+pyright: transformers lazily exports BitsAndBytesConfig at runtime (verified:
+transformers 5.2.0) without stub coverage.
 """
+
+# pyright: reportAttributeAccessIssue=false
 
 import logging
 import os
@@ -54,18 +59,20 @@ from transformers import (
 )
 
 # Try to import BitsAndBytesConfig (may not be available in all transformers versions)
+BitsAndBytesConfig: Any
+
 try:
-    from transformers import BitsAndBytesConfig
+    from transformers import BitsAndBytesConfig  # pyright: ignore[reportAttributeAccessIssue]
 
     BNB_AVAILABLE = True
 except ImportError:
     try:
-        from transformers.integrations import BitsAndBytesConfig  # ty: ignore[unresolved-import]
+        from transformers.integrations import BitsAndBytesConfig
 
         BNB_AVAILABLE = True
     except ImportError:
         BNB_AVAILABLE = False
-        BitsAndBytesConfig = None  # ty: ignore[conflicting-declarations]
+        BitsAndBytesConfig = None  # pyright: ignore[reportAssignmentType]
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -318,7 +325,7 @@ class QLoRAEvolvedManager:
             per_device_train_batch_size=config.batch_size,
             gradient_accumulation_steps=config.gradient_accumulation_steps,
             num_train_epochs=config.num_train_epochs,
-            max_steps=config.max_steps if config.max_steps > 0 else None,  # ty: ignore[invalid-argument-type]
+            max_steps=(config.max_steps if config.max_steps and config.max_steps > 0 else None),  # pyright: ignore[reportArgumentType]
             warmup_ratio=config.warmup_ratio,
             weight_decay=config.weight_decay,
             optim=config.optim,
@@ -396,7 +403,7 @@ class QLoRAEvolvedManager:
             Dictionary with information about loaded models
         """
         return {
-            model_id: {
+            str(model_id): {
                 "config": config.to_dict(),
                 "device": str(next(model.parameters()).device),
             }

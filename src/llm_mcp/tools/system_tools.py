@@ -6,6 +6,7 @@ import platform
 from datetime import UTC, datetime
 from typing import Any
 
+import httpx
 import psutil
 
 from ..utils.gpu import get_gpu_info
@@ -71,7 +72,7 @@ def get_system_info() -> dict[str, Any]:
             if hasattr(psutil, "cpu_freq") and psutil.cpu_freq()
             else "N/A",
             "cpu_percent": psutil.cpu_percent(interval=1, percpu=True),
-            "load_avg": [x / psutil.cpu_count() * 100 for x in psutil.getloadavg()]
+            "load_avg": [x / (psutil.cpu_count() or 1) * 100 for x in psutil.getloadavg()]
             if hasattr(psutil, "getloadavg")
             else [],
         },
@@ -114,7 +115,7 @@ def get_service_status() -> dict[str, Any]:
     # Check Redis
     redis_status: dict[str, str] = {"status": "unknown", "version": "unknown"}
     try:
-        import redis  # ty: ignore[unresolved-import]
+        import redis  # pyright: ignore[reportMissingImports]  # optional service probe
 
         r = redis.Redis()
         redis_status["status"] = "running" if r.ping() else "not responding"
@@ -125,8 +126,6 @@ def get_service_status() -> dict[str, Any]:
 
     # Check Ollama (synchronous probe via httpx in a new event loop)
     try:
-        import httpx
-
         with httpx.Client(timeout=httpx.Timeout(connect=3.0, read=5.0)) as client:
             resp = client.get("http://localhost:11434/api/tags")
             if resp.status_code == 200:
@@ -146,8 +145,6 @@ def get_service_status() -> dict[str, Any]:
 
     # Check LM Studio with Docker conflict detection
     try:
-        import httpx
-
         with httpx.Client(timeout=httpx.Timeout(connect=3.0, read=5.0)) as client:
             resp = client.get("http://localhost:1234/v1/models")
             ct = resp.headers.get("content-type", "")
