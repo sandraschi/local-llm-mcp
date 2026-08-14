@@ -90,12 +90,13 @@ class ServerConfig(BaseModel):
 class ModelConfig(BaseModel):
     """Model configuration."""
 
-    default_provider: str = "vllm"
+    default_provider: str = "ollama"
     available_providers: list[str] = ["vllm", "ollama", "openai", "anthropic"]
 
     # Model paths and settings
+    # Tier routing: muse-glimmer = heavy (agentic reasoning, default), qwen3.5-9b distil = fast (routing/classifier)
     model_cache_dir: Path = Path("models")
-    default_model: str = "microsoft/Phi-3.5-mini-instruct"
+    default_model: str = "muse-glimmer"
 
     # Generation defaults
     default_max_tokens: int = 2048
