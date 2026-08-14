@@ -11,7 +11,14 @@ import os
 from pathlib import Path
 from typing import Any
 
-# Try to import PEFT (for LoRA support)
+# Try to import PEFT (for LoRA support) — pre-declared so names stay bound.
+LoraConfig: Any
+PeftConfig: Any
+PeftModel: Any
+get_peft_model: Any
+SAFETENSORS_WEIGHTS_NAME: Any
+WEIGHTS_NAME: Any
+
 try:
     from peft import LoraConfig, PeftConfig, PeftModel, get_peft_model
     from peft.utils import SAFETENSORS_WEIGHTS_NAME, WEIGHTS_NAME
@@ -19,6 +26,12 @@ try:
     PEFT_AVAILABLE = True
 except ImportError:
     PEFT_AVAILABLE = False
+    LoraConfig = None
+    PeftConfig = None
+    PeftModel = None
+    get_peft_model = None
+    SAFETENSORS_WEIGHTS_NAME = None
+    WEIGHTS_NAME = None
 
 logger = logging.getLogger(__name__)
 

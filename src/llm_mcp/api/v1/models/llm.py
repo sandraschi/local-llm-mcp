@@ -20,16 +20,18 @@ class ProviderInfo(BaseModel):
 class ModelIntelligence(BaseModel):
     """Rich metadata about a model's intelligence and lineage."""
 
-    hf_id: str | None = Field(None, description="Hugging Face Model ID")
-    developer: str | None = Field(None, description="The entity that developed the model")
-    release_date: str | None = Field(None, description="Release date in YYYY-MM-DD")
+    hf_id: str | None = Field(default=None, description="Hugging Face Model ID")
+    developer: str | None = Field(default=None, description="The entity that developed the model")
+    release_date: str | None = Field(default=None, description="Release date in YYYY-MM-DD")
     strengths: list[str] = Field(default_factory=list, description="What the model excels at")
     weaknesses: list[str] = Field(default_factory=list, description="Known limitations")
-    best_for: str | None = Field(None, description="Recommended use case")
+    best_for: str | None = Field(default=None, description="Recommended use case")
     is_legacy: bool = Field(False, description="Whether this is a pre-2025 legacy model")
-    vram_required_gb: float | None = Field(None, description="Estimated VRAM required in GB")
-    quantization_info: str | None = Field(None, description="Info about common quantizations (GGUF, EXL2, etc.)")
-    model_card_url: str | None = Field(None, description="Direct link to model card/docs")
+    vram_required_gb: float | None = Field(default=None, description="Estimated VRAM required in GB")
+    quantization_info: str | None = Field(
+        default=None, description="Info about common quantizations (GGUF, EXL2, etc.)"
+    )
+    model_card_url: str | None = Field(default=None, description="Direct link to model card/docs")
 
 
 class ModelInfo(BaseModel):
@@ -138,7 +140,7 @@ class GenerateResponse(BaseModel):
     text: str = Field(..., description="The generated text")
     model: str = Field(..., description="The model used for generation")
     provider: str = Field(..., description="The provider used for generation")
-    usage: dict[str, int] | None = Field(None, description="Information about token usage")
+    usage: dict[str, int] | None = Field(default=None, description="Information about token usage")
 
 
 class ModelStatus(StrEnum):
@@ -156,5 +158,5 @@ class ModelOperationResponse(BaseModel):
     model: str = Field(..., description="Name of the model")
     provider: str = Field(..., description="Name of the provider")
     status: ModelStatus = Field(..., description="Status of the operation")
-    message: str | None = Field(None, description="Additional information")
-    details: dict[str, Any] | None = Field(None, description="Additional details about the operation")
+    message: str | None = Field(default=None, description="Additional information")
+    details: dict[str, Any] | None = Field(default=None, description="Additional details about the operation")

@@ -75,7 +75,10 @@ class BedrockAdapter(BaseLLMAdapter):
     async def complete(self, body: dict[str, Any], headers: dict[str, Any]) -> dict[str, Any]:
         import os
 
-        from aws4py import AWSRequest  # ty: ignore[unresolved-import]
+        try:
+            from aws4py import AWSRequest  # pyright: ignore[reportMissingImports]  # optional aws signing dep
+        except ImportError as e:
+            raise RuntimeError("aws4py is required for the Bedrock adapter: pip install aws4py") from e
 
         mapped = self.map_params(body)
         region = os.getenv("AWS_REGION", "us-east-1")
@@ -93,7 +96,7 @@ class BedrockAdapter(BaseLLMAdapter):
         )
         signed = aws_req.sign()
         async with httpx.AsyncClient(timeout=120.0) as client:
-            resp = await client.post(url, data=payload, headers=dict(signed.headers))  # ty: ignore[invalid-argument-type]
+            resp = await client.post(url, data=payload, headers=dict(signed.headers))  # pyright: ignore[reportArgumentType]  # aiohttp-style data accepted at runtime
             resp.raise_for_status()
             data = resp.json()
 

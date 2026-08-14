@@ -2,12 +2,10 @@
 
 from typing import Any
 
-from pydantic import Field
-
-from ...models.base import BaseProviderConfig  # ty: ignore[unresolved-import]
+from pydantic import BaseModel, Field
 
 
-class LMStudioConfig(BaseProviderConfig):
+class LMStudioConfig(BaseModel):
     """Configuration for LM Studio provider.
 
     Attributes:

@@ -1,14 +1,12 @@
 """OpenRouter provider configuration."""
 
-from pydantic import Field
-
-from ...config.base import BaseProviderConfig  # ty: ignore[unresolved-import]
+from pydantic import BaseModel, Field
 
 
-class OpenRouterConfig(BaseProviderConfig):
+class OpenRouterConfig(BaseModel):
     """Configuration for the OpenRouter provider."""
 
-    api_key: str | None = Field(None, description="OpenRouter API key", env="OPENROUTER_API_KEY")
+    api_key: str | None = Field(default=None, description="OpenRouter API key")
 
     base_url: str = Field("https://openrouter.ai/api/v1", description="OpenRouter API base URL")
 

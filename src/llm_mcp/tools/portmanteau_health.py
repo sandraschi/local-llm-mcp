@@ -31,12 +31,15 @@ except ImportError:
     FASTMCP_AVAILABLE = False
 
 # Prefab UI for in-chat dashboard cards (optional at runtime)
+PrefabApp: Any
+
 try:
     from prefab_ui import PrefabApp
 
     PREFAB_AVAILABLE = True
 except ImportError:
     PREFAB_AVAILABLE = False
+    PrefabApp = None
 
 # Global MCP instance (set during registration)
 _mcp = None
@@ -320,8 +323,10 @@ def register_llm_health_tools(mcp):
     if PREFAB_AVAILABLE:
 
         @mcp.tool(app=True)
-        async def show_status_app(include_gpu: bool = True) -> PrefabApp:
+        async def show_status_app(include_gpu: bool = True) -> Any:
             """Show server, provider, and engine status as a rich in-chat card.
+
+            Returns Any: PrefabApp (optional dependency type).
 
             Renders a Prefab dashboard card with server version, registered
             tool count, provider reachability, engine processes, and system
@@ -347,7 +352,7 @@ def register_llm_health_tools(mcp):
                 Separator,
             )
 
-            with Column(gap=4, css_class="p-4") as view:
+            with Column(gap=4, cssClass="p-4") as view:
                 Heading("Local LLM MCP Status")
                 Separator()
 

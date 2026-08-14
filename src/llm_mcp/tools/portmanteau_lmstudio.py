@@ -131,7 +131,7 @@ async def llm_lmstudio(
         elif operation == "unload_model":
             if not model_name:
                 return {"error": "model_name required for unload_model operation"}
-            return await _lmstudio_unload_model_impl(model_name)  # ty: ignore[too-many-positional-arguments]
+            return await _lmstudio_unload_model_impl()
 
         elif operation == "link_status":
             result = await _run_lms(["link", "status", "--json"])

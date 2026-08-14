@@ -86,7 +86,10 @@ class VLLMProvider(BaseProvider):
         """
         # Check if the model is already loaded
         if self._current_model == model_id:
-            return await self.get_model(model_id)  # ty: ignore[invalid-return-type]
+            model = await self.get_model(model_id)
+            if model is None:
+                raise ValueError(f"Model not found: {model_id}")
+            return model if isinstance(model, ModelMetadata) else ModelMetadata(**model)
 
         # Get model details first
         model = await self.get_model(model_id)

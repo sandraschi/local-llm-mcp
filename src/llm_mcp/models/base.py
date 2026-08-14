@@ -1,5 +1,7 @@
 """Base models for LLM MCP Server."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
 from enum import StrEnum
@@ -24,6 +26,7 @@ class ModelProvider(StrEnum):
 class ModelStatus(StrEnum):
     """Model status."""
 
+    AVAILABLE = "available"  # present in the provider catalog
     LOADED = "loaded"
     UNLOADED = "unloaded"
     LOADING = "loading"
@@ -101,10 +104,10 @@ class BaseProvider(ABC):
     # ModelMetadata | dict unions: richer providers return ModelMetadata
     # objects, legacy providers return plain dicts.
     @abstractmethod
-    async def list_models(self) -> list[dict[str, Any]] | list["ModelMetadata"]:
+    async def list_models(self) -> list[dict[str, Any]] | list[ModelMetadata]:
         """List available models - each item must include at least ``id``."""
 
-    async def get_model(self, model_id: str) -> dict[str, Any] | "ModelMetadata" | None:
+    async def get_model(self, model_id: str) -> dict[str, Any] | ModelMetadata | None:
         """Resolve a single model by id via linear scan of ``list_models``."""
         for m in await self.list_models():
             if (m.get("id") if isinstance(m, dict) else m.id) == model_id:
@@ -120,7 +123,7 @@ class BaseProvider(ABC):
 
     # ── Model lifecycle (override for stateful providers) ─────────────────
 
-    async def load_model(self, model_id: str, **kwargs) -> dict[str, Any] | "ModelMetadata":
+    async def load_model(self, model_id: str, **kwargs) -> dict[str, Any] | ModelMetadata:
         raise NotImplementedError(f"{type(self).__name__} does not support load_model")
 
     async def unload_model(self, model_id: str) -> bool:

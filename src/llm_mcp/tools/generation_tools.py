@@ -4,8 +4,9 @@ import dataclasses
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
+from ..models.base import ModelProvider
 from ..services.provider_factory import _provider_factory
 from .model_tools import _model_manager as model_manager
 
@@ -76,7 +77,7 @@ class GenerationManager:
         if not provider:
             model = model_manager.get_model(model_id)
             if model:
-                provider = self.provider_factory.get_provider(model.provider)  # ty: ignore[invalid-argument-type]
+                provider = self.provider_factory.get_provider(cast(ModelProvider, model.provider))
 
         if not provider:
             # Check if it was a model manager miss but maybe the factory knows it generally?
@@ -128,7 +129,7 @@ class GenerationManager:
         if not provider:
             model = model_manager.get_model(model_id)
             if model:
-                provider = self.provider_factory.get_provider(model.provider)  # ty: ignore[invalid-argument-type]
+                provider = self.provider_factory.get_provider(cast(ModelProvider, model.provider))
 
         if not provider:
             raise ValueError(f"No provider found for model {model_id}")

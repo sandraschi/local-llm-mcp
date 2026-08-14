@@ -75,17 +75,19 @@ class OllamaProvider(BaseProvider):
             logger.error(f"Error getting Ollama model {model_id}: {e!s}")
             return None
 
-    async def load_model(self, model_id: str, **kwargs) -> ModelMetadata:  # ty: ignore[invalid-method-override]
+    async def load_model(self, model_id: str, **kwargs) -> ModelMetadata:
         """Load an Ollama model."""
         # In Ollama, models are loaded on first use, so we just need to check if it exists
         model = await self.get_model(model_id)
         if not model:
             # Try to pull the model if it doesn't exist
-            return await self.pull_model(model_id, **kwargs)
-        return model
+            pulled = await self.pull_model(model_id, **kwargs)
+            return ModelMetadata(**pulled)
+        return model if isinstance(model, ModelMetadata) else ModelMetadata(**model)
 
-    async def pull_model(self, model_id: str, **kwargs) -> ModelMetadata:  # ty: ignore[invalid-method-override]
+    async def pull_model(self, model_name: str, **kwargs) -> dict[str, Any]:
         """Pull a model from the Ollama library."""
+        model_id = model_name
         try:
             # Start the pull operation
             async with self.client.stream(
@@ -105,7 +107,10 @@ class OllamaProvider(BaseProvider):
                             continue
 
             # After successful pull, get the model details
-            return await self.get_model(model_id)  # ty: ignore[invalid-return-type]
+            model = await self.get_model(model_id)
+            if model is None:
+                raise Exception(f"Failed to load model {model_id} after pull")
+            return model.model_dump() if isinstance(model, ModelMetadata) else model
         except Exception as e:
             raise Exception(f"Failed to pull model {model_id}: {e!s}") from e
 

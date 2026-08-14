@@ -1,5 +1,6 @@
 """Factory for creating and managing LLM providers."""
 
+import inspect
 import logging
 from typing import Any
 
@@ -14,7 +15,7 @@ from ..providers.perplexity import PerplexityProvider
 from ..providers.vllm_v1 import VLLMv1Provider as VLLMProvider
 
 # Map provider types to their implementation classes
-PROVIDER_CLASSES: dict[ModelProvider, type[BaseProvider]] = {
+PROVIDER_CLASSES: dict[ModelProvider, Any] = {
     ModelProvider.OLLAMA: OllamaProvider,
     ModelProvider.LMSTUDIO: LMStudioProvider,
     ModelProvider.VLLM: VLLMProvider,
@@ -23,7 +24,7 @@ PROVIDER_CLASSES: dict[ModelProvider, type[BaseProvider]] = {
     ModelProvider.GEMINI: GeminiProvider,
     ModelProvider.PERPLEXITY: PerplexityProvider,
     ModelProvider.HUGGINGFACE: HuggingFaceProvider,
-}  # ty: ignore[invalid-assignment]
+}
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ class ProviderFactory:
             config: Configuration dictionary with provider-specific settings
         """
         self.config = config
-        self._providers: dict[ModelProvider, BaseProvider] = {}
+        self._providers: dict[ModelProvider, Any] = {}
 
     def get_provider(self, provider_type: ModelProvider) -> BaseProvider:
         """Get or create a provider instance.
@@ -89,7 +90,10 @@ class ProviderFactory:
                 # Check if the model exists with this provider
                 # This is a simple check and might be optimized
                 models = await provider.list_models()
-                if any(model.id == model_id or model.name == model_id for model in models):  # ty: ignore[unresolved-attribute]
+                if any(
+                    (model.get("id") if isinstance(model, dict) else getattr(model, "id", None)) == model_id
+                    for model in models
+                ):
                     return provider
             except Exception:
                 # Skip this provider and try the next one
@@ -119,8 +123,11 @@ class ProviderFactory:
     async def close(self):
         """Clean up resources used by providers."""
         for provider in self._providers.values():
-            if hasattr(provider, "close"):
-                await provider.close()  # ty: ignore[call-non-callable]
+            close_fn = getattr(provider, "close", None)
+            if callable(close_fn):
+                result = close_fn()
+                if inspect.isawaitable(result):
+                    await result
         self._providers.clear()
 
 

@@ -109,12 +109,14 @@ async def gateway_provider_health(request: Request):
     cloud providers report a fast URL connectivity check.
     """
     start = time.monotonic()
+    to_dict: Any = None
     try:
         from llm_mcp.services.provider_health import (
             check_all_providers,
             provider_health_to_dict,
         )
 
+        to_dict = provider_health_to_dict
         local_health = await check_all_providers(force=True)
     except Exception as e:
         local_health = {
@@ -132,7 +134,7 @@ async def gateway_provider_health(request: Request):
 
     results: dict[str, Any] = {}
     for name, h in local_health.items():
-        results[name] = h if isinstance(h, dict) else provider_health_to_dict(h)
+        results[name] = h if isinstance(h, dict) else to_dict(h)
 
     # Mark all registered providers (even non-local ones)
     for p in list_providers():

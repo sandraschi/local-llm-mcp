@@ -1,5 +1,6 @@
 """OpenRouter provider implementation."""
 
+import importlib
 import logging
 from collections.abc import AsyncGenerator
 from typing import Any
@@ -9,13 +10,15 @@ from llm_mcp.models.base import BaseProvider
 logger = logging.getLogger(__name__)
 
 # Re-use openai library for OpenRouter as it is OpenAI-compatible
-try:
-    import openai
+openai: Any
 
+try:
+    openai = importlib.import_module("openai")
     OPENAI_AVAILABLE = True
 except ImportError:
     logger.warning("OpenAI not installed, required for OpenRouter. Install with: pip install openai")
     OPENAI_AVAILABLE = False
+    openai = None
 
 
 class OpenRouterProvider(BaseProvider):
@@ -134,7 +137,11 @@ class OpenRouterProvider(BaseProvider):
         """Generate chat completion from OpenRouter."""
         model_id = model or self.config.default_model  # ty: ignore[unresolved-attribute]
         try:
-            response = await self.client.chat.completions.create(model=model_id, messages=messages, **kwargs)  # ty: ignore[no-matching-overload]
+            response = await self.client.chat.completions.create(
+                model=model_id,
+                messages=[{"role": m.get("role", "user"), "content": m.get("content", "")} for m in messages],
+                **kwargs,
+            )
             return response.choices[0].message.content
         except Exception as e:
             logger.error(f"OpenRouter chat error: {e!s}")

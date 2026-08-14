@@ -7,6 +7,7 @@ import logging
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 _START_TIME = time.time()
 
-_mcp_server_cache: object | None = None
+_mcp_server_cache: Any | None = None
 
 
 async def _get_mcp_tool_catalog() -> dict:

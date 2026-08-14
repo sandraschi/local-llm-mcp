@@ -69,16 +69,16 @@ async def llm_help_tool(
     try:
         # Import here to avoid circular imports
         from llm_mcp.tools.help_tools import (
-            _get_hardware_requirements,  # ty: ignore[unresolved-import]
-            _get_integration_guide_impl,  # ty: ignore[unresolved-import]
             _get_performance_guide_impl,
-            _get_quick_reference_impl,  # ty: ignore[unresolved-import]
             _get_tool_help_impl,
             _get_tool_signature_impl,
             _get_troubleshooting_guide_impl,
             _get_workflow_guides_impl,
             _list_tools_impl,
             _search_tools_impl,
+            get_hardware_requirements,
+            get_integration_notes,
+            get_quick_reference,
         )
 
         if operation == "list_tools":
@@ -110,13 +110,13 @@ async def llm_help_tool(
             return await _get_troubleshooting_guide_impl(category)
 
         elif operation == "get_hardware_requirements":
-            return _get_hardware_requirements()
+            return await get_hardware_requirements()
 
         elif operation == "get_quick_reference":
-            return await _get_quick_reference_impl()
+            return await get_quick_reference()
 
         elif operation == "get_integration_guide":
-            return await _get_integration_guide_impl()
+            return get_integration_notes(tool_name or "")
 
         else:
             return {

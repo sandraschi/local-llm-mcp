@@ -88,7 +88,7 @@ def register_llm_gpu_tools(mcp):
         - optimize: Advanced GPU memory optimization and health check
         - get_health: Detailed GPU health monitoring and diagnostics
         """
-        return llm_gpu_tool(
+        return await llm_gpu_tool(
             operation=operation,
             gpu_id=gpu_id,
         )

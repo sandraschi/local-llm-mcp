@@ -20,7 +20,7 @@ The help system includes:
 import inspect
 from collections.abc import Callable
 from enum import Enum
-from typing import Any, Union, get_args, get_origin
+from typing import Any, Union, cast, get_args, get_origin
 
 
 async def _get_mcp_tools_dict(mcp: Any) -> dict[str, Any]:
@@ -227,7 +227,7 @@ def get_return_docs(func: Callable) -> dict[str, str]:
     except Exception:
         description = ""
 
-    return {"type": format_type(return_type), "description": description}  # ty: ignore[invalid-argument-type]
+    return {"type": format_type(cast(type, return_type)), "description": description}
 
 
 def get_tool_examples(tool_name: str) -> list[dict[str, Any]]:
@@ -1047,6 +1047,167 @@ async def _get_troubleshooting_guide_impl(category: str | None = None) -> dict[s
     }
 
 
+async def get_hardware_requirements() -> dict[str, Any]:
+    """Get detailed hardware requirements and performance estimates.
+
+    Comprehensive hardware guidance including:
+    - GPU recommendations by model size
+    - Memory utilization estimates
+    - Performance benchmarks (tokens/sec)
+    - Training time estimates
+    - Optimization recommendations
+
+    Specific support for:
+    - RTX 3090/4090 series
+    - H100/A100 data center GPUs
+    - Memory and thermal management
+    - Quantization impact on performance
+
+    Returns:
+        Complete hardware requirements guide
+    """
+    return {
+        "gpu_recommendations": [
+            {
+                "gpu": "RTX 3090 (24GB)",
+                "recommended_for": "Up to 13B models",
+                "performance": {
+                    "7B_4bit": "12-18 tokens/sec",
+                    "13B_4bit": "4-7 tokens/sec",
+                    "30B": "Not recommended",
+                },
+                "vram_usage": {"7B_4bit": "16-20GB", "13B_4bit": "20-24GB"},
+            },
+            {
+                "gpu": "RTX 4090 (24GB)",
+                "recommended_for": "Up to 30B models",
+                "performance": {
+                    "7B_4bit": "15-22 tokens/sec",
+                    "13B_4bit": "6-9 tokens/sec",
+                    "30B_4bit": "2-4 tokens/sec",
+                    "70B": "Not recommended",
+                },
+                "vram_usage": {
+                    "7B_4bit": "18-22GB",
+                    "13B_4bit": "22-24GB",
+                    "30B_4bit": "24GB+ (with optimizations)",
+                },
+                "notes": "Susceptible to memory fragmentation - use gpu_clear_memory() regularly",
+            },
+            {
+                "gpu": "H100 80GB",
+                "recommended_for": "Up to 70B+ models",
+                "performance": {
+                    "7B_4bit": "40-60 tokens/sec",
+                    "13B_4bit": "25-40 tokens/sec",
+                    "30B_4bit": "12-20 tokens/sec",
+                    "70B_4bit": "3-6 tokens/sec",
+                },
+                "vram_usage": {
+                    "7B_4bit": "25-35GB",
+                    "13B_4bit": "45-60GB",
+                    "30B_4bit": "65-75GB",
+                    "70B_4bit": "75-80GB",
+                },
+            },
+        ],
+        "cpu_requirements": {
+            "minimum": "8 cores, 16GB RAM",
+            "recommended": "16+ cores, 32GB+ RAM",
+            "for_training": "32+ cores, 128GB+ RAM",
+        },
+        "storage_requirements": {
+            "models": "100-500GB for common models",
+            "datasets": "Additional space for training data",
+            "temp_space": "50GB+ for model downloads and processing",
+        },
+        "training_time_estimates": {
+            "1M_tokens_7B_4090": "12-16 hours",
+            "1M_tokens_13B_4090": "30-45 hours",
+            "1M_tokens_7B_H100": "3-5 hours",
+            "1M_tokens_13B_H100": "6-8 hours",
+            "1M_tokens_30B_H100": "10-15 hours",
+            "1M_tokens_70B_H100": "40-60 hours",
+        },
+        "optimization_tips": [
+            "Use 4-bit quantization to reduce memory usage by 75%",
+            "Enable gradient checkpointing to save 60% memory during training",
+            "Use gradient accumulation for larger effective batch sizes",
+            "Enable Flash Attention 2.0 when available for 20-50% speedup",
+            "Use mixed precision training (bf16/fp16) for 2x performance",
+            "For large models, consider tensor parallelism",
+            "Clear GPU memory fragmentation regularly (especially RTX 4090)",
+            "Monitor GPU temperature to prevent thermal throttling",
+        ],
+        "network_requirements": {
+            "minimum": "25 Mbps download for model downloads",
+            "recommended": "100+ Mbps for large model downloads",
+            "huggingface_token": "Required for gated models (FLUX, etc.)",
+        },
+    }
+
+
+async def get_quick_reference() -> dict[str, Any]:
+    """Get quick reference guide for common operations.
+
+    Essential commands and workflows for immediate productivity:
+    - Most frequently used tools and commands
+    - Common parameter settings
+    - Quick troubleshooting steps
+    - Essential environment variables
+
+    Returns:
+        Quick reference guide for common operations
+    """
+    return {
+        "most_used_tools": [
+            {"tool": "llm_health_tool", "operation": "health_check", "use": "Check system status"},
+            {"tool": "llm_models_tool", "operation": "list_models", "use": "See available models"},
+            {"tool": "llm_generation_tool", "operation": "generate_text", "use": "Generate content"},
+            {"tool": "gpu_status", "use": "Check GPU status"},
+            {"tool": "gpu_clear_memory", "use": "Fix memory fragmentation"},
+        ],
+        "essential_commands": [
+            "export HUGGINGFACE_TOKEN=hf_xxx  # For gated models",
+            "export OPENAI_API_KEY=sk-xxx     # For OpenAI models",
+            "gpu_clear_memory()                # Clear GPU fragmentation",
+            "llm_health_tool('health_check')   # System status",
+            "list_available_tools(detail=1)     # See all tools",
+        ],
+        "parameter_quick_reference": {
+            "temperature": {
+                "0.1-0.3": "Factual/technical writing",
+                "0.7-0.9": "Creative writing",
+                "0.4-0.6": "Balanced general use",
+            },
+            "max_tokens": {
+                "100-300": "Short responses",
+                "500-1000": "Medium responses",
+                "1000+": "Long detailed responses",
+            },
+            "quantization": {
+                "none": "Full precision (most accurate, uses most memory)",
+                "4bit": "75% memory reduction, minimal quality loss",
+                "8bit": "50% memory reduction, slight quality loss",
+            },
+        },
+        "common_issues_quick_fix": [
+            {"issue": "CUDA out of memory", "fix": "gpu_clear_memory() then use 4-bit quantization"},
+            {"issue": "Slow generation", "fix": "Lower temperature, use smaller model"},
+            {"issue": "Gated model access", "fix": "Set HUGGINGFACE_TOKEN environment variable"},
+            {"issue": "Poor output quality", "fix": "Adjust temperature or try different model"},
+            {"issue": "Training divergence", "fix": "Reduce learning rate, check data quality"},
+        ],
+        "environment_variables": [
+            "HUGGINGFACE_TOKEN - For gated models (FLUX, etc.)",
+            "HF_TOKEN - Alternative Hugging Face token",
+            "OPENAI_API_KEY - For OpenAI models",
+            "ANTHROPIC_API_KEY - For Claude models",
+            "LLM_MCP_CACHE_DIR - Custom model cache location",
+        ],
+    }
+
+
 def register_help_tools(mcp, register_individual_tools: bool = True):
     """Register help tools with the MCP server using FastMCP 2.12+ features.
 
@@ -1196,166 +1357,8 @@ def register_help_tools(mcp, register_individual_tools: bool = True):
             """
             return await _get_troubleshooting_guide_impl(category)
 
-        @mcp.tool()
-        async def get_hardware_requirements() -> dict[str, Any]:
-            """Get detailed hardware requirements and performance estimates.
-
-            Comprehensive hardware guidance including:
-            - GPU recommendations by model size
-            - Memory utilization estimates
-            - Performance benchmarks (tokens/sec)
-            - Training time estimates
-            - Optimization recommendations
-
-            Specific support for:
-            - RTX 3090/4090 series
-            - H100/A100 data center GPUs
-            - Memory and thermal management
-            - Quantization impact on performance
-
-            Returns:
-                Complete hardware requirements guide
-            """
-            return {
-                "gpu_recommendations": [
-                    {
-                        "gpu": "RTX 3090 (24GB)",
-                        "recommended_for": "Up to 13B models",
-                        "performance": {
-                            "7B_4bit": "12-18 tokens/sec",
-                            "13B_4bit": "4-7 tokens/sec",
-                            "30B": "Not recommended",
-                        },
-                        "vram_usage": {"7B_4bit": "16-20GB", "13B_4bit": "20-24GB"},
-                    },
-                    {
-                        "gpu": "RTX 4090 (24GB)",
-                        "recommended_for": "Up to 30B models",
-                        "performance": {
-                            "7B_4bit": "15-22 tokens/sec",
-                            "13B_4bit": "6-9 tokens/sec",
-                            "30B_4bit": "2-4 tokens/sec",
-                            "70B": "Not recommended",
-                        },
-                        "vram_usage": {
-                            "7B_4bit": "18-22GB",
-                            "13B_4bit": "22-24GB",
-                            "30B_4bit": "24GB+ (with optimizations)",
-                        },
-                        "notes": "Susceptible to memory fragmentation - use gpu_clear_memory() regularly",
-                    },
-                    {
-                        "gpu": "H100 80GB",
-                        "recommended_for": "Up to 70B+ models",
-                        "performance": {
-                            "7B_4bit": "40-60 tokens/sec",
-                            "13B_4bit": "25-40 tokens/sec",
-                            "30B_4bit": "12-20 tokens/sec",
-                            "70B_4bit": "3-6 tokens/sec",
-                        },
-                        "vram_usage": {
-                            "7B_4bit": "25-35GB",
-                            "13B_4bit": "45-60GB",
-                            "30B_4bit": "65-75GB",
-                            "70B_4bit": "75-80GB",
-                        },
-                    },
-                ],
-                "cpu_requirements": {
-                    "minimum": "8 cores, 16GB RAM",
-                    "recommended": "16+ cores, 32GB+ RAM",
-                    "for_training": "32+ cores, 128GB+ RAM",
-                },
-                "storage_requirements": {
-                    "models": "100-500GB for common models",
-                    "datasets": "Additional space for training data",
-                    "temp_space": "50GB+ for model downloads and processing",
-                },
-                "training_time_estimates": {
-                    "1M_tokens_7B_4090": "12-16 hours",
-                    "1M_tokens_13B_4090": "30-45 hours",
-                    "1M_tokens_7B_H100": "3-5 hours",
-                    "1M_tokens_13B_H100": "6-8 hours",
-                    "1M_tokens_30B_H100": "10-15 hours",
-                    "1M_tokens_70B_H100": "40-60 hours",
-                },
-                "optimization_tips": [
-                    "Use 4-bit quantization to reduce memory usage by 75%",
-                    "Enable gradient checkpointing to save 60% memory during training",
-                    "Use gradient accumulation for larger effective batch sizes",
-                    "Enable Flash Attention 2.0 when available for 20-50% speedup",
-                    "Use mixed precision training (bf16/fp16) for 2x performance",
-                    "For large models, consider tensor parallelism",
-                    "Clear GPU memory fragmentation regularly (especially RTX 4090)",
-                    "Monitor GPU temperature to prevent thermal throttling",
-                ],
-                "network_requirements": {
-                    "minimum": "25 Mbps download for model downloads",
-                    "recommended": "100+ Mbps for large model downloads",
-                    "huggingface_token": "Required for gated models (FLUX, etc.)",
-                },
-            }
-
-        @mcp.tool()
-        async def get_quick_reference() -> dict[str, Any]:
-            """Get quick reference guide for common operations.
-
-            Essential commands and workflows for immediate productivity:
-            - Most frequently used tools and commands
-            - Common parameter settings
-            - Quick troubleshooting steps
-            - Essential environment variables
-
-            Returns:
-                Quick reference guide for common operations
-            """
-            return {
-                "most_used_tools": [
-                    {"tool": "llm_health_tool", "operation": "health_check", "use": "Check system status"},
-                    {"tool": "llm_models_tool", "operation": "list_models", "use": "See available models"},
-                    {"tool": "llm_generation_tool", "operation": "generate_text", "use": "Generate content"},
-                    {"tool": "gpu_status", "use": "Check GPU status"},
-                    {"tool": "gpu_clear_memory", "use": "Fix memory fragmentation"},
-                ],
-                "essential_commands": [
-                    "export HUGGINGFACE_TOKEN=hf_xxx  # For gated models",
-                    "export OPENAI_API_KEY=sk-xxx     # For OpenAI models",
-                    "gpu_clear_memory()                # Clear GPU fragmentation",
-                    "llm_health_tool('health_check')   # System status",
-                    "list_available_tools(detail=1)     # See all tools",
-                ],
-                "parameter_quick_reference": {
-                    "temperature": {
-                        "0.1-0.3": "Factual/technical writing",
-                        "0.7-0.9": "Creative writing",
-                        "0.4-0.6": "Balanced general use",
-                    },
-                    "max_tokens": {
-                        "100-300": "Short responses",
-                        "500-1000": "Medium responses",
-                        "1000+": "Long detailed responses",
-                    },
-                    "quantization": {
-                        "none": "Full precision (most accurate, uses most memory)",
-                        "4bit": "75% memory reduction, minimal quality loss",
-                        "8bit": "50% memory reduction, slight quality loss",
-                    },
-                },
-                "common_issues_quick_fix": [
-                    {"issue": "CUDA out of memory", "fix": "gpu_clear_memory() then use 4-bit quantization"},
-                    {"issue": "Slow generation", "fix": "Lower temperature, use smaller model"},
-                    {"issue": "Gated model access", "fix": "Set HUGGINGFACE_TOKEN environment variable"},
-                    {"issue": "Poor output quality", "fix": "Adjust temperature or try different model"},
-                    {"issue": "Training divergence", "fix": "Reduce learning rate, check data quality"},
-                ],
-                "environment_variables": [
-                    "HUGGINGFACE_TOKEN - For gated models (FLUX, etc.)",
-                    "HF_TOKEN - Alternative Hugging Face token",
-                    "OPENAI_API_KEY - For OpenAI models",
-                    "ANTHROPIC_API_KEY - For Claude models",
-                    "LLM_MCP_CACHE_DIR - Custom model cache location",
-                ],
-            }
+        mcp.tool()(get_hardware_requirements)
+        mcp.tool()(get_quick_reference)
 
         @mcp.tool()
         async def get_integration_guide() -> dict[str, Any]:

@@ -1,5 +1,6 @@
 """Service for managing LLM models and providers."""
 
+import inspect
 import logging
 from collections.abc import AsyncGenerator
 from typing import Any
@@ -334,8 +335,11 @@ class ModelService:
     async def close(self) -> None:
         """Clean up resources."""
         for provider in self.providers.values():
-            if hasattr(provider, "close") and callable(provider.close):
-                await provider.close()
+            close_fn = getattr(provider, "close", None)
+            if callable(close_fn):
+                result = close_fn()
+                if inspect.isawaitable(result):
+                    await result
 
         self.providers.clear()
         self._initialized = False

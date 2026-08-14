@@ -3,6 +3,7 @@
 This module provides integration with Ollama's local LLM service.
 """
 
+import json
 import logging
 from collections.abc import AsyncGenerator
 from typing import Any
@@ -100,7 +101,7 @@ class OllamaProvider(BaseProvider):
                         if not line.strip():
                             continue
                         try:
-                            data = httpx._utils.json.loads(line)  # ty: ignore[possibly-missing-submodule]
+                            data = json.loads(line)
                             if "response" in data:
                                 yield data["response"]
                             if data.get("done", False):
