@@ -1,6 +1,7 @@
 """API endpoints for MCP server management."""
 
 import logging
+from typing import cast
 
 from fastapi import APIRouter, HTTPException, status
 
@@ -14,6 +15,7 @@ from ..models.mcp_servers import (
     MCPServerStatus,
     MCPServerUpdate,
     ServerStatus,
+    ServerType,
 )
 
 logger = logging.getLogger(__name__)
@@ -39,7 +41,7 @@ async def list_mcp_servers(enabled_only: bool = True) -> list[MCPServerStatus]:
             result.append(
                 MCPServerStatus(
                     name=server.name,
-                    type=server.server_type,
+                    type=cast(ServerType, server.server_type),
                     status=ServerStatus.RUNNING if status_info.get("status") == "running" else ServerStatus.STOPPED,
                     enabled=server.enabled,
                     metrics=status_info.get("metrics", {}),
@@ -70,7 +72,7 @@ async def create_mcp_server(server: MCPServerCreate) -> MCPServer:
         server_config = MCPServerConfig(
             name=server.name,
             description=server.description,
-            server_type=server.server_type,
+            server_type=cast(ServerType, server.server_type),
             config=server.config,
             enabled=server.enabled,
         )
@@ -233,7 +235,7 @@ async def start_mcp_server(server_name: str) -> MCPServerOperation:
             message=f"MCP server '{server_name}' started successfully",
             server=MCPServerStatus(
                 name=server_name,
-                type=server.server_type,
+                type=cast(ServerType, server.server_type),
                 status=ServerStatus.RUNNING,
                 enabled=server.enabled,
                 metrics=status_info.get("metrics", {}),
@@ -275,7 +277,10 @@ async def stop_mcp_server(server_name: str) -> MCPServerOperation:
             success=True,
             message=f"MCP server '{server_name}' stopped successfully",
             server=MCPServerStatus(
-                name=server_name, type=server.server_type, status=ServerStatus.STOPPED, enabled=server.enabled
+                name=server_name,
+                type=cast(ServerType, server.server_type),
+                status=ServerStatus.STOPPED,
+                enabled=server.enabled,
             ),
         )
 
@@ -309,7 +314,7 @@ async def get_mcp_server_status(server_name: str) -> MCPServerStatus:
 
         return MCPServerStatus(
             name=server_name,
-            type=server.server_type,
+            type=cast(ServerType, server.server_type),
             status=ServerStatus.RUNNING if status_info.get("status") == "running" else ServerStatus.STOPPED,
             enabled=server.enabled,
             metrics=status_info.get("metrics", {}),

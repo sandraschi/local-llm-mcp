@@ -1,5 +1,6 @@
 """OpenAI provider implementation."""
 
+import importlib
 import logging
 import time
 from collections.abc import AsyncGenerator
@@ -9,14 +10,16 @@ from llm_mcp.models.base import BaseProvider, ModelCapability, ModelMetadata, Mo
 
 logger = logging.getLogger(__name__)
 
-# Try to import openai, but make it optional
-try:
-    import openai
+# openai SDK is optional — importlib keeps the name bound (Any).
+openai: Any
 
+try:
+    openai = importlib.import_module("openai")
     OPENAI_AVAILABLE = True
 except ImportError:
     logger.warning("OpenAI not installed. Install with: pip install openai")
     OPENAI_AVAILABLE = False
+    openai = None
 
 
 class OpenAIProvider(BaseProvider):
@@ -43,7 +46,7 @@ class OpenAIProvider(BaseProvider):
 
         self.config = OpenAIConfig(**(config or {}))
 
-        # Initialize OpenAI client
+        # Initialize OpenAI client (async client — generate/chat are async)
         self.client = openai.AsyncOpenAI(
             api_key=self.config.api_key,
             base_url=self.config.base_url,
@@ -71,6 +74,14 @@ class OpenAIProvider(BaseProvider):
     def is_ready(self) -> bool:
         """Check if the provider is ready to handle requests."""
         return self._is_initialized and self.config.api_key is not None  # ty: ignore[unresolved-attribute]
+
+    async def _test_connection(self) -> None:
+        """Probe the OpenAI API with a minimal chat completion."""
+        await self.client.chat.completions.create(
+            model=self.config.default_model,
+            max_tokens=1,
+            messages=[{"role": "user", "content": "ping"}],
+        )
 
     async def initialize(self) -> None:
         """Initialize the OpenAI provider."""
@@ -386,7 +397,7 @@ class OpenAIProvider(BaseProvider):
     async def chat(self, model_id: str, messages: list[dict[str, str]], **kwargs) -> str:
         """Generate a chat completion using the specified model."""
         response = await self.chat_completion(model_id=model_id, messages=messages, **kwargs)
-        return response["content"]  # ty: ignore[invalid-argument-type]
+        return response
 
     async def generate_embeddings(self, model_id: str, texts: list[str], **kwargs) -> list[list[float]]:
         """Generate embeddings for the given texts."""

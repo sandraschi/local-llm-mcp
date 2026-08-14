@@ -31,7 +31,7 @@ class MCPServerBase(BaseModel):
 
     name: str = Field(..., description="Unique name for the MCP server")
     description: str = Field("", description="Description of the MCP server")
-    server_type: ServerType = Field(..., description="Type of MCP server")
+    server_type: ServerType = Field(..., description="Type of MCP server")  # pyright: ignore[reportArgumentType]  # str coerced by pydantic
     config: dict[str, Any] = Field(default_factory=dict, description="Server-specific configuration")
     enabled: bool = Field(True, description="Whether the server is enabled")
 
@@ -45,16 +45,16 @@ class MCPServerCreate(MCPServerBase):
 class MCPServerUpdate(BaseModel):
     """Model for updating an existing MCP server."""
 
-    description: str | None = Field(None, description="Updated description")
-    config: dict[str, Any] | None = Field(None, description="Updated configuration")
-    enabled: bool | None = Field(None, description="Whether the server is enabled")
+    description: str | None = Field(default=None, description="Updated description")
+    config: dict[str, Any] | None = Field(default=None, description="Updated configuration")
+    enabled: bool | None = Field(default=None, description="Whether the server is enabled")
 
 
 class MCPServer(MCPServerBase):
     """Complete MCP server model with status information."""
 
     status: ServerStatus = Field(ServerStatus.STOPPED, description="Current server status")
-    last_error: str | None = Field(None, description="Last error message, if any")
+    last_error: str | None = Field(default=None, description="Last error message, if any")
 
     class Config:
         """Pydantic config."""
@@ -67,10 +67,10 @@ class MCPServerStatus(BaseModel):
 
     name: str = Field(..., description="Server name")
     status: ServerStatus = Field(..., description="Current status")
-    type: ServerType = Field(..., description="Server type")
+    type: ServerType = Field(..., description="Server type")  # pyright: ignore[reportArgumentType]  # str coerced by pydantic
     enabled: bool = Field(..., description="Whether the server is enabled")
-    uptime_seconds: float | None = Field(None, description="Uptime in seconds")
-    last_error: str | None = Field(None, description="Last error message, if any")
+    uptime_seconds: float | None = Field(default=None, description="Uptime in seconds")
+    last_error: str | None = Field(default=None, description="Last error message, if any")
     metrics: dict[str, Any] = Field(default_factory=dict, description="Server metrics and statistics")
 
 
@@ -85,8 +85,10 @@ class MCPServerOperation(BaseModel):
 
     success: bool = Field(..., description="Whether the operation was successful")
     message: str = Field(..., description="Status message")
-    server: MCPServerStatus | None = Field(None, description="Updated server status")
-    error: str | None = Field(None, description="Error details if the operation failed")
+    server: MCPServerStatus | None = Field(default=None, description="Updated server status")
+    error: str | None = Field(default=None, description="Error details if the operation failed")
+    uptime_seconds: float | None = Field(default=None, description="Uptime in seconds")
+    last_error: str | None = Field(default=None, description="Last error message, if any")
 
 
 class MCPServerLogs(BaseModel):
@@ -96,14 +98,14 @@ class MCPServerLogs(BaseModel):
     logs: list[dict[str, Any]] = Field(
         default_factory=list, description="List of log entries with timestamp and message"
     )
-    next_token: str | None = Field(None, description="Token for pagination to get the next set of logs")
+    next_token: str | None = Field(default=None, description="Token for pagination to get the next set of logs")
 
 
 class MCPServerDiscovery(BaseModel):
     """Information about discovered MCP servers."""
 
     name: str = Field(..., description="Server name")
-    type: ServerType = Field(..., description="Server type")
+    type: ServerType = Field(..., description="Server type")  # pyright: ignore[reportArgumentType]  # str coerced by pydantic
     description: str = Field("", description="Server description")
-    endpoint: HttpUrl | None = Field(None, description="Server endpoint URL if available")
+    endpoint: HttpUrl | None = Field(default=None, description="Server endpoint URL if available")
     config: dict[str, Any] = Field(default_factory=dict, description="Suggested configuration for the server")
