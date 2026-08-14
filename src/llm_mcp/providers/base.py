@@ -30,7 +30,7 @@ class BaseProvider(ABC):
         pass
 
     @abstractmethod
-    async def generate(self, prompt: str, model: str, **kwargs) -> AsyncGenerator[str, None]:
+    def generate(self, prompt: str, model: str, **kwargs) -> AsyncGenerator[str, None]:
         """Generate a response from the model.
 
         Args:
@@ -40,6 +40,10 @@ class BaseProvider(ABC):
 
         Yields:
             Chunks of the generated response as strings
+
+        Implementations are async generator functions (``async def`` with
+        ``yield``); the base is intentionally non-async so the declared type
+        matches the AsyncGenerator contract instead of a coroutine wrapping it.
         """
         pass
 

@@ -5,44 +5,50 @@ This provider integrates:
 - Diffusion Models (FLUX, SDXL, SDXL Turbo, Stable Video Diffusion)
 - Image Analysis and Understanding
 - Text-to-Image and Image-to-Text generation
+
+pyright: diffusers/transformers lazily export these names at runtime
+(verified: diffusers 0.36.0 / transformers 5.2.0 hasattr == True) but their
+stubs do not; disable the private-import rule for this wrapper file only.
 """
+
+# pyright: reportPrivateImportUsage=false
 
 import asyncio
 import logging
 from collections.abc import AsyncGenerator
+from io import BytesIO
 from typing import Any
 
+import requests
 import torch
+from diffusers import (
+    AutoencoderKL,
+    DiffusionPipeline,
+    FluxPipeline,
+    StableDiffusionPipeline,
+    StableDiffusionXLPipeline,
+    UNet2DConditionModel,
+)
+from PIL import Image
+from transformers import (
+    AutoModel,
+    AutoProcessor,
+    Blip2ForConditionalGeneration,
+    Blip2Processor,
+    BlipForConditionalGeneration,
+    BlipProcessor,
+    CLIPModel,
+    CLIPProcessor,
+    CLIPTokenizer,
+)
 
+# transformers >=5 renamed Vision2Seq to ImageTextToText; fall back for older versions
 try:
-    from io import BytesIO
-
-    import requests
-    from diffusers import (
-        AutoencoderKL,
-        DiffusionPipeline,
-        FluxPipeline,
-        StableDiffusionPipeline,
-        StableDiffusionXLPipeline,
-        UNet2DConditionModel,
-    )
-    from PIL import Image
-    from transformers import (
-        AutoModel,
-        AutoModelForVision2Seq,  # ty: ignore[unresolved-import]
-        AutoProcessor,
-        Blip2ForConditionalGeneration,
-        Blip2Processor,
-        BlipForConditionalGeneration,
-        BlipProcessor,
-        CLIPModel,
-        CLIPProcessor,
-        CLIPTokenizer,
-    )
-
-    MULTIMODAL_DEPS_AVAILABLE = True
+    from transformers import AutoModelForImageTextToText as AutoModelForVision2Seq
 except ImportError:
-    MULTIMODAL_DEPS_AVAILABLE = False
+    from transformers import AutoModelForVision2Seq  # pyright: ignore[reportAttributeAccessIssue]
+
+MULTIMODAL_DEPS_AVAILABLE = True
 
 from .base import BaseProvider
 
@@ -129,6 +135,9 @@ class MultimodalProvider(BaseProvider):
             logger.error(f"Unknown vision model: {model_key}")
             return False
 
+        model: Any = None
+        processor: Any = None
+
         try:
             logger.info(f"Loading vision model: {model_name}")
 
@@ -142,7 +151,7 @@ class MultimodalProvider(BaseProvider):
                 )
             elif model_key == "clip":
                 processor = CLIPProcessor.from_pretrained(model_name)
-                model = CLIPModel.from_pretrained(model_name).to(self.device)  # ty: ignore[invalid-argument-type]
+                model = CLIPModel.from_pretrained(model_name).to(self.device)  # pyright: ignore[reportArgumentType]  # CLIPModel stub resolves .to() against __call__
             elif model_key in ["blip", "blip2"]:
                 if model_key == "blip":
                     processor = BlipProcessor.from_pretrained(model_name)
@@ -155,6 +164,12 @@ class MultimodalProvider(BaseProvider):
                         device_map="auto" if self.device.type == "cuda" else None,
                     )
                 model.to(self.device)  # ty: ignore[invalid-argument-type]
+
+            if model is None or processor is None:
+                logger.error(
+                    f"Vision model {model_key} did not initialize (model={model is not None}, processor={processor is not None})"
+                )
+                return False
 
             self.vision_models[model_key] = {
                 "model": model,
@@ -462,7 +477,7 @@ class MultimodalProvider(BaseProvider):
             torch.cuda.empty_cache()
 
     # Provider interface methods
-    async def generate(self, prompt: str, **kwargs) -> AsyncGenerator[str, None]:  # ty: ignore[invalid-method-override]
+    async def generate(self, prompt: str, model: str = "", **kwargs) -> AsyncGenerator[str, None]:  # pyright: ignore[reportIncompatibleMethodOverride]  # multimodal provider does not stream text
         """Generate text response (not used for multimodal)."""
         yield ""
 

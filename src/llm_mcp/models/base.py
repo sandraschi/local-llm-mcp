@@ -128,8 +128,13 @@ class BaseProvider(ABC):
     # ── Text generation ───────────────────────────────────────────────────
 
     @abstractmethod
-    async def generate(self, prompt: str, model: str, **kwargs) -> AsyncGenerator[str, None]:
-        """Streaming generation - the primitive every provider must supply."""
+    def generate(self, prompt: str, model: str, **kwargs) -> AsyncGenerator[str, None]:
+        """Streaming generation - the primitive every provider must supply.
+
+        Implementations are async generator functions (``async def`` with
+        ``yield``); the base is intentionally non-async so the declared type
+        matches the AsyncGenerator contract instead of a coroutine wrapping it.
+        """
 
     async def generate_text(self, model_id: str, prompt: str, **kwargs) -> str:
         """Non-streaming collect from ``generate``."""

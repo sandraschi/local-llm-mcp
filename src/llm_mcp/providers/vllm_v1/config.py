@@ -86,4 +86,4 @@ class VLLMv1Config(BaseModel):
     log_level: str = "INFO"
     disable_log_requests: bool = False
 
-    model_config = ConfigDict(env_prefix="VLLM_")  # ty: ignore[invalid-key]
+    model_config = ConfigDict(env_prefix="VLLM_")  # pyright: ignore[reportCallIssue]  # pydantic 2.12 ConfigDict typing

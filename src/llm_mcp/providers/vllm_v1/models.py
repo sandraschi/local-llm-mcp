@@ -42,8 +42,8 @@ class VLLMModel(BaseModel):
     context_length: int = Field(default=4096, description="Maximum context length")
 
     # Performance optimization
-    tensor_parallel_recommended: int | None = Field(None, description="Recommended tensor parallelism")
-    pipeline_parallel_recommended: int | None = Field(None, description="Recommended pipeline parallelism")
+    tensor_parallel_recommended: int | None = Field(default=None, description="Recommended tensor parallelism")
+    pipeline_parallel_recommended: int | None = Field(default=None, description="Recommended pipeline parallelism")
 
     # Configuration
     supports_v1_engine: bool = Field(default=True, description="Supports vLLM V1 engine")
@@ -58,12 +58,12 @@ class VLLMMultimodalModel(VLLMModel):
 
     # Multimodal specific
     max_images: int | None = Field(None, description="Maximum images per request")
-    max_video_frames: int | None = Field(None, description="Maximum video frames")
-    max_audio_length: int | None = Field(None, description="Maximum audio length (seconds)")
+    max_video_frames: int | None = Field(default=None, description="Maximum video frames")
+    max_audio_length: int | None = Field(default=None, description="Maximum audio length (seconds)")
 
     # Vision settings
     max_image_size: int = Field(default=2048, description="Maximum image resolution")
-    vision_embedding_dim: int | None = Field(None, description="Vision embedding dimension")
+    vision_embedding_dim: int | None = Field(default=None, description="Vision embedding dimension")
 
 
 # Pre-defined model configurations for vLLM v0.10+

@@ -1,4 +1,10 @@
-"""Docker container management for vLLM v0.9.5."""
+"""Docker container management for vLLM v0.9.5.
+
+pyright: the docker SDK exposes its API via a lazy namespace without usable
+stubs (from_env, types, errors resolve at runtime only).
+"""
+
+# pyright: reportAttributeAccessIssue=false
 
 import asyncio
 import logging
@@ -17,7 +23,7 @@ class VLLMDockerManager:
     """Manage vLLM v0.9.5 Docker containers with RTX 4090 optimization."""
 
     def __init__(self):
-        self.docker_client = docker.from_env()  # ty: ignore[unresolved-attribute]
+        self.docker_client = docker.from_env()  # pyright: ignore[reportAttributeAccessIssue]  # docker lazy namespace
         self.container_name = "local-llm-mcp-vllm-v10"
         self.container = None
         self.base_url = "http://localhost:8000"
@@ -159,7 +165,7 @@ class VLLMDockerManager:
             # Calculate GPU memory usage if available
             gpu_usage = None
             try:
-                import pynvml  # ty: ignore[unresolved-import]
+                import pynvml  # pyright: ignore[reportMissingImports]  # guarded by try/except ImportError
 
                 pynvml.nvmlInit()
                 handle = pynvml.nvmlDeviceGetHandleByIndex(0)
