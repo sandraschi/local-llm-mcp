@@ -17,7 +17,7 @@ from typing import Any
 
 import structlog
 
-# vLLM imports (optional — importlib keeps names bound when absent)
+# vLLM imports (optional - importlib keeps names bound when absent)
 LLM: Any
 SamplingParams: Any
 

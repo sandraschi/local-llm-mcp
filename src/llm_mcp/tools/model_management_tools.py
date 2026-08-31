@@ -114,7 +114,7 @@ class ModelManager:
                         f"Last error: {e}. Check that the service is running."
                     ) from e
             except aiohttp.ClientResponseError as e:
-                raise ConnectionError(f"{self.provider_name} API error: HTTP {e.status} — {e.message}") from e
+                raise ConnectionError(f"{self.provider_name} API error: HTTP {e.status} - {e.message}") from e
             except TimeoutError as e:
                 raise TimeoutError(f"{self.provider_name} request timed out. The daemon may be hung.") from e
             except Exception as e:

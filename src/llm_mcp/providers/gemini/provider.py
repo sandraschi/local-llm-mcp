@@ -10,7 +10,7 @@ from llm_mcp.models.base import BaseProvider, ModelCapability, ModelMetadata, Mo
 
 logger = logging.getLogger(__name__)
 
-# google.generativeai is optional — importlib keeps the name bound (Any).
+# google.generativeai is optional - importlib keeps the name bound (Any).
 genai: Any
 
 try:

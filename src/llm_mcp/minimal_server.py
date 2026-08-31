@@ -66,7 +66,7 @@ class MinimalServer:
             logger.info("Starting minimal MCP server...")
 
             try:
-                # FastMCP 3.x runs via run_stdio_async — no start()/stop() API
+                # FastMCP 3.x runs via run_stdio_async - no start()/stop() API
                 await self.server.run_stdio_async()
                 logger.info("Server exited")
             except asyncio.CancelledError:
@@ -82,7 +82,7 @@ class MinimalServer:
             await self.stop()
 
     async def stop(self):
-        """Stop the server (no-op — run_stdio_async returns on shutdown)."""
+        """Stop the server (no-op - run_stdio_async returns on shutdown)."""
         self.server = None
         logger.info("Server stopped")
 

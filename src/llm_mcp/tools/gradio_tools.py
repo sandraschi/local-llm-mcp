@@ -12,7 +12,7 @@ import webbrowser
 from collections.abc import Callable
 from typing import Any
 
-# Gradio is an optional dependency — importlib keeps names bound (Any) when absent.
+# Gradio is an optional dependency - importlib keeps names bound (Any) when absent.
 gr: Any
 App: Any
 

@@ -1,4 +1,4 @@
-"""OpenAI adapter — pass-through (already OpenAI format)."""
+"""OpenAI adapter - pass-through (already OpenAI format)."""
 
 from typing import Any
 

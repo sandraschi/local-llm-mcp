@@ -1,19 +1,19 @@
-# DXT Packaging for LLM MCP Server
+# MCPB Packaging for LLM MCP Server
 
-This document explains how to package the LLM MCP Server as a DXT (Desktop eXtension) for use with Claude Desktop and
+This document explains how to package the LLM MCP Server as a MCPB (Desktop eXtension) for use with Claude Desktop and
 other MCP-compatible applications.
 
 ## Overview
 
-DXT (Desktop eXtensions) is a packaging format for MCP (Model Control Protocol) servers. It allows for easy distribution
+MCPB (Desktop eXtensions) is a packaging format for MCP (Model Control Protocol) servers. It allows for easy distribution
 and installation of MCP servers with all their dependencies.
 
 ## Prerequisites
 
-$11. Install the DXT CLI tool:
+$11. Install the MCPB CLI tool:
 
    ```bash
-   npm install -g @anthropic/dxt
+   npm install -g @anthropic/MCPB
    ```
 
 $11. Ensure you have Python 3.8+ installed
@@ -26,12 +26,12 @@ $11. Install project dependencies:
 
 ## Generating the Manifest
 
-The `dxt_generator.py` script automates the creation of the `manifest.json` file by analyzing your MCP server code.
+The `MCPB_generator.py` script automates the creation of the `manifest.json` file by analyzing your MCP server code.
 
 ### Basic Usage
 
 ```bash
-python tools/dxt_generator.py -m src/llm_mcp/server.py -o manifest.json
+python tools/MCPB_generator.py -m src/llm_mcp/server.py -o manifest.json
 
 
 
@@ -41,7 +41,7 @@ python tools/dxt_generator.py -m src/llm_mcp/server.py -o manifest.json
 
 ### With Custom Configuration
 
-$11. Edit `tools/dxt_config.json` to customize the manifest:
+$11. Edit `tools/MCPB_config.json` to customize the manifest:
 
    - Update metadata (name, version, author, etc.)
 
@@ -55,15 +55,15 @@ $11. Edit `tools/dxt_config.json` to customize the manifest:
 $11. Generate the manifest with custom configuration:
 
    ```bash
-   python tools/dxt_generator.py -m src/llm_mcp/server.py -o manifest.json --overrides tools/dxt_config.json
+   python tools/MCPB_generator.py -m src/llm_mcp/server.py -o manifest.json --overrides tools/MCPB_config.json
    ```
 
 ## Package Structure
 
-A DXT package has the following structure:
+A MCPB package has the following structure:
 
 ```
-llm-mcp.dxt (ZIP file)
+llm-mcp.MCPB (ZIP file)
 
 
 
@@ -79,7 +79,7 @@ llm-mcp.dxt (ZIP file)
 ```
 
 
-## Building the DXT Package
+## Building the MCPB Package
 
 $11. First, ensure you have a valid `manifest.json` file
 
@@ -94,18 +94,18 @@ $11. Create the package structure:
    # cp assets/icon.png dist/llm-mcp/
    ```
 
-$11. Create the DXT package:
+$11. Create the MCPB package:
 
    ```bash
    cd dist
-   dxt pack llm-mcp -o llm-mcp.dxt
+   MCPB pack llm-mcp -o llm-mcp.MCPB
    ```
 
-## Installing the DXT Package
+## Installing the MCPB Package
 
 $11. In Claude Desktop, go to Settings > Extensions
 
-$11. Click "Install Extension" and select the `llm-mcp.dxt` file
+$11. Click "Install Extension" and select the `llm-mcp.MCPB` file
 
 
 $11. Configure any required settings
@@ -124,10 +124,10 @@ $11. Update tests as needed
 $11. Generate an updated manifest:
 
    ```bash
-   python tools/dxt_generator.py -m src/llm_mcp/server.py -o manifest.json
+   python tools/MCPB_generator.py -m src/llm_mcp/server.py -o manifest.json
    ```
 
-$11. Build and test the DXT package
+$11. Build and test the MCPB package
 
 $11. Commit and push your changes
 
@@ -217,9 +217,10 @@ $11. **Connection Problems**:
 
 ## Resources
 
-- [DXT Documentation](https://github.com/anthropics/dxt)
+- [MCPB Documentation](https://github.com/anthropics/MCPB)
 
 - [MCP Protocol Specification](https://github.com/anthropics/mcp)
 
 
-- [Example MCP Servers](https://github.com/anthropics/dxt/tree/main/examples)
+- [Example MCP Servers](https://github.com/anthropics/MCPB/tree/main/examples)
+

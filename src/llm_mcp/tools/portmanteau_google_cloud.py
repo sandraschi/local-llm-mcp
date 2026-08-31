@@ -19,7 +19,7 @@ from llm_mcp.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Google Cloud dependencies (optional — importlib keeps names bound when absent)
+# Google Cloud dependencies (optional - importlib keeps names bound when absent)
 import importlib
 
 genai: Any

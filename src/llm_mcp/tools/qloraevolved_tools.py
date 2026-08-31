@@ -628,7 +628,7 @@ def register_qloraevolved_tools(mcp_server):
         mcp_server: The MCP server instance
     """
 
-    # Register tools with decorators (explicit signatures — FastMCP 3.x rejects *args)
+    # Register tools with decorators (explicit signatures - FastMCP 3.x rejects *args)
     @mcp_server.tool()
     async def qloraevolved_load_model_wrapper(
         model_name: str,

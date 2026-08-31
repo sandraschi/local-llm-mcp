@@ -58,7 +58,7 @@ async def chat_completions(request: Request):
             suggestion = f"Check that the {provider_name} service is running and reachable"
         elif "timeout" in err_str:
             error_type = "timeout"
-            suggestion = f"The {provider_name} service is not responding — it may be hung"
+            suggestion = f"The {provider_name} service is not responding - it may be hung"
         elif "refused" in err_str:
             error_type = "connection_refused"
             suggestion = f"The {provider_name} service is not running"
@@ -139,7 +139,7 @@ async def gateway_provider_health(request: Request):
     # Mark all registered providers (even non-local ones)
     for p in list_providers():
         if p not in results:
-            results[p] = {"provider": p, "reachable": True, "note": "Cloud provider — not probed"}
+            results[p] = {"provider": p, "reachable": True, "note": "Cloud provider - not probed"}
 
     elapsed_ms = round((time.monotonic() - start) * 1000, 1)
     return {"providers": results, "elapsed_ms": elapsed_ms}

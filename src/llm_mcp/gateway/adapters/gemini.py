@@ -1,4 +1,4 @@
-"""Gemini adapter — translates OpenAI ChatCompletion -> Gemini generateContent."""
+"""Gemini adapter - translates OpenAI ChatCompletion -> Gemini generateContent."""
 
 from typing import Any
 

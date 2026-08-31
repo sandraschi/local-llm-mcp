@@ -151,7 +151,7 @@ def get_service_status() -> dict[str, Any]:
             if "text/html" in ct:
                 services["lmstudio"] = {
                     "status": "error",
-                    "error": "Port 1234 responded with HTML — likely Docker Desktop, not LM Studio",
+                    "error": "Port 1234 responded with HTML - likely Docker Desktop, not LM Studio",
                 }
             elif resp.status_code == 200:
                 data = resp.json()
@@ -163,7 +163,7 @@ def get_service_status() -> dict[str, Any]:
                 else:
                     services["lmstudio"] = {
                         "status": "error",
-                        "error": "Port 1234 returned unexpected JSON shape — likely not LM Studio",
+                        "error": "Port 1234 returned unexpected JSON shape - likely not LM Studio",
                     }
             else:
                 services["lmstudio"] = {"status": f"error: HTTP {resp.status_code}"}
@@ -172,7 +172,7 @@ def get_service_status() -> dict[str, Any]:
     except httpx.TimeoutException:
         services["lmstudio"] = {
             "status": "hung",
-            "error": "Process exists but not responding — Docker may be the cause",
+            "error": "Process exists but not responding - Docker may be the cause",
         }
     except Exception as e:
         services["lmstudio"] = {"status": "error", "error": str(e)}

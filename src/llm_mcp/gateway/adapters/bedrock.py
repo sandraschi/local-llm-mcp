@@ -1,4 +1,4 @@
-"""AWS Bedrock adapter — sigv4 signing, Converse API."""
+"""AWS Bedrock adapter - sigv4 signing, Converse API."""
 
 import json
 from typing import Any

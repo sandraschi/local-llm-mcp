@@ -1,4 +1,4 @@
-"""Azure OpenAI adapter — custom endpoint construction."""
+"""Azure OpenAI adapter - custom endpoint construction."""
 
 from llm_mcp.gateway.adapters.openai import OpenAIAdapter
 from llm_mcp.gateway.base import register_provider

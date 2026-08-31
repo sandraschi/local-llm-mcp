@@ -1,4 +1,4 @@
-"""Anthropic adapter — translates OpenAI ChatCompletion -> Anthropic Messages API."""
+"""Anthropic adapter - translates OpenAI ChatCompletion -> Anthropic Messages API."""
 
 from typing import Any
 

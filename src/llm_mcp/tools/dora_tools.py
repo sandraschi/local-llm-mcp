@@ -30,7 +30,7 @@ import torch.nn.functional as F
 from transformers import AutoModelForCausalLM, Trainer, TrainingArguments
 
 # transformers lazily exports these at runtime (verified: transformers 5.2.0)
-# without stub coverage — treat them as Any.
+# without stub coverage - treat them as Any.
 BitsAndBytesConfig: Any
 is_torch_bf16_gpu_available: Any
 is_torch_tf32_available: Any

@@ -43,7 +43,7 @@ LoggingConfig.initialize(log_level="ERROR")  # Only show errors
 logger = get_logger(__name__)
 
 # Import FastMCP after logging is configured
-# Try to import FastMCP with version check — pre-declared so pyright sees the
+# Try to import FastMCP with version check - pre-declared so pyright sees the
 # names as bound whether or not the dependency resolves.
 FastMCP: Any
 fastmcp_version_installed: Any

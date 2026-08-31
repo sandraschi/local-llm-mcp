@@ -1,4 +1,4 @@
-"""Ollama adapter — translates OpenAI ChatCompletion -> Ollama /api/chat."""
+"""Ollama adapter - translates OpenAI ChatCompletion -> Ollama /api/chat."""
 
 from typing import Any
 

@@ -10,7 +10,7 @@ from llm_mcp.models.base import BaseProvider, ModelCapability, ModelMetadata, Mo
 
 logger = logging.getLogger(__name__)
 
-# Anthropic SDK is optional — importlib keeps the name bound (Any) when absent.
+# Anthropic SDK is optional - importlib keeps the name bound (Any) when absent.
 anthropic: Any
 
 try:
@@ -46,7 +46,7 @@ class AnthropicProvider(BaseProvider):
 
         self.config = AnthropicConfig(**(config or {}))
 
-        # Initialize Anthropic client (async client — generate/chat are async)
+        # Initialize Anthropic client (async client - generate/chat are async)
         self.client = anthropic.AsyncAnthropic(
             api_key=self.config.api_key,
             base_url=self.config.base_url,

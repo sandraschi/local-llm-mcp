@@ -20,7 +20,7 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-# Optional RAG deps — importlib keeps names bound (Any) when not installed.
+# Optional RAG deps - importlib keeps names bound (Any) when not installed.
 lancedb: Any
 pa: Any
 SentenceTransformer: Any

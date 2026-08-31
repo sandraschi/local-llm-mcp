@@ -36,7 +36,7 @@ async def rag_ingest(body: dict[str, Any]) -> dict:
         {"success": true, "source": "...", "total_docs": N}
     """
     if not _HAS_DEPS:
-        raise HTTPException(501, "RAG not available — install lancedb pyarrow sentence-transformers")
+        raise HTTPException(501, "RAG not available - install lancedb pyarrow sentence-transformers")
     text = body.get("text", "").strip()
     if not text:
         raise HTTPException(400, "text is required")
@@ -56,7 +56,7 @@ async def rag_search(query: str = "", limit: int = 5) -> list[dict]:
         List of {text, source, metadata, score} sorted by relevance.
     """
     if not _HAS_DEPS:
-        raise HTTPException(501, "RAG not available — install lancedb pyarrow sentence-transformers")
+        raise HTTPException(501, "RAG not available - install lancedb pyarrow sentence-transformers")
     if not query.strip():
         raise HTTPException(400, "query is required")
     limit = min(max(limit, 1), 50)

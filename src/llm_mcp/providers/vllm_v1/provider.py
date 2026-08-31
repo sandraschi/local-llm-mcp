@@ -17,7 +17,7 @@ from .config import VLLMv1Config
 logger = logging.getLogger(__name__)
 
 # vLLM is an optional dependency. Import via importlib so the names stay
-# bound (Any) whether or not it is importable — no try/except redeclaration.
+# bound (Any) whether or not it is importable - no try/except redeclaration.
 LLM: Any
 SamplingParams: Any
 AsyncEngineArgs: Any

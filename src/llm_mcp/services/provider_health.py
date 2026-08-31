@@ -115,7 +115,7 @@ async def check_ollama_health(force: bool = False) -> ProviderHealth:
             provider="ollama",
             reachable=False,
             base_url=OLLAMA_BASE,
-            error="Circuit breaker open — too many consecutive failures",
+            error="Circuit breaker open - too many consecutive failures",
             error_type="circuit_open",
             suggestion="Wait for the cooldown period or restart the Ollama daemon",
         )
@@ -172,7 +172,7 @@ async def check_ollama_health(force: bool = False) -> ProviderHealth:
             provider="ollama",
             reachable=False,
             base_url=OLLAMA_BASE,
-            error="Connection timed out — Ollama daemon may be hung",
+            error="Connection timed out - Ollama daemon may be hung",
             error_type="timeout",
             suggestion="The Ollama daemon process exists but is not responding. Restart it.",
         )
@@ -206,7 +206,7 @@ async def check_lmstudio_health(force: bool = False) -> ProviderHealth:
             provider="lmstudio",
             reachable=False,
             base_url=LMSTUDIO_BASE,
-            error="Circuit breaker open — too many consecutive failures",
+            error="Circuit breaker open - too many consecutive failures",
             error_type="circuit_open",
             suggestion="Wait for the cooldown period or check if Docker is occupying port 1234",
         )
@@ -240,7 +240,7 @@ async def check_lmstudio_health(force: bool = False) -> ProviderHealth:
                         provider="lmstudio",
                         reachable=False,
                         base_url=LMSTUDIO_BASE,
-                        error="Port 1234 responded with HTML — likely Docker Desktop, not LM Studio",
+                        error="Port 1234 responded with HTML - likely Docker Desktop, not LM Studio",
                         error_type="docker_conflict",
                         suggestion=(
                             "Docker Desktop is occupying port 1234. Stop Docker or change LM Studio's port in Settings."
@@ -257,7 +257,7 @@ async def check_lmstudio_health(force: bool = False) -> ProviderHealth:
                         provider="lmstudio",
                         reachable=False,
                         base_url=LMSTUDIO_BASE,
-                        error=("Port 1234 responded with non-JSON content — likely Docker or another service"),
+                        error=("Port 1234 responded with non-JSON content - likely Docker or another service"),
                         error_type="docker_conflict",
                         suggestion=(
                             "Docker Desktop or another service is occupying port 1234. "
@@ -318,7 +318,7 @@ async def check_lmstudio_health(force: bool = False) -> ProviderHealth:
             provider="lmstudio",
             reachable=False,
             base_url=LMSTUDIO_BASE,
-            error="Connection timed out — the process at port 1234 may be hung",
+            error="Connection timed out - the process at port 1234 may be hung",
             error_type="timeout",
             suggestion="A process occupies port 1234 but is not responding. Check if Docker is running.",
         )

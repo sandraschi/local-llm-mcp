@@ -1,4 +1,4 @@
-"""Cohere adapter — custom API format."""
+"""Cohere adapter - custom API format."""
 
 from typing import Any
 

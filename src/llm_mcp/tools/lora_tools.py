@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-# Try to import PEFT (for LoRA support) — pre-declared so names stay bound.
+# Try to import PEFT (for LoRA support) - pre-declared so names stay bound.
 LoraConfig: Any
 PeftConfig: Any
 PeftModel: Any
