@@ -14,6 +14,7 @@ import llm_mcp.gateway.adapters.groq
 import llm_mcp.gateway.adapters.hyperbolic
 import llm_mcp.gateway.adapters.lepton
 import llm_mcp.gateway.adapters.lmstudio
+import llm_mcp.gateway.adapters.meta
 import llm_mcp.gateway.adapters.mistral
 import llm_mcp.gateway.adapters.modal
 import llm_mcp.gateway.adapters.nebius

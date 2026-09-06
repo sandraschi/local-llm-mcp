@@ -37,6 +37,7 @@ client.default_headers["x-lightport-provider"] = "deepseek"
 | Groq | `groq` | https://api.groq.com/openai/v1 | `GROQ_API_KEY` | Cloud |
 | xAI (Grok) | `xai` | https://api.x.ai/v1 | `XAI_API_KEY` | Cloud |
 | Mistral | `mistral` | https://api.mistral.ai/v1 | `MISTRAL_API_KEY` | Cloud |
+| Meta | `meta` | https://api.meta.ai/v1 | `MODEL_API_KEY` | Cloud |
 | OpenRouter | `openrouter` | https://openrouter.ai/api/v1 | `OPENROUTER_API_KEY` | Cloud |
 | Together | `together` | https://api.together.xyz/v1 | `TOGETHER_API_KEY` | Cloud |
 | Fireworks | `fireworks` | https://api.fireworks.ai/inference/v1 | `FIREWORKS_API_KEY` | Cloud |
