@@ -94,9 +94,12 @@ class ModelConfig(BaseModel):
     available_providers: list[str] = ["vllm", "ollama", "openai", "anthropic"]
 
     # Model paths and settings
-    # Tier routing: muse-glimmer = heavy (agentic reasoning, default), qwen3.5-9b distil = fast (routing/classifier)
+    # Tier routing: Bonsai 27B (1-bit, ~4.4GB) = heavy (agentic reasoning, default),
+    # qwen3.5-9b distil = fast (routing/classifier). Was muse-glimmer - too heavy for
+    # reasonable t/s on consumer hardware; Bonsai 2 27B compresses Qwen3.8 27B to
+    # ~98% of its benchmark score at a fraction of the footprint.
     model_cache_dir: Path = Path("models")
-    default_model: str = "muse-glimmer"
+    default_model: str = "MobiusDevelopment/Bonsai-27B-Q1_0-gguf"
 
     # Generation defaults
     default_max_tokens: int = 2048
