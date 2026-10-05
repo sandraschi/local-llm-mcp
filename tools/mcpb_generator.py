@@ -276,19 +276,19 @@ def discover_tools(module_path: str) -> dict[str, ToolDefinition]:
             if mcp_instance and hasattr(mcp_instance, "_tool_manager"):
                 print("Found MCP instance with tool manager, attempting to get tools...")
                 try:
-                    # Try to get tools using the FastMCP 2.10.2 API
+                    # Get tools from the MCP instance (FastMCP 3.x: list_tools)
                     import asyncio
 
                     # Create a new event loop for this thread
                     loop = asyncio.new_event_loop()
                     asyncio.set_event_loop(loop)
 
-                    # Get tools from the MCP instance
-                    mcp_tools = loop.run_until_complete(mcp_instance.get_tools())
+                    mcp_tools = loop.run_until_complete(mcp_instance.list_tools())
                     print(f"Found {len(mcp_tools)} tools from MCP instance")
 
                     # Convert MCP tools to our ToolDefinition format
-                    for tool_name, tool in mcp_tools.items():
+                    for tool in mcp_tools:
+                        tool_name = tool.name
                         print(f"Processing tool: {tool_name}")
                         # Create a wrapper function that matches the expected signature
 
