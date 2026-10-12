@@ -184,8 +184,8 @@ async def _http_get(url: str, timeout: float = 3.0) -> dict | None:
 
 
 async def _ollama_state() -> dict:
-    port_up = _port_open(OLLAMA_PORT)
-    procs = _find_processes(["ollama"])
+    port_up = await asyncio.to_thread(_port_open, OLLAMA_PORT)
+    procs = await asyncio.to_thread(_find_processes, ["ollama"])
     loaded = []
     if port_up:
         ps = await _http_get(f"{OLLAMA_API}/ps")
@@ -197,17 +197,17 @@ async def _ollama_state() -> dict:
         "running": port_up or bool(procs),
         "port_open": port_up,
         "processes": [{"pid": p["pid"], "name": p["name"]} for p in procs],
-        "process_vram_gb": _proc_vram(pids),
+        "process_vram_gb": await asyncio.to_thread(_proc_vram, pids),
         "loaded_models": loaded,
         "url": f"http://127.0.0.1:{OLLAMA_PORT}",
     }
 
 
 async def _llama_state() -> dict:
-    server_up = _port_open(LLAMA_PORT)
-    proxy_up = _port_open(LLAMA_PROXY_PORT)
-    procs = _find_processes(["llama-server"])
-    proxy_procs = _find_processes(["muse-proxy"])
+    server_up = await asyncio.to_thread(_port_open, LLAMA_PORT)
+    proxy_up = await asyncio.to_thread(_port_open, LLAMA_PROXY_PORT)
+    procs = await asyncio.to_thread(_find_processes, ["llama-server"])
+    proxy_procs = await asyncio.to_thread(_find_processes, ["muse-proxy"])
     models = []
     if server_up:
         m = await _http_get(f"{LLAMA_BASE}/v1/models")
@@ -220,8 +220,8 @@ async def _llama_state() -> dict:
         "server_port_open": server_up,
         "proxy_port_open": proxy_up,
         "processes": [{"pid": p["pid"], "name": p["name"]} for p in procs + proxy_procs],
-        "process_vram_gb": _proc_vram(pids),
-        "gpu_vram": _gpu_vram(),
+        "process_vram_gb": await asyncio.to_thread(_proc_vram, pids),
+        "gpu_vram": await asyncio.to_thread(_gpu_vram),
         "loaded_models": models,
         "url": f"http://127.0.0.1:{LLAMA_PROXY_PORT}",
         "server_url": LLAMA_BASE,
@@ -240,7 +240,7 @@ async def _engine_state(engine: str) -> dict:
 
 
 async def _start_ollama() -> dict:
-    if _port_open(OLLAMA_PORT):
+    if await asyncio.to_thread(_port_open, OLLAMA_PORT):
         return {"success": True, "message": "Ollama already running", "state": await _ollama_state()}
     # Try the Ollama app first, fall back to `ollama serve`
     spawned = False
@@ -257,23 +257,27 @@ async def _start_ollama() -> dict:
         return {"success": False, "error": "failed to start Ollama"}
     for _ in range(20):
         await asyncio.sleep(0.5)
-        if _port_open(OLLAMA_PORT):
+        if await asyncio.to_thread(_port_open, OLLAMA_PORT):
             return {"success": True, "message": "Ollama started", "state": await _ollama_state()}
     return {"success": False, "error": "Ollama did not open its port in time"}
 
 
 async def _stop_ollama() -> dict:
-    procs = _find_processes(["ollama"])
+    procs = await asyncio.to_thread(_find_processes, ["ollama"])
     pids = [p["pid"] for p in procs if p["name"].lower().startswith("ollama")]
-    _kill_pids(pids)
+    await asyncio.to_thread(_kill_pids, pids)
     await asyncio.sleep(1.5)
-    return {"success": not _port_open(OLLAMA_PORT), "message": "Ollama stopped", "killed_pids": pids}
+    return {
+        "success": not await asyncio.to_thread(_port_open, OLLAMA_PORT),
+        "message": "Ollama stopped",
+        "killed_pids": pids,
+    }
 
 
 async def _start_llama() -> dict:
-    if _port_open(LLAMA_PORT):
+    if await asyncio.to_thread(_port_open, LLAMA_PORT):
         return {"success": True, "message": "llama server already running", "state": await _llama_state()}
-    if _port_open(LLAMA_PROXY_PORT):
+    if await asyncio.to_thread(_port_open, LLAMA_PROXY_PORT):
         # Zombie proxy with no backend: kill it so a fresh one attaches to the new server
         await _stop_llama()
     gguf = os.path.join(LLAMA_MODEL_DIR, "meta", "muse-glimmer-30B-kquant-17gb.gguf")
@@ -316,18 +320,18 @@ async def _start_llama() -> dict:
         return {"success": False, "error": "failed to spawn llama server"}
     for _ in range(120):
         await asyncio.sleep(1)
-        if _port_open(LLAMA_PROXY_PORT):
+        if await asyncio.to_thread(_port_open, LLAMA_PROXY_PORT):
             return {"success": True, "message": "llama server started", "state": await _llama_state()}
     return {"success": False, "error": "llama server did not become healthy in time"}
 
 
 async def _stop_llama() -> dict:
-    pids = [p["pid"] for p in _find_processes(["llama-server"])]
-    pids += [p["pid"] for p in _find_processes(["muse-proxy"])]
-    _kill_pids(pids)
+    pids = [p["pid"] for p in await asyncio.to_thread(_find_processes, ["llama-server"])]
+    pids += [p["pid"] for p in await asyncio.to_thread(_find_processes, ["muse-proxy"])]
+    await asyncio.to_thread(_kill_pids, pids)
     await asyncio.sleep(2)
     return {
-        "success": not _port_open(LLAMA_PROXY_PORT),
+        "success": not await asyncio.to_thread(_port_open, LLAMA_PROXY_PORT),
         "message": "llama server stopped",
         "killed_pids": pids,
     }

@@ -12,6 +12,7 @@ pyright: diffusers lazily exports StableDiffusionPipeline at runtime
 
 # pyright: reportPrivateImportUsage=false
 
+import asyncio
 import base64
 import io
 import logging
@@ -97,7 +98,7 @@ class MultimodalTools:
             self.image_model = pipeline(cast(Any, "image-to-text"), model=model_name, device=self.device)
 
         # Process image
-        pil_image = self.load_image(image)
+        pil_image = await asyncio.to_thread(self.load_image, image)
         result = self.image_model(pil_image, **kwargs)
 
         # Format result
@@ -169,8 +170,8 @@ class MultimodalTools:
         model: Any = SentenceTransformer(f"clip-{model_name}")
 
         # Process images
-        img1 = self.load_image(image1)
-        img2 = self.load_image(image2)
+        img1 = await asyncio.to_thread(self.load_image, image1)
+        img2 = await asyncio.to_thread(self.load_image, image2)
 
         # Get embeddings
         embedding1 = model.encode([img1], convert_to_tensor=True)
