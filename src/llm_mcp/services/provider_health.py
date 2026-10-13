@@ -377,8 +377,9 @@ def _find_lms() -> str | None:
         return lms
     import os
 
+    local_app_data = os.environ.get("LOCALAPPDATA", os.path.expanduser(r"~\AppData\Local"))
     for c in [
-        r"C:\Users\sandr\AppData\Local\Programs\lm-studio\lms.exe",
+        os.path.join(local_app_data, "Programs", "lm-studio", "lms.exe"),
         r"C:\Program Files\lm-studio\lms.exe",
     ]:
         if os.path.isfile(c):

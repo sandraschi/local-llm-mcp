@@ -31,8 +31,9 @@ def _find_lms_binary() -> str | None:
         return lms_in_path
     import os
 
+    local_app_data = os.environ.get("LOCALAPPDATA", os.path.expanduser(r"~\AppData\Local"))
     candidates = [
-        r"C:\Users\sandr\AppData\Local\Programs\lm-studio\lms.exe",
+        os.path.join(local_app_data, "Programs", "lm-studio", "lms.exe"),
         r"C:\Program Files\lm-studio\lms.exe",
     ]
     for c in candidates:

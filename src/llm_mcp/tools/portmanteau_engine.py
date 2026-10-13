@@ -17,9 +17,11 @@ Engine identities:
 import asyncio
 import json
 import os
+import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 from typing import Any
 
 import httpx
@@ -47,9 +49,11 @@ LLAMA_MODEL_DIR = os.getenv("LLM_MCP_LLAMA_MODEL_DIR", r"D:\Dev\models\muse-glim
 LLAMA_SERVER_EXE = os.getenv("LLM_MCP_LLAMA_SERVER_EXE", r"D:\Dev\tools\llama.cpp\src\build\bin\llama-server.exe")
 LLAMA_PROXY_SCRIPT = os.getenv(
     "LLM_MCP_LLAMA_PROXY_SCRIPT",
-    r"C:\Users\sandr\AppData\Local\Temp\opencode\muse-proxy\proxy.py",
+    os.path.join(tempfile.gettempdir(), "opencode", "muse-proxy", "proxy.py"),
 )
-LLAMA_UV = os.getenv("LLM_MCP_UV", r"C:\Users\sandr\.local\bin\uv.exe")
+LLAMA_UV = os.getenv(
+    "LLM_MCP_UV", shutil.which("uv") or os.path.join(os.path.expanduser("~"), ".local", "bin", "uv.exe")
+)
 
 _READONLY = {"readonly": True}
 _MUTATING = {}
