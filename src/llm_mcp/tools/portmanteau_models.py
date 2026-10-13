@@ -75,6 +75,8 @@ async def llm_models(
     - vllm_list: List currently loaded vLLM model
     - vllm_load: Initialize/load vLLM engine (requires model_id as model_name)
     - vllm_unload: Unload vLLM engine from memory
+    - list_model_cards: List model cards from the mcd info depot (summaries)
+    - get_model_card: Get one model card body (requires model_id as card name)
 
     Args:
         operation: Operation to perform (see SUPPORTED OPERATIONS above)
@@ -161,6 +163,18 @@ async def llm_models(
         elif operation == "vllm_unload":
             return await _vllm_unload_impl()
 
+        elif operation == "list_model_cards":
+            from llm_mcp.services.model_cards import list_model_cards as _list_cards
+
+            return _list_cards()
+
+        elif operation == "get_model_card":
+            if not model_id:
+                return {"error": "model_id required for get_model_card operation (use as card name)"}
+            from llm_mcp.services.model_cards import get_model_card as _get_card
+
+            return _get_card(model_id)
+
         else:
             return {
                 "error": f"Unknown operation: {operation}",
@@ -179,6 +193,8 @@ async def llm_models(
                     "vllm_list",
                     "vllm_load",
                     "vllm_unload",
+                    "list_model_cards",
+                    "get_model_card",
                 ],
             }
 
@@ -218,6 +234,7 @@ def register_llm_models_tools(mcp):
         - ollama_*: Ollama-specific operations (list, pull, delete, load, unload)
         - lmstudio_*: LM Studio-specific operations (list, load, unload)
         - vllm_*: vLLM-specific operations (list, load, unload)
+        - list_model_cards / get_model_card: mcd info-depot model cards
         """
         return await llm_models(
             operation=operation,

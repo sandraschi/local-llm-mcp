@@ -242,6 +242,30 @@ async def api_skill_content(skill_name: str):
     return {"name": skill_name, "content": skill_file.read_text(encoding="utf-8", errors="replace")}
 
 
+@app.get("/api/v1/model-cards")
+async def api_model_cards():
+    """List model cards from the mcd info depot (name + summary, no bodies)."""
+    try:
+        from llm_mcp.services.model_cards import list_model_cards
+
+        return list_model_cards()
+    except Exception as e:
+        logger.warning("Model cards probe failed: %s", e, exc_info=True)
+        return {"cards": [], "total": 0, "error": str(e)}
+
+
+@app.get("/api/v1/model-cards/{card_name}")
+async def api_model_card_content(card_name: str):
+    """Return the raw Markdown body of one model card."""
+    try:
+        from llm_mcp.services.model_cards import get_model_card
+
+        return get_model_card(card_name)
+    except Exception as e:
+        logger.warning("Model card read failed: %s", e, exc_info=True)
+        return {"error": str(e), "content": ""}
+
+
 @app.get("/api/v1/engines")
 async def api_engines():
     """Engine supervision status for the Glimmer page.
