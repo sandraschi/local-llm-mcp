@@ -6,6 +6,7 @@ import { Dashboard } from "@/pages/dashboard";
 import { Fleet } from "@/pages/fleet";
 import { Glimmer } from "@/pages/glimmer";
 import { Help } from "@/pages/help";
+import { Models } from "@/pages/models";
 import { Performance } from "@/pages/performance";
 import { Settings } from "@/pages/settings";
 import { Skills } from "@/pages/skills";
@@ -24,6 +25,7 @@ function App() {
           <Route path="/performance" element={<Performance />} />
           <Route path="/vision" element={<Vision />} />
           <Route path="/glimmer" element={<Glimmer />} />
+          <Route path="/models" element={<Models />} />
           <Route path="/fleet" element={<Fleet />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />

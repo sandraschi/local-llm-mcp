@@ -34,6 +34,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { href: "/performance", label: "Performance", icon: Gauge },
     { href: "/vision", label: "Vision", icon: ImageIcon },
     { href: "/glimmer", label: "Glimmer", icon: Sparkles },
+    { href: "/models", label: "Models", icon: Brain },
     { href: "/fleet", label: "Fleet", icon: LayoutGrid },
     { href: "/analytics", label: "Analytics", icon: Activity },
     { href: "/settings", label: "Settings", icon: Settings },
