@@ -12,6 +12,12 @@ Stack:    FastMCP 3.4.4+  |  FastAPI  |  React 19 + Vite 6 + TailwindCSS
 > **New to Glimmer?** Read **[docs/GLIMMER.md](docs/GLIMMER.md)** -- the complete
 > guide: what it is, how Meta trained it, benchmarks, DFlash speculative decoding,
 > and how it is operated in this fleet.
+>
+> **Which model on which card?** Read **[docs/MODEL_GUIDE.md](docs/MODEL_GUIDE.md)** --
+> engine comparison (Ollama vs LM Studio vs vLLM vs native llama.cpp, and why
+> vLLM sits out), the 2026-10-24 health sweep, and a 4090 / 16 GB model table
+> with provenance and abilities. Manage the library from the dashboard
+> Models page (pull / test / remove) or the `llm_ollama` MCP tools.
 
 The server supervises two local inference engines that share the GPU:
 

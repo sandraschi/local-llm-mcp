@@ -1,5 +1,9 @@
 # Local LLM Setup Guide for High-End Workstations
 
+> **Stale (2023-era: oobabooga, CodeLlama, WizardCoder).** Kept for history;
+> for current truth see [MODEL_GUIDE.md](MODEL_GUIDE.md) (2026-10-24: engine
+> comparison, tested model table, lifecycle UI).
+
 ## Table of Contents
 
 1. [Hardware Requirements](#hardware-requirements)
