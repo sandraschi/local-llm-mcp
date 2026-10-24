@@ -1,52 +1,52 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.12/schema.json",
-  "vcs": {
-    "enabled": true,
-    "clientKind": "git",
-    "useIgnoreFile": true
-  },
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "space",
-    "indentWidth": 2,
-    "lineWidth": 100
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "preset": "recommended",
-      "suspicious": {
-        "noUnknownAtRules": "off",
-        "useIterableCallbackReturn": "warn",
-        "noArrayIndexKey": "warn",
-        "noExplicitAny": "warn"
-      },
-      "a11y": {
-        "useButtonType": "warn",
-        "useMediaCaption": "warn",
-        "noStaticElementInteractions": "warn"
-      },
-      "style": {
-        "noNonNullAssertion": "warn"
-      },
-      "correctness": {
-        "noUnusedVariables": "warn",
-        "useExhaustiveDependencies": "off"
-      }
-    }
-  },
-  "css": {
-    "parser": {
-      "tailwindDirectives": true
-    }
-  },
-  "javascript": {
-    "formatter": {
-      "quoteStyle": "double"
-    }
-  },
-  "files": {
-    "ignoreUnknown": false,
-    "includes": ["**", "!dist", "!node_modules"]
-  }
+	"$schema": "https://biomejs.dev/schemas/2.4.12/schema.json",
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "space",
+		"indentWidth": 2,
+		"lineWidth": 100
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended",
+			"suspicious": {
+				"noUnknownAtRules": "off",
+				"useIterableCallbackReturn": "warn",
+				"noArrayIndexKey": "warn",
+				"noExplicitAny": "warn"
+			},
+			"a11y": {
+				"useButtonType": "warn",
+				"useMediaCaption": "warn",
+				"noStaticElementInteractions": "warn"
+			},
+			"style": {
+				"noNonNullAssertion": "warn"
+			},
+			"correctness": {
+				"noUnusedVariables": "warn",
+				"useExhaustiveDependencies": "off"
+			}
+		}
+	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	},
+	"files": {
+		"ignoreUnknown": false,
+		"includes": ["**", "!dist", "!node_modules"]
+	}
 }
