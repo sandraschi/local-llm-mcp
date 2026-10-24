@@ -3,12 +3,16 @@
 Serves the API used by the web_sota frontend (health, models, MCP servers).
 """
 
+import asyncio
 import logging
+import os
 import time
+import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -352,3 +356,155 @@ try:
     logger.info("Gateway router mounted: %d providers registered", len(gw_base))
 except Exception as e:
     logger.warning("Gateway router not loaded: %s", e)
+
+
+# --- Ollama library management (Models page: list / pull / test / remove) ----
+# Thin REST over the Ollama HTTP API so the dashboard can manage the local
+# model library without shell access. Pulls run as background jobs (a 20 GB
+# model exceeds any sane HTTP timeout); test runs a tiny completion with a
+# generous timeout because cold loads of big models take a minute or more.
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
+
+_PULL_JOBS: dict[str, dict[str, Any]] = {}
+_PULL_TASKS: set = set()
+
+
+async def _ollama_tags() -> list[dict[str, Any]]:
+    async with httpx.AsyncClient(base_url=OLLAMA_BASE_URL, timeout=30.0) as client:
+        r = await client.get("/api/tags")
+        r.raise_for_status()
+        return r.json().get("models", [])
+
+
+@app.get("/api/v1/ollama/models")
+async def api_ollama_models():
+    """Installed Ollama models with sizes for the library UI."""
+    try:
+        models = await _ollama_tags()
+        out = [
+            {
+                "name": m.get("name", ""),
+                "size_gb": round(m.get("size", 0) / 1e9, 1),
+                "modified_at": m.get("modified_at", ""),
+                "digest": (m.get("digest") or "")[:19],
+            }
+            for m in models
+        ]
+        return {"models": out, "count": len(out)}
+    except Exception as e:
+        logger.warning("Ollama list failed: %s", e)
+        return {"models": [], "count": 0, "error": str(e)}
+
+
+async def _run_pull_job(job_id: str, name: str) -> None:
+    job = _PULL_JOBS[job_id]
+    job["state"] = "running"
+    try:
+        # No fixed timeout by design: a 20 GB pull streams for 10+ minutes.
+        # Progress is visible via the job id; a stuck pull stays "running".
+        async with httpx.AsyncClient(base_url=OLLAMA_BASE_URL, timeout=None) as client:  # noqa: S113
+            async with client.stream("POST", "/api/pull", json={"name": name, "stream": True}) as resp:
+                resp.raise_for_status()
+                async for line in resp.aiter_lines():
+                    if not line.strip():
+                        continue
+                    try:
+                        import json as _json
+
+                        data = _json.loads(line)
+                    except ValueError:
+                        continue
+                    job["status_text"] = data.get("status", "")
+                    total = data.get("total") or 0
+                    done = data.get("completed") or 0
+                    if total > 0:
+                        job["progress"] = round(done / total, 3)
+                    if data.get("status") == "success":
+                        job["progress"] = 1.0
+        job["state"] = "done"
+    except Exception as e:
+        job["state"] = "failed"
+        job["error"] = str(e)
+    logger.info("Ollama pull job %s (%s) -> %s", job_id, name, job["state"])
+
+
+@app.post("/api/v1/ollama/pull")
+async def api_ollama_pull(body: dict[str, Any]):
+    """Start a background pull from the Ollama library. Poll the job id."""
+    name = str(body.get("name") or "").strip()
+    if not name:
+        return {"success": False, "error": "model name required"}
+    job_id = uuid.uuid4().hex[:12]
+    _PULL_JOBS[job_id] = {
+        "job_id": job_id,
+        "name": name,
+        "state": "queued",
+        "progress": 0.0,
+        "status_text": "queued",
+        "error": "",
+    }
+    task = asyncio.create_task(_run_pull_job(job_id, name))
+    _PULL_TASKS.add(task)
+    task.add_done_callback(_PULL_TASKS.discard)
+    return {"success": True, "job_id": job_id}
+
+
+@app.get("/api/v1/ollama/pull/{job_id}")
+async def api_ollama_pull_status(job_id: str):
+    """Poll a pull job started by POST /api/v1/ollama/pull."""
+    job = _PULL_JOBS.get(job_id)
+    if job is None:
+        return {"success": False, "error": f"unknown job: {job_id}"}
+    return {"success": True, **job}
+
+
+@app.post("/api/v1/ollama/delete")
+async def api_ollama_delete(body: dict[str, Any]):
+    """Remove an installed Ollama model (frees disk immediately)."""
+    name = str(body.get("name") or "").strip()
+    if not name:
+        return {"success": False, "error": "model name required"}
+    try:
+        async with httpx.AsyncClient(base_url=OLLAMA_BASE_URL, timeout=60.0) as client:
+            r = await client.request("DELETE", "/api/delete", json={"name": name})
+            r.raise_for_status()
+        return {"success": True, "name": name}
+    except Exception as e:
+        logger.warning("Ollama delete failed for %s: %s", name, e)
+        return {"success": False, "error": str(e)}
+
+
+@app.post("/api/v1/ollama/test")
+async def api_ollama_test(body: dict[str, Any]):
+    """Smoke-test a model: cold load + tiny completion. Times out honestly."""
+    name = str(body.get("name") or "").strip()
+    if not name:
+        return {"success": False, "ok": False, "error": "model name required"}
+    import time as _time
+
+    started = _time.monotonic()
+    try:
+        async with httpx.AsyncClient(base_url=OLLAMA_BASE_URL, timeout=210.0) as client:
+            r = await client.post(
+                "/api/chat",
+                json={
+                    "model": name,
+                    "messages": [{"role": "user", "content": "Reply with exactly: OK"}],
+                    "stream": False,
+                    "keep_alive": "0s",
+                    "options": {"num_ctx": 2048, "num_predict": 10},
+                },
+            )
+            r.raise_for_status()
+            text = (r.json().get("message") or {}).get("content", "")
+        seconds = round(_time.monotonic() - started, 1)
+        # Unload again so the test does not squat VRAM.
+        try:
+            async with httpx.AsyncClient(base_url=OLLAMA_BASE_URL, timeout=30.0) as client:
+                await client.post("/api/generate", json={"model": name, "keep_alive": 0})
+        except Exception:
+            pass
+        return {"success": True, "ok": True, "name": name, "seconds": seconds, "reply": text[:120]}
+    except Exception as e:
+        seconds = round(_time.monotonic() - started, 1)
+        return {"success": False, "ok": False, "name": name, "seconds": seconds, "error": str(e)}
