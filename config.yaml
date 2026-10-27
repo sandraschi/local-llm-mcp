@@ -10,6 +10,13 @@ model:
 
 # Extra providers surfaced via GET /api/v1/providers and the dashboard.
 providers:
+  lmstudio:
+    enabled: true
+    name: "LM Studio (0.4.0+ compat)"
+    type: "openai-compatible"
+    base_url: "http://127.0.0.1:1234/v1"
+    description: "LM Studio 0.4.0+ local server (llmster daemon, /api/v1 + /v1, MCP via API)"
+    models: []
   local-llama:
     enabled: true
     name: "Muse Glimmer (llama.cpp :11435)"
