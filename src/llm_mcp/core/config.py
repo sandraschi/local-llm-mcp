@@ -26,6 +26,9 @@ class ProviderSettings(BaseModel):
 
     # LM Studio settings
     lmstudio_base_url: str = Field(default="http://localhost:1234", description="Base URL for LM Studio API")
+    lmstudio_api_key: str | None = Field(
+        default=None, description="Permission key for LM Studio Server (or LM_API_TOKEN env)"
+    )
 
     # OpenAI settings
     openai_api_key: str | None = Field(default=None, description="API key for OpenAI")
